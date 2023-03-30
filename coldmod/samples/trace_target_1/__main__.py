@@ -1,12 +1,13 @@
 from . import helper
 import coldmod.write_trace
 
-coldmod.write_trace.init()
+coldmod.write_trace.init_from_trace_root()
 
 def useless_function(): #noqa
     pass
 
 def get_helper():
-    return helper.NameHelper(name="world")
+    name="world"
+    return helper.NameHelper(name=name)
 
 print(get_helper().message())
