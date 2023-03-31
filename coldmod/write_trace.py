@@ -13,15 +13,16 @@ def trace_fn(frame, event, _):
     # just want to trace when we enter new scopes (functions)
 
 class _TraceAgent():
-    def __init__(self, trace_root=''):
+    def __init__(self, trace_root, textio):
         self.trace_root = trace_root
+        self.textio = textio
 
     def trace_fn(self, frame, event, _):
         if event == "call":
             filename = frame.f_code.co_filename
             if filename.startswith(self.trace_root):
                 classname = frame.f_locals.get('self', None).__class__.__name__ if 'self' in frame.f_locals else None
-                sys.stderr.write(f"{event} {frame.f_code.co_firstlineno} {frame.f_code.co_name} {classname} {filename}\n")
+                self.textio.write(f"{event} {frame.f_code.co_firstlineno} {frame.f_code.co_name} {classname} {filename}\n")
 
         # return None because we don't want to trace within the scope of a call
         # just want to trace when we enter new scopes (functions)
@@ -30,10 +31,10 @@ class _TraceAgent():
         threading.settrace(self.trace_fn)
         sys.settrace(self.trace_fn)
 
-def init_from_trace_root():
-    return init(os.path.dirname(sys._getframe().f_back.f_code.co_filename))
+def init_from_trace_root(textio=sys.stderr):
+    return init(trace_root=os.path.dirname(sys._getframe().f_back.f_code.co_filename), textio=textio)
 
-def init(trace_root=''):
-    _TraceAgent(trace_root=trace_root).settrace()
+def init(trace_root='', textio=sys.stderr):
+    _TraceAgent(trace_root, textio).settrace()
 
 
