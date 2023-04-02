@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "coldmod"
+name = "coldmod-py"
 version = "0.1.0"
 description = "find cold code"
 authors = ["Sam Taylor <sjltaylor@gmail.com>"]
