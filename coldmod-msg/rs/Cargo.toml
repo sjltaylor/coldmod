@@ -1,0 +1,13 @@
+[package]
+name = "coldmod-msg-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+flatbuffers = "23.1.21"
+
+[lib]
+name = "coldmod_msg_rs"
+path = "src/lib.rs"
