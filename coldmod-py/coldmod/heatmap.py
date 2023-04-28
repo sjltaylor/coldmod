@@ -1,4 +1,4 @@
-from typing import List
+from typing import Iterable, List
 from coldmod.repr import repr_vars
 from coldmod.read_trace import CallTrace
 from coldmod.read_sources import FnSource
@@ -9,7 +9,7 @@ class Heatmap():
         self.called: List[FnSource] = []
         self.not_called: List[FnSource] = []
 
-def create_heatmap(call_traces: List[CallTrace], fn_sources: List[FnSource]) -> Heatmap:
+def create_heatmap(call_traces: Iterable[CallTrace], fn_sources: Iterable[FnSource]) -> Heatmap:
     heatmap = Heatmap()
     lookup = {}
 

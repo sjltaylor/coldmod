@@ -1,4 +1,4 @@
-call 9 get_helper None /Users/sam/Documents/projects/sjltaylor/rust/coldmod/coldmod/coldmod/samples/trace_target_1/__main__.py
-call 6 __init__ NameHelper /Users/sam/Documents/projects/sjltaylor/rust/coldmod/coldmod/coldmod/samples/trace_target_1/helper.py
-call 10 message NameHelper /Users/sam/Documents/projects/sjltaylor/rust/coldmod/coldmod/coldmod/samples/trace_target_1/helper.py
-call 2 message NameHelper /Users/sam/Documents/projects/sjltaylor/rust/coldmod/coldmod/coldmod/samples/trace_target_1/helper.py
+call 9 get_helper None /Users/sam/Documents/projects/sjltaylor/coldmod/coldmod/coldmod-py/coldmod/samples/trace_target_1/__main__.py
+call 6 __init__ NameHelper /Users/sam/Documents/projects/sjltaylor/coldmod/coldmod/coldmod-py/coldmod/samples/trace_target_1/helper.py
+call 10 message NameHelper /Users/sam/Documents/projects/sjltaylor/coldmod/coldmod/coldmod-py/coldmod/samples/trace_target_1/helper.py
+call 2 message NameHelper /Users/sam/Documents/projects/sjltaylor/coldmod/coldmod/coldmod-py/coldmod/samples/trace_target_1/helper.py
