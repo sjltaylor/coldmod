@@ -1,4 +1,4 @@
-import os
+import sys
 from coldmod.read_sources import read_sources, list_sources, FnSource
 from coldmod.read_trace import read_trace
 from coldmod.heatmap import create_heatmap
@@ -6,7 +6,7 @@ from coldmod.heatmap import create_heatmap
 COLDMOD = "COLD" + ''.join([c + '\u0336' for c in 'MOD'])
 
 def main():
-    [tracefile, source_path] = os.sys.argv[1:3]
+    [tracefile, source_path] = sys.argv[1:3]
 
     call_traces = read_trace(tracefile)
     fn_sources = read_sources(list_sources(source_path))

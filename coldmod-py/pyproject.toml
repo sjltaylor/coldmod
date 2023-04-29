@@ -8,6 +8,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 libcst = "^0.4.9"
+coldmod-msg-py = {path = "../coldmod-msg/py", develop = true}
+flatbuffers = "^23.3.3"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.2"
