@@ -3,3 +3,4 @@ target
 /scratch.py
 STATUS
 .vscode/launch.json
+.pytest_cache

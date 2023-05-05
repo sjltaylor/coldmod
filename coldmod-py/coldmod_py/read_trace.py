@@ -1,5 +1,5 @@
 from typing import List
-from coldmod.repr import repr_vars
+from coldmod_py.repr import repr_vars
 
 @repr_vars
 class CallTrace():

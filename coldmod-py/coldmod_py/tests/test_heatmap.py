@@ -1,9 +1,9 @@
 import os
 import pathlib
-from coldmod.read_trace import read_trace
-from coldmod.read_sources import read_sources, list_sources
-from coldmod.heatmap import create_heatmap
-from coldmod.read_sources import FnSource
+from coldmod_py.read_trace import read_trace
+from coldmod_py.read_sources import read_sources, list_sources
+from coldmod_py.heatmap import create_heatmap
+from coldmod_py.read_sources import FnSource
 
 SAMPLE_TRACE_TARGET_1_FILE = pathlib.Path(__file__).resolve().parent.joinpath('sample.trace_target_1')
 

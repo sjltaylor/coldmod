@@ -1,7 +1,7 @@
 from time import sleep
-import coldmod.tracing
+import coldmod_py.tracing
 from introspection.udp_listener import UDPListener
-from coldmod.samples.app_1 import app
+from coldmod_py.samples.app_1 import app
 from coldmod_msg_py import Trace
 from pprint import pp
 
@@ -20,9 +20,9 @@ def test_emitter():
     udp_listener.start()
 
     try:
-        coldmod.tracing.install(host=host, port=port)
+        coldmod_py.tracing.install(host=host, port=port)
         app.run()
-        coldmod.tracing.uninstall()
+        coldmod_py.tracing.uninstall()
         sleep(0.01) # yield to listener thread
     finally:
         udp_listener.stop()

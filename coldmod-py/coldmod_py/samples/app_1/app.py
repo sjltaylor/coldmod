@@ -1,5 +1,5 @@
 from . import helper
-import coldmod.write_trace
+import coldmod_py.write_trace
 
 def useless_function(): #noqa
     pass

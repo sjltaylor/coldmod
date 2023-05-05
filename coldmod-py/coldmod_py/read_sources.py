@@ -3,7 +3,7 @@ from glob import glob
 import os
 from itertools import chain
 from typing import List, Tuple, Dict, Optional, Iterable
-from coldmod.repr import repr_vars
+from coldmod_py.repr import repr_vars
 
 @repr_vars
 class FnSource():

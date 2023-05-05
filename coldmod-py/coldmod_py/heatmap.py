@@ -1,7 +1,7 @@
 from typing import Iterable, List
-from coldmod.repr import repr_vars
-from coldmod.read_trace import CallTrace
-from coldmod.read_sources import FnSource
+from coldmod_py.repr import repr_vars
+from coldmod_py.read_trace import CallTrace
+from coldmod_py.read_sources import FnSource
 
 @repr_vars
 class Heatmap():

@@ -1,5 +1,5 @@
 import os
-from coldmod.read_sources import read_source, list_sources, read_sources
+from coldmod_py.read_sources import read_source, list_sources, read_sources
 
 def test_read_source_from_sample_trace_target_1_helper():
     source = os.path.abspath('./coldmod/samples/trace_target_1/helper.py')

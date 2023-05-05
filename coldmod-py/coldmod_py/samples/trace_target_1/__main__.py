@@ -1,7 +1,7 @@
 from . import helper
-import coldmod.write_trace
+import coldmod_py.write_trace
 
-coldmod.write_trace.init_from_trace_root()
+coldmod_py.write_trace.init_from_trace_root()
 
 def useless_function(): #noqa
     pass
