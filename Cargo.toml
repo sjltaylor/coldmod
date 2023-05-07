@@ -1,5 +1,6 @@
 [workspace]
 name = "coldmod"
 members = [
-    "coldmod-daemon"
+    "coldmod-daemon",
+    "coldmod-msg/rs"
 ]

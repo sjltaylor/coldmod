@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package coldmod_msg.proto;
+
+message Trace {
+  string path = 1;
+  uint32 line = 2;
+}
+
+service TracingDaemon {
+  rpc collect(stream Trace) returns (google.protobuf.Empty);
+}

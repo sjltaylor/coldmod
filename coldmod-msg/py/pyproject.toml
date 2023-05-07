@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "coldmod_msg_py"
+name = "coldmod-msg"
 version = "0.1.0"
 description = ""
 authors = ["Sam Taylor <sjltaylor@gmail.com>"]
@@ -7,7 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-flatbuffers = "^23.3.3"
+grpcio = "^1.54.0"
+grpcio-tools = "^1.54.0"
 
 [build-system]
 requires = ["poetry-core"]

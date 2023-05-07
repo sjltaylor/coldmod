@@ -7,8 +7,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-coldmod-msg-py = {path = "coldmod-msg/py", develop = true}
 coldmod-py = {path = "coldmod-py", develop = true}
+coldmod-msg = {path = "coldmod-msg/py", develop = true}
 
 [build-system]
 requires = ["poetry-core"]

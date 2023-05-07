@@ -1,13 +1,13 @@
-use coldmod_daemon::proto::tracing_collector_server::{TracingCollector, TracingCollectorServer};
-use coldmod_daemon::proto::Trace;
+use coldmod_msg::proto::tracing_daemon_server::{TracingDaemon, TracingDaemonServer};
+use coldmod_msg::proto::Trace;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 
 #[derive(Debug, Default)]
-pub struct TracingCollectorDaemon {}
+pub struct ColdmodTracingDaemon {}
 
 #[tonic::async_trait]
-impl TracingCollector for TracingCollectorDaemon {
-    async fn trace(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
+impl TracingDaemon for ColdmodTracingDaemon {
+    async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         let mut stream = request.into_inner();
 
         while let Some(trace) = stream.message().await? {
@@ -22,10 +22,13 @@ impl TracingCollector for TracingCollectorDaemon {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "127.0.0.1:7777".parse()?;
-    let daemon = TracingCollectorDaemon::default();
+    let daemon = ColdmodTracingDaemon::default();
+
+    // let new_layer = tonic_tracing::TracingLayer::new();
 
     Server::builder()
-        .add_service(TracingCollectorServer::new(daemon))
+        // .layer(new_layer)
+        .add_service(TracingDaemonServer::new(daemon))
         .serve(addr)
         .await?;
 
