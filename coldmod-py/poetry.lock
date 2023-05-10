@@ -43,6 +43,24 @@ files = [
 ]
 
 [[package]]
+name = "coldmod-msg"
+version = "0.1.0"
+description = ""
+category = "main"
+optional = false
+python-versions = "^3.11"
+files = []
+develop = true
+
+[package.dependencies]
+grpcio = "^1.54.0"
+grpcio-tools = "^1.54.0"
+
+[package.source]
+type = "directory"
+url = "../coldmod-msg/py"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -759,4 +777,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "87fe991734dc710645c242d9f38cb467d4a04e6edd782d3aed2961b3e70a5d5d"
+content-hash = "0582c1073cb403e48a76109937d43fa774a3b56d3d1f1a52d7bfe010310ed93f"
