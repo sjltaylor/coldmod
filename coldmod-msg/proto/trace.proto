@@ -7,6 +7,8 @@ package coldmod_msg.proto;
 message Trace {
   string path = 1;
   uint32 line = 2;
+  uint64 thread_id = 3;
+  uint64 process_id = 4;
 }
 
 service TracingDaemon {

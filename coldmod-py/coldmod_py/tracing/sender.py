@@ -5,8 +5,8 @@ import coldmod_msg.proto.trace_pb2 as trace_pb2
 from coldmod_py.tracing.queue import Q, generator
 
 def _stream_q_to_trace():
-    for [path, line] in generator():
-        yield trace_pb2.Trace(path=path, line=line)
+    for [path, line, thread_id, process_id] in generator():
+        yield trace_pb2.Trace(path=path, line=line, thread_id=thread_id, process_id=process_id)
 
 def sender():
     with grpc.insecure_channel("127.0.0.1:7777") as channel:

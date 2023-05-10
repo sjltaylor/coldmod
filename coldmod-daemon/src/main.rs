@@ -9,9 +9,8 @@ pub struct ColdmodTracingDaemon {}
 impl TracingDaemon for ColdmodTracingDaemon {
     async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         let mut stream = request.into_inner();
-
         while let Some(trace) = stream.message().await? {
-            println!("received: {:?}", trace);
+            println!("recv: {:?}", trace);
             // see: https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md
         }
 
