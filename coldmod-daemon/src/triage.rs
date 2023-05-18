@@ -86,7 +86,11 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
             let local = Local::now();
 
             // In case of any websocket error, we exit.
-            if sender.send(Message::Text(local.to_string())).await.is_err() {
+            if sender
+                .send(Message::Text(format!("{}:: {}", i, local.to_string())))
+                .await
+                .is_err()
+            {
                 return i;
             }
 

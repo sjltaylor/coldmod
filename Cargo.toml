@@ -2,5 +2,6 @@
 name = "coldmod"
 members = [
     "coldmod-daemon",
-    "coldmod-msg/rs"
+    "coldmod-msg/rs",
+    "coldmod-web"
 ]
