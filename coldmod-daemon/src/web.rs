@@ -3,7 +3,6 @@ use axum::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         State, TypedHeader,
     },
-    handler::Handler,
     response::IntoResponse,
     routing::get,
     Router,
@@ -26,7 +25,7 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use chrono::prelude::*;
 
 use async_channel::Receiver;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 #[derive(Debug, Clone)]
 struct SocketContext {
