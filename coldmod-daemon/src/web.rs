@@ -22,7 +22,7 @@ use axum::extract::ws::CloseFrame;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-use chrono::prelude::*;
+
 
 use async_channel::Receiver;
 use serde::Serialize;
@@ -86,7 +86,7 @@ async fn ws_handler(
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(mut socket: WebSocket, who: SocketAddr, socket_context: SocketContext) {
+async fn handle_socket(socket: WebSocket, who: SocketAddr, socket_context: SocketContext) {
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
     let (mut sender, mut receiver) = socket.split();

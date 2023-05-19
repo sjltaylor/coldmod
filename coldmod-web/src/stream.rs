@@ -1,11 +1,11 @@
-use std::default;
 
-use js_sys::*;
+
+
 use leptos::*;
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::__rt::IntoJsResult;
+use serde::{Deserialize};
+
 use wasm_bindgen::prelude::*;
-use web_sys::Window;
+
 use web_sys::*;
 
 pub fn start(s: async_channel::Sender<String>) {
@@ -32,7 +32,7 @@ pub fn start(s: async_channel::Sender<String>) {
     onerror_callback.forget();
 }
 
-fn onopen(_: &WebSocket, e: Event) {
+fn onopen(_: &WebSocket, _e: Event) {
     //todo!("onopen {:?}", e);
 }
 
