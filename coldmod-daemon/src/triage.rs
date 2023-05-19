@@ -1,18 +1,19 @@
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        TypedHeader,
+        State, TypedHeader,
     },
+    handler::Handler,
     response::IntoResponse,
     routing::get,
     Router,
 };
 
+use coldmod_msg::proto::Trace;
 use std::borrow::Cow;
 use std::net::SocketAddr;
 use std::ops::ControlFlow;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
-
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 //allows to extract the IP of connecting user
@@ -24,9 +25,15 @@ use futures::{sink::SinkExt, stream::StreamExt};
 
 use chrono::prelude::*;
 
+use async_channel::Receiver;
 use serde::{Deserialize, Serialize};
 
-pub async fn server() {
+#[derive(Debug, Clone)]
+struct SocketContext {
+    receiver: Receiver<Trace>,
+}
+
+pub async fn server(receiver: Receiver<Trace>) {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -35,9 +42,11 @@ pub async fn server() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    let socket_context = SocketContext { receiver };
+
     // build our application with some routes
     let app = Router::new()
-        .route("/ws", get(ws_handler))
+        .route("/ws", get(ws_handler).with_state(socket_context))
         .route("/", get(|| async { "Hello, World!" }))
         // logging so we can see whats going on
         .layer(
@@ -64,6 +73,7 @@ async fn ws_handler(
     ws: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    State(socket_context): State<SocketContext>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
@@ -73,24 +83,23 @@ async fn ws_handler(
     println!("`{user_agent}` at {addr} connected.");
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    ws.on_upgrade(move |socket| handle_socket(socket, addr))
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, socket_context))
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
+async fn handle_socket(mut socket: WebSocket, who: SocketAddr, socket_context: SocketContext) {
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
     let (mut sender, mut receiver) = socket.split();
 
     // Spawn a task that will push several messages to the client (does not matter what client does)
     let mut send_task = tokio::spawn(async move {
-        for i in 0..1000 {
-            let local = Local::now();
-
-            let txt = format!("{}:: {}", i, local.to_string());
-
+        while let Ok(trace) = socket_context.receiver.recv().await {
             let we = coldmod_msg::web::Event {
-                content: txt.clone(),
+                content: format!(
+                    "{}:{} process:{} thread:{}",
+                    trace.path, trace.line, trace.process_id, trace.thread_id
+                ),
             };
 
             let mut flexbuffers_serializer = flexbuffers::FlexbufferSerializer::new();
@@ -102,17 +111,12 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
                 .await
                 .is_err()
             {
-                return i;
+                eprintln!("Could not send message, bailing out");
+                return;
             }
-
-            // if sender.send(Message::Text(txt.clone())).await.is_err() {
-            //     return i;
-            // }
-
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }
 
-        println!("Sending close to {who}...");
+        println!("source socket closed/errored, sending close to client {who}...");
         if let Err(e) = sender
             .send(Message::Close(Some(CloseFrame {
                 code: axum::extract::ws::close_code::NORMAL,
@@ -121,9 +125,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
             .await
         {
             println!("Could not send Close due to {}, probably it is ok?", e);
-        }
-
-        return -1;
+        };
     });
 
     // This second task will receive messages from client and print them on server console
@@ -143,7 +145,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
     tokio::select! {
         rv_a = (&mut send_task) => {
             match rv_a {
-                Ok(a) => println!("{} messages sent to {}", a, who),
+                Ok(_) => println!("messages forwarding finished, closing {}", who),
                 Err(a) => println!("Error sending messages {:?}", a)
             }
             recv_task.abort();

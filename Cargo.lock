@@ -381,6 +381,7 @@ dependencies = [
 name = "coldmod-daemon"
 version = "0.1.0"
 dependencies = [
+ "async-channel",
  "axum",
  "axum-extra",
  "chrono",

@@ -1,7 +1,8 @@
 #[tokio::main]
 async fn main() {
-    let triage = tokio::spawn(async { coldmod_daemon::triage::server().await });
-    let tracing = tokio::spawn(async { coldmod_daemon::tracing::server().await });
+    let (sender, receiver) = async_channel::bounded(65536);
+    let triage = tokio::spawn(async { coldmod_daemon::triage::server(receiver).await });
+    let tracing = tokio::spawn(async { coldmod_daemon::tracing::server(sender).await });
 
     match tokio::join!(triage, tracing) {
         (Ok(_), Ok(_)) => println!("all servers exited"),
