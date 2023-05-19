@@ -2,6 +2,7 @@ use std::default;
 
 use js_sys::*;
 use leptos::*;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::__rt::IntoJsResult;
 use wasm_bindgen::prelude::*;
 use web_sys::Window;
@@ -32,7 +33,7 @@ pub fn start(s: async_channel::Sender<String>) {
 }
 
 fn onopen(_: &WebSocket, e: Event) {
-    todo!("onopen {:?}", e);
+    //todo!("onopen {:?}", e);
 }
 
 fn onmessage(e: MessageEvent, snd: &async_channel::Sender<String>) {
@@ -45,9 +46,26 @@ fn onmessage(e: MessageEvent, snd: &async_channel::Sender<String>) {
                 log!("Error sending message: {:?}", e);
             }
         }
-    } else {
-        warn!("unexpected message: {:?}", e.data());
+
+        return;
     }
+
+    if let Ok(data) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
+        let buffer = js_sys::Uint8Array::new(&data).to_vec();
+        let r = flexbuffers::Reader::get_root(buffer.as_slice()).unwrap();
+        let e = coldmod_msg::web::Event::deserialize(r).unwrap();
+        log!("message event, received bytes: {:?}", e);
+        // match snd.try_send(s) {
+        //     Ok(_) => {}
+        //     Err(e) => {
+        //         log!("Error sending message: {:?}", e);
+        //     }
+        // }
+
+        return;
+    }
+
+    warn!("unexpected message: {:?}", e.data());
 }
 
 fn onerror(e: ErrorEvent) {

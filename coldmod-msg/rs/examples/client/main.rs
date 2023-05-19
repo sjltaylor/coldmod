@@ -9,6 +9,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let trace = Trace {
         path: "/a/path/to/a/file".into(),
         line: 7263,
+        process_id: 1231231,
+        thread_id: 1230920,
     };
 
     let traces = vec![trace];

@@ -24,6 +24,8 @@ use futures::{sink::SinkExt, stream::StreamExt};
 
 use chrono::prelude::*;
 
+use serde::{Deserialize, Serialize};
+
 pub async fn server() {
     tracing_subscriber::registry()
         .with(
@@ -85,14 +87,27 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
         for i in 0..1000 {
             let local = Local::now();
 
+            let txt = format!("{}:: {}", i, local.to_string());
+
+            let we = coldmod_msg::web::Event {
+                content: txt.clone(),
+            };
+
+            let mut flexbuffers_serializer = flexbuffers::FlexbufferSerializer::new();
+            we.serialize(&mut flexbuffers_serializer).unwrap();
+
             // In case of any websocket error, we exit.
             if sender
-                .send(Message::Text(format!("{}:: {}", i, local.to_string())))
+                .send(Message::Binary(flexbuffers_serializer.take_buffer()))
                 .await
                 .is_err()
             {
                 return i;
             }
+
+            // if sender.send(Message::Text(txt.clone())).await.is_err() {
+            //     return i;
+            // }
 
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
         }

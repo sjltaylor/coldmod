@@ -7,8 +7,11 @@ edition = "2021"
 
 [dependencies]
 async-channel = "1.8.0"
+coldmod-msg = { version = "0.1.0", path = "../coldmod-msg/rs" }
+flexbuffers = "2.0.0"
 gloo-timers = { version = "0.2.6", features = ["futures"] }
 js-sys = "0.3.61"
 leptos = "0.2.5"
+serde = { version = "1.0.163", features = ["derive"] }
 wasm-bindgen = "0.2.86"
 web-sys = "0.3.61"
