@@ -14,15 +14,15 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x63oldmod-msg/proto/trace.proto\x12\x11\x63oldmod_msg.proto\x1a\x1bgoogle/protobuf/empty.proto\"J\n\x05Trace\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04line\x18\x02 \x01(\r\x12\x11\n\tthread_id\x18\x03 \x01(\x04\x12\x12\n\nprocess_id\x18\x04 \x01(\x04\x32N\n\rTracingDaemon\x12=\n\x07\x63ollect\x12\x18.coldmod_msg.proto.Trace\x1a\x16.google.protobuf.Empty(\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1d\x63oldmod-msg/proto/trace.proto\x12\x17\x63oldmod_msg.proto.trace\x1a\x1bgoogle/protobuf/empty.proto\"J\n\x05Trace\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0c\n\x04line\x18\x02 \x01(\r\x12\x11\n\tthread_id\x18\x03 \x01(\x04\x12\x12\n\nprocess_id\x18\x04 \x01(\x04\x32T\n\rTracingDaemon\x12\x43\n\x07\x63ollect\x12\x1e.coldmod_msg.proto.trace.Trace\x1a\x16.google.protobuf.Empty(\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'coldmod_msg.proto.trace_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _TRACE._serialized_start=81
-  _TRACE._serialized_end=155
-  _TRACINGDAEMON._serialized_start=157
-  _TRACINGDAEMON._serialized_end=235
+  _TRACE._serialized_start=87
+  _TRACE._serialized_end=161
+  _TRACINGDAEMON._serialized_start=163
+  _TRACINGDAEMON._serialized_end=247
 # @@protoc_insertion_point(module_scope)

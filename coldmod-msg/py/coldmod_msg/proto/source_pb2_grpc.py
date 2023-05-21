@@ -2,11 +2,11 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from coldmod_msg.proto import trace_pb2 as coldmod__msg_dot_proto_dot_trace__pb2
+from coldmod_msg.proto import source_pb2 as coldmod__msg_dot_proto_dot_source__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-class TracingDaemonStub(object):
+class SourceDaemonStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -16,13 +16,13 @@ class TracingDaemonStub(object):
             channel: A grpc.Channel.
         """
         self.collect = channel.stream_unary(
-                '/coldmod_msg.proto.trace.TracingDaemon/collect',
-                request_serializer=coldmod__msg_dot_proto_dot_trace__pb2.Trace.SerializeToString,
+                '/coldmod_msg.proto.source.SourceDaemon/collect',
+                request_serializer=coldmod__msg_dot_proto_dot_source__pb2.Source.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
 
 
-class TracingDaemonServicer(object):
+class SourceDaemonServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def collect(self, request_iterator, context):
@@ -32,21 +32,21 @@ class TracingDaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_TracingDaemonServicer_to_server(servicer, server):
+def add_SourceDaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'collect': grpc.stream_unary_rpc_method_handler(
                     servicer.collect,
-                    request_deserializer=coldmod__msg_dot_proto_dot_trace__pb2.Trace.FromString,
+                    request_deserializer=coldmod__msg_dot_proto_dot_source__pb2.Source.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'coldmod_msg.proto.trace.TracingDaemon', rpc_method_handlers)
+            'coldmod_msg.proto.source.SourceDaemon', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class TracingDaemon(object):
+class SourceDaemon(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -60,8 +60,8 @@ class TracingDaemon(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/coldmod_msg.proto.trace.TracingDaemon/collect',
-            coldmod__msg_dot_proto_dot_trace__pb2.Trace.SerializeToString,
+        return grpc.experimental.stream_unary(request_iterator, target, '/coldmod_msg.proto.source.SourceDaemon/collect',
+            coldmod__msg_dot_proto_dot_source__pb2.Source.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

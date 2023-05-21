@@ -22,8 +22,6 @@ use axum::extract::ws::CloseFrame;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-
-
 use async_channel::Receiver;
 use serde::Serialize;
 
@@ -33,14 +31,6 @@ struct SocketContext {
 }
 
 pub async fn server(receiver: Receiver<Trace>) {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "example_websockets=debug,tower_http=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-
     let socket_context = SocketContext { receiver };
 
     // build our application with some routes

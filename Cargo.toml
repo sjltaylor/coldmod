@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "coldmod-daemon",
+    "coldmod-d",
     "coldmod-msg/rs",
     "coldmod-web"
 ]
