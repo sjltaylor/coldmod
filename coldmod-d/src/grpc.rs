@@ -5,6 +5,8 @@ use coldmod_msg::proto::{SourceScan, Trace};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
+use crate::storage;
+
 pub struct ColdmodTracingDaemon {
     sender: Sender<Trace>,
 }
@@ -34,6 +36,7 @@ impl SourceDaemon for ColdmodSourceDaemon {
     async fn submit(&self, request: Request<SourceScan>) -> Result<Response<()>, Status> {
         let scan = request.into_inner();
         println!("received scan request: {:?}", scan);
+        storage::store_source_scan(scan).await.unwrap();
         Ok(Response::new(()))
     }
 }
