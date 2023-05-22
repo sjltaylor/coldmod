@@ -13,7 +13,6 @@ use std::borrow::Cow;
 use std::net::SocketAddr;
 use std::ops::ControlFlow;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;

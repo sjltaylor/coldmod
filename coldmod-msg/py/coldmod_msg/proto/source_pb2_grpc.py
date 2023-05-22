@@ -15,9 +15,9 @@ class SourceDaemonStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.collect = channel.stream_unary(
-                '/coldmod_msg.proto.source.SourceDaemon/collect',
-                request_serializer=coldmod__msg_dot_proto_dot_source__pb2.Source.SerializeToString,
+        self.submit = channel.unary_unary(
+                '/coldmod_msg.proto.source.SourceDaemon/submit',
+                request_serializer=coldmod__msg_dot_proto_dot_source__pb2.SourceScan.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
 
@@ -25,7 +25,7 @@ class SourceDaemonStub(object):
 class SourceDaemonServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def collect(self, request_iterator, context):
+    def submit(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -34,9 +34,9 @@ class SourceDaemonServicer(object):
 
 def add_SourceDaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'collect': grpc.stream_unary_rpc_method_handler(
-                    servicer.collect,
-                    request_deserializer=coldmod__msg_dot_proto_dot_source__pb2.Source.FromString,
+            'submit': grpc.unary_unary_rpc_method_handler(
+                    servicer.submit,
+                    request_deserializer=coldmod__msg_dot_proto_dot_source__pb2.SourceScan.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
@@ -50,7 +50,7 @@ class SourceDaemon(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def collect(request_iterator,
+    def submit(request,
             target,
             options=(),
             channel_credentials=None,
@@ -60,8 +60,8 @@ class SourceDaemon(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(request_iterator, target, '/coldmod_msg.proto.source.SourceDaemon/collect',
-            coldmod__msg_dot_proto_dot_source__pb2.Source.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.source.SourceDaemon/submit',
+            coldmod__msg_dot_proto_dot_source__pb2.SourceScan.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

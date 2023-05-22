@@ -19,10 +19,10 @@ async fn main() {
     let storage_receiver = receiver.clone();
 
     let web = tokio::spawn(async move { coldmod_d::web::server(web_receiver).await });
-    let tracing = tokio::spawn(async { coldmod_d::tracing::server(sender).await });
+    let grpc = tokio::spawn(async { coldmod_d::grpc::server(sender).await });
     let storage = tokio::spawn(async move { coldmod_d::storage::server(storage_receiver).await });
 
-    match tokio::try_join!(web, tracing, storage) {
+    match tokio::try_join!(web, grpc, storage) {
         Ok(_) => println!("all servers exited"),
         Err(e) => println!("one or more servers exited with an error: {}", e),
     };
