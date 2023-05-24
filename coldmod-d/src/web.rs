@@ -24,17 +24,20 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use async_channel::Receiver;
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
-struct SocketContext {
-    receiver: Receiver<Trace>,
+// #[derive(Debug, Clone)]
+// struct SocketContext {
+//     receiver: Receiver<Trace>,
+// }
+
+#[tonic::async_trait]
+pub trait DispatchContext: Clone + Send + Sync + 'static {
+    fn receiver(&self) -> Receiver<Trace>;
 }
 
-pub async fn server(receiver: Receiver<Trace>) {
-    let socket_context = SocketContext { receiver };
-
+pub async fn server<Dispatch: DispatchContext>(dispatch: Dispatch) {
     // build our application with some routes
-    let app = Router::new()
-        .route("/ws", get(ws_handler).with_state(socket_context))
+    let app: _ = Router::new()
+        .route("/ws", get(ws_handler::<Dispatch>).with_state(dispatch))
         .route("/", get(|| async { "Hello, World!" }))
         // logging so we can see whats going on
         .layer(
@@ -57,11 +60,11 @@ pub async fn server(receiver: Receiver<Trace>) {
 /// websocket protocol will occur.
 /// This is the last point where we can extract TCP/IP metadata such as IP address of the client
 /// as well as things from HTTP headers such as user-agent of the browser etc.
-async fn ws_handler(
+async fn ws_handler<Dispatch: DispatchContext>(
     ws: WebSocketUpgrade,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    State(socket_context): State<SocketContext>,
+    State(dispatch): State<Dispatch>,
 ) -> impl IntoResponse {
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
@@ -71,18 +74,22 @@ async fn ws_handler(
     println!("`{user_agent}` at {addr} connected.");
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    ws.on_upgrade(move |socket| handle_socket(socket, addr, socket_context))
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, dispatch))
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(socket: WebSocket, who: SocketAddr, socket_context: SocketContext) {
+async fn handle_socket<Dispatch: DispatchContext>(
+    socket: WebSocket,
+    who: SocketAddr,
+    dispatch: Dispatch,
+) {
     // By splitting socket we can send and receive at the same time. In this example we will send
     // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
     let (mut sender, mut receiver) = socket.split();
 
     // Spawn a task that will push several messages to the client (does not matter what client does)
     let mut send_task = tokio::spawn(async move {
-        while let Ok(trace) = socket_context.receiver.recv().await {
+        while let Ok(trace) = dispatch.receiver().recv().await {
             let we = coldmod_msg::web::Event {
                 content: format!(
                     "{}:{} process:{} thread:{}",

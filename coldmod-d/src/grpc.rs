@@ -1,25 +1,33 @@
-use async_channel::Sender;
 use coldmod_msg::proto::source_daemon_server::{SourceDaemon, SourceDaemonServer};
 use coldmod_msg::proto::tracing_daemon_server::{TracingDaemon, TracingDaemonServer};
 use coldmod_msg::proto::{SourceScan, Trace};
+use std::error::Error;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
-use crate::storage;
-
-pub struct ColdmodTracingDaemon {
-    sender: Sender<Trace>,
+#[tonic::async_trait]
+pub trait DispatchContext: Clone + Send + Sync + 'static {
+    async fn store_source_scan(&self, scan: SourceScan) -> Result<(), Box<dyn Error>>;
+    fn emit_trace(&self, trace: Trace) -> Result<(), Box<dyn Error>>;
 }
 
-pub struct ColdmodSourceDaemon {}
+#[derive(Clone)]
+pub struct ColdmodTracingDaemon<Dispatch: DispatchContext> {
+    dispatch: Dispatch,
+}
+
+#[derive(Clone)]
+pub struct ColdmodSourceDaemon<Dispatch: DispatchContext> {
+    dispatch: Dispatch,
+}
 
 #[tonic::async_trait]
-impl TracingDaemon for ColdmodTracingDaemon {
+impl<Dispatch: DispatchContext> TracingDaemon for ColdmodTracingDaemon<Dispatch> {
     async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md
         let mut stream = request.into_inner();
         while let Some(trace) = stream.message().await? {
-            match self.sender.try_send(trace) {
+            match self.dispatch.emit_trace(trace) {
                 Ok(_) => (),
                 Err(e) => {
                     eprintln!("failed to send trace: {:?}", e);
@@ -32,19 +40,21 @@ impl TracingDaemon for ColdmodTracingDaemon {
 }
 
 #[tonic::async_trait]
-impl SourceDaemon for ColdmodSourceDaemon {
+impl<Dispatch: DispatchContext> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
     async fn submit(&self, request: Request<SourceScan>) -> Result<Response<()>, Status> {
         let scan = request.into_inner();
         println!("received scan request: {:?}", scan);
-        storage::store_source_scan(scan).await.unwrap();
+        self.dispatch.store_source_scan(scan).await.unwrap();
         Ok(Response::new(()))
     }
 }
 
-pub async fn server(sender: Sender<Trace>) {
+pub async fn server<Dispatch: DispatchContext>(dispatch: Dispatch) {
     let addr = "127.0.0.1:7777".parse().expect("couldn't parse address");
-    let tracing_d = ColdmodTracingDaemon { sender };
-    let source_d = ColdmodSourceDaemon {};
+    let tracing_d = ColdmodTracingDaemon {
+        dispatch: dispatch.clone(),
+    };
+    let source_d = ColdmodSourceDaemon { dispatch };
 
     match Server::builder()
         .layer(

@@ -1,3 +1,4 @@
+use coldmod_d::store;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 fn configure_tracing() {
@@ -14,13 +15,17 @@ fn configure_tracing() {
 async fn main() {
     configure_tracing();
 
-    let (sender, receiver) = async_channel::bounded(65536);
-    let web_receiver = receiver.clone();
-    let storage_receiver = receiver.clone();
+    let dispatch = coldmod_d::dispatch::Dispatch {
+        store: store::RedisStore::new().await,
+        trace_ch: async_channel::bounded(65536),
+    };
+    let grpc_dispatch = dispatch.clone();
+    let web_dispatch = dispatch.clone();
+    let storage_dispatch = dispatch.clone();
 
-    let web = tokio::spawn(async move { coldmod_d::web::server(web_receiver).await });
-    let grpc = tokio::spawn(async { coldmod_d::grpc::server(sender).await });
-    let storage = tokio::spawn(async move { coldmod_d::storage::server(storage_receiver).await });
+    let web = tokio::spawn(async move { coldmod_d::web::server(web_dispatch).await });
+    let grpc = tokio::spawn(async move { coldmod_d::grpc::server(grpc_dispatch).await });
+    let storage = tokio::spawn(async move { store::tracing_sink(storage_dispatch).await });
 
     match tokio::try_join!(web, grpc, storage) {
         Ok(_) => println!("all servers exited"),

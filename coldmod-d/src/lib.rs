@@ -1,3 +1,4 @@
+pub mod dispatch;
 pub mod grpc;
-pub mod storage;
+pub mod store;
 pub mod web;
