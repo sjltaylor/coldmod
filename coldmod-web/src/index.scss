@@ -1,4 +1,25 @@
+@import 'app_lug';
+
+@mixin text-font {
+  font-family: 'Oxanium', cursive;
+}
+
+@mixin code-font {
+  font-family: 'Share Tech Mono', monospace;
+}
+
 body {
-  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
-    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+    @include text-font;
+    font-size: 14px;
+    border-top: solid 2px black;
+    margin: 0;
+    padding: 9;
+}
+
+main {
+    position: absolute;
+    top: 50px;
+    left: 20vw;
+    width: 80vw;
+
 }
