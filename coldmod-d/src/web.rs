@@ -17,12 +17,13 @@ use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
 use axum::extract::ws::CloseFrame;
+use flexbuffers;
 
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
 use async_channel::Receiver;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // #[derive(Debug, Clone)]
 // struct SocketContext {
@@ -90,12 +91,7 @@ async fn handle_socket<Dispatch: DispatchContext>(
     // Spawn a task that will push several messages to the client (does not matter what client does)
     let mut send_task = tokio::spawn(async move {
         while let Ok(trace) = dispatch.receiver().recv().await {
-            let we = coldmod_msg::web::Event {
-                content: format!(
-                    "{}:{} process:{} thread:{}",
-                    trace.path, trace.line, trace.process_id, trace.thread_id
-                ),
-            };
+            let we = coldmod_msg::web::Event::DaemonEmitsSourceData {};
 
             let mut flexbuffers_serializer = flexbuffers::FlexbufferSerializer::new();
             we.serialize(&mut flexbuffers_serializer).unwrap();
@@ -165,7 +161,9 @@ fn process_message(msg: Message, who: SocketAddr) -> ControlFlow<(), ()> {
             println!(">>> {} sent str: {:?}", who, t);
         }
         Message::Binary(d) => {
-            println!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
+            let reader = flexbuffers::Reader::get_root(d.as_slice()).unwrap();
+            let event = coldmod_msg::web::Event::deserialize(reader).unwrap();
+            println!("recv: {} sent a {} byte event: {:?}", who, d.len(), event);
         }
         Message::Close(c) => {
             if let Some(cf) = c {

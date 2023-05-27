@@ -1,17 +1,12 @@
-use leptos::*;
+use web_sys::CloseEvent;
 
-#[derive(Clone, Debug)]
-pub enum AppView {
-    Source,
-    Trace,
-}
-
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum AppEvent {
-    NavigateTo(AppView),
+    ColdmodMsg(coldmod_msg::web::Event),
+    WebSocketClientEvent(WebSocketEventType),
 }
 
-pub type EventsChannel = (
-    async_channel::Sender<AppEvent>,
-    async_channel::Receiver<AppEvent>,
-);
+#[derive(Clone)]
+pub enum WebSocketEventType {
+    Close(CloseEvent),
+}

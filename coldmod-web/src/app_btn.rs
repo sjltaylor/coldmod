@@ -1,5 +1,3 @@
-use crate::events::AppEvent;
-use crate::events::EventsChannel;
 use leptos::*;
 
 #[component]
