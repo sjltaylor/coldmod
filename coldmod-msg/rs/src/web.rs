@@ -4,4 +4,8 @@ use serde::{Deserialize, Serialize};
 pub enum Event {
     RequestSourceData,
     DaemonEmitsSourceData,
+    #[cfg(feature = "proto")]
+    TraceReceived(crate::proto::Trace),
+    #[cfg(feature = "proto")]
+    SourceReceived(crate::proto::SourceScan),
 }

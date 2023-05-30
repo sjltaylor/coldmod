@@ -1,37 +1,34 @@
 use coldmod_msg::proto::source_daemon_server::{SourceDaemon, SourceDaemonServer};
 use coldmod_msg::proto::tracing_daemon_server::{TracingDaemon, TracingDaemonServer};
 use coldmod_msg::proto::{SourceScan, Trace};
-use std::error::Error;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
-#[tonic::async_trait]
-pub trait DispatchContext: Clone + Send + Sync + 'static {
-    async fn store_source_scan(&self, scan: SourceScan) -> Result<(), Box<dyn Error>>;
-    fn emit_trace(&self, trace: Trace) -> Result<(), Box<dyn Error>>;
-}
+use crate::dispatch::WebDispatch;
 
 #[derive(Clone)]
-pub struct ColdmodTracingDaemon<Dispatch: DispatchContext> {
+pub struct ColdmodTracingDaemon<Dispatch: WebDispatch> {
     dispatch: Dispatch,
 }
 
 #[derive(Clone)]
-pub struct ColdmodSourceDaemon<Dispatch: DispatchContext> {
+pub struct ColdmodSourceDaemon<Dispatch: WebDispatch> {
     dispatch: Dispatch,
 }
 
 #[tonic::async_trait]
-impl<Dispatch: DispatchContext> TracingDaemon for ColdmodTracingDaemon<Dispatch> {
+impl<Dispatch: WebDispatch> TracingDaemon for ColdmodTracingDaemon<Dispatch> {
     async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md
         let mut stream = request.into_inner();
         while let Some(trace) = stream.message().await? {
-            match self.dispatch.emit_trace(trace) {
-                Ok(_) => (),
-                Err(e) => {
-                    eprintln!("failed to send trace: {:?}", e);
-                }
+            let result = self
+                .dispatch
+                .emit(coldmod_msg::web::Event::TraceReceived(trace))
+                .await;
+
+            if let Err(e) = result {
+                tracing::error!("failed to send trace: {:?}", e);
             }
         }
 
@@ -40,16 +37,22 @@ impl<Dispatch: DispatchContext> TracingDaemon for ColdmodTracingDaemon<Dispatch>
 }
 
 #[tonic::async_trait]
-impl<Dispatch: DispatchContext> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
+impl<Dispatch: WebDispatch> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
     async fn submit(&self, request: Request<SourceScan>) -> Result<Response<()>, Status> {
         let scan = request.into_inner();
-        println!("received scan request: {:?}", scan);
-        self.dispatch.store_source_scan(scan).await.unwrap();
+        let event = coldmod_msg::web::Event::SourceReceived(scan);
+        match self.dispatch.emit(event).await {
+            Ok(_) => {}
+            Err(e) => {
+                tracing::error!("failed to emit event: {:?}", e);
+                return Err(Status::internal("handling failed"));
+            }
+        }
         Ok(Response::new(()))
     }
 }
 
-pub async fn server<Dispatch: DispatchContext>(dispatch: Dispatch) {
+pub async fn server<Dispatch: WebDispatch>(dispatch: Dispatch) {
     let addr = "127.0.0.1:7777".parse().expect("couldn't parse address");
     let tracing_d = ColdmodTracingDaemon {
         dispatch: dispatch.clone(),
