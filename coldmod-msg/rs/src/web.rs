@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Event {
     RequestSourceData,
-    DaemonEmitsSourceData,
+    SourceDataAvailable,
     #[cfg(feature = "proto")]
     TraceReceived(crate::proto::Trace),
     #[cfg(feature = "proto")]

@@ -7,7 +7,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::*;
 
 pub fn start(dispatch: &Dispatch) {
-    let ws = WebSocket::new("ws://localhost:3000/ws").expect("to create websocket");
+    let ws = WebSocket::new("ws://localhost:3333/ws").expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
@@ -85,7 +85,7 @@ fn spawn_upstream_relay(receiver: &async_channel::Receiver<AppEvent>, ws: &WebSo
 
 fn relay_downstream(e: MessageEvent, _: &async_channel::Sender<AppEvent>) {
     // Handle difference Text/Binary,...
-    if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
+    if let Ok(_txt) = e.data().dyn_into::<js_sys::JsString>() {
         // let s = format!("message event, received Text: {:?}", txt);
         // match snd.try_send(s) {
         //     Ok(_) => {}
@@ -101,6 +101,7 @@ fn relay_downstream(e: MessageEvent, _: &async_channel::Sender<AppEvent>) {
         let buffer = js_sys::Uint8Array::new(&data).to_vec();
         let r = flexbuffers::Reader::get_root(buffer.as_slice()).unwrap();
         let e = coldmod_msg::web::Event::deserialize(r).unwrap();
+
         log!("message event, received bytes: {:?}", e);
         // match snd.try_send(s) {
         //     Ok(_) => {}

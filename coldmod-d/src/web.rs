@@ -25,7 +25,7 @@ use crate::dispatch::WebDispatch;
 
 pub async fn server<Dispatch: WebDispatch>(dispatch: Dispatch) {
     // build our application with some routes
-    let app: _ = Router::new()
+    let app = Router::new()
         .route("/ws", get(ws_handler::<Dispatch>).with_state(dispatch))
         .route("/", get(|| async { "Hello, World!" }))
         // logging so we can see whats going on
@@ -35,7 +35,7 @@ pub async fn server<Dispatch: WebDispatch>(dispatch: Dispatch) {
         );
 
     // run it with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3333));
     tracing::debug!("listening on {}", addr);
 
     axum::Server::bind(&addr)
@@ -87,7 +87,7 @@ async fn serve_socket<Dispatch: WebDispatch>(
         },
         rv_b = (&mut recv_task) => {
             match rv_b {
-                Ok(_) =>  tracing::trace!("websocket message listening finished {}", who),
+                Ok(_) =>  tracing::trace!("websocket: message listening finished {}", who),
                 Err(b) =>  tracing::error!("websocket: error receiving messages {:?}", b)
             }
             send_task.abort();
@@ -116,10 +116,23 @@ async fn websocket_to_dispatch<Dispatch: WebDispatch>(
 }
 
 async fn dispatch_to_websocket<Dispatch: WebDispatch>(
-    dispatch: Dispatch,
+    mut dispatch: Dispatch,
     mut ws_sender: SplitSink<WebSocket, Message>,
 ) {
     while let Ok(event) = dispatch.receive().await {
+        let event = match event {
+            coldmod_msg::web::Event::SourceDataAvailable => Some(event),
+            _ => None,
+        };
+
+        println!("forwarding event {:?}", event);
+
+        if event.is_none() {
+            continue;
+        }
+
+        let event = event.unwrap();
+
         match marshall(event) {
             Ok(payload) => {
                 if let Err(e) = ws_sender.send(Message::Binary(payload)).await {
