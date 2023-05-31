@@ -73,11 +73,12 @@ impl Dispatch {
                 self.store.store_trace(trace).await?;
             }
             Event::SourceReceived(scan) => {
-                self.store.store_source_scan(scan).await?;
-                self.emit(Event::SourceDataAvailable).await?;
+                self.store.store_source_scan(&scan).await?;
+                self.emit(Event::SourceDataAvailable(scan)).await?;
             }
             Event::RequestSourceData => {
-                self.emit(Event::SourceDataAvailable).await?;
+                let scan = self.store.get_source_scan().await?;
+                self.emit(Event::SourceDataAvailable(scan)).await?;
             }
             _ => {}
         };

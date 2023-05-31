@@ -121,7 +121,7 @@ async fn dispatch_to_websocket<Dispatch: WebDispatch>(
 ) {
     while let Ok(event) = dispatch.receive().await {
         let event = match event {
-            coldmod_msg::web::Event::SourceDataAvailable => Some(event),
+            coldmod_msg::web::Event::SourceDataAvailable(_) => Some(event),
             _ => None,
         };
 

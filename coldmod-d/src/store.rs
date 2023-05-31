@@ -24,7 +24,7 @@ impl RedisStore {
         }
     }
 
-    pub async fn store_source_scan(&mut self, source_scan: SourceScan) -> Result<(), RedisError> {
+    pub async fn store_source_scan(&mut self, source_scan: &SourceScan) -> Result<(), RedisError> {
         let bytes = source_scan.encode_to_vec();
 
         redis::cmd("HSET")
@@ -33,6 +33,18 @@ impl RedisStore {
             .arg(bytes)
             .query_async(&mut self.connection)
             .await
+    }
+
+    pub async fn get_source_scan(&mut self) -> Result<SourceScan, RedisError> {
+        let raw: Vec<u8> = redis::cmd("HGET")
+            .arg("source-scan")
+            .arg("default")
+            .query_async(&mut self.connection)
+            .await?;
+
+        let scan = SourceScan::decode(&raw[..]).unwrap();
+
+        return Ok(scan);
     }
 
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {

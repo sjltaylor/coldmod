@@ -102,7 +102,17 @@ fn relay_downstream(e: MessageEvent, _: &async_channel::Sender<AppEvent>) {
         let r = flexbuffers::Reader::get_root(buffer.as_slice()).unwrap();
         let e = coldmod_msg::web::Event::deserialize(r).unwrap();
 
-        log!("message event, received bytes: {:?}", e);
+        match e {
+            coldmod_msg::web::Event::SourceDataAvailable(src) => {
+                log!("source data available");
+                src.source_elements.iter().for_each(|e| {
+                    log!("source element: {:?}", e);
+                });
+            }
+            _ => {
+                log!("message event, received bytes: {:?}", e);
+            }
+        }
         // match snd.try_send(s) {
         //     Ok(_) => {}
         //     Err(e) => {
