@@ -1,17 +1,32 @@
 use crate::events::AppEvent;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Dispatch {
-    pub channel: (
-        async_channel::Sender<AppEvent>,
-        async_channel::Receiver<AppEvent>,
+    ch: (
+        crossfire::mpmc::TxUnbounded<AppEvent>,
+        crossfire::mpmc::RxUnbounded<AppEvent>,
     ),
 }
 
 impl Dispatch {
     pub fn new() -> Self {
         Self {
-            channel: async_channel::bounded::<AppEvent>(65536),
+            ch: crossfire::mpmc::unbounded_future::<AppEvent>(),
         }
+    }
+    pub fn send(&self, event: AppEvent) -> Result<(), anyhow::Error> {
+        self.ch
+            .0
+            .send(event)
+            .map_err(|e| anyhow::anyhow!("{:?}", e))?;
+
+        Ok(())
+    }
+    pub async fn receive(&self) -> Result<AppEvent, anyhow::Error> {
+        self.ch
+            .1
+            .recv()
+            .await
+            .map_err(|e| anyhow::anyhow!("{:?}", e))
     }
 }

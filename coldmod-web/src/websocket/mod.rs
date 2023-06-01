@@ -11,12 +11,17 @@ pub fn start(dispatch: &Dispatch) {
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
+    spawn_upstream_relay(dispatch, &ws);
+
     {
         // onopen
-        let ws_clone = ws.clone();
-        let receiver = dispatch.channel.1.clone();
+        let onopen_dispatch = dispatch.clone();
         let onopen_callback = Closure::<dyn FnMut(_)>::new(move |_: Event| {
-            spawn_upstream_relay(&receiver, &ws_clone);
+            if let Err(e) =
+                onopen_dispatch.send(AppEvent::WebSocketClientEvent(WebSocketEventType::Open))
+            {
+                error!("to send websocket open event: {:?}", e);
+            }
         });
         ws.set_onopen(Some(onopen_callback.as_ref().unchecked_ref()));
         onopen_callback.forget();
@@ -24,9 +29,9 @@ pub fn start(dispatch: &Dispatch) {
 
     {
         // onclose
-        let sender = dispatch.channel.0.clone();
+        let onclose_dispatch = dispatch.clone();
         let onclose_callback = Closure::<dyn FnMut(_)>::new(move |close_event: CloseEvent| {
-            if let Err(e) = sender.try_send(AppEvent::WebSocketClientEvent(
+            if let Err(e) = onclose_dispatch.send(AppEvent::WebSocketClientEvent(
                 WebSocketEventType::Close(close_event.clone()),
             )) {
                 error!("websocket closed: {:?}", close_event);
@@ -42,9 +47,9 @@ pub fn start(dispatch: &Dispatch) {
 
     {
         // onmessage
-        let sender = dispatch.channel.0.clone();
+        let onmessage_dispatch = dispatch.clone();
         let onmessage_callback = Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| {
-            relay_downstream(e, &sender);
+            relay_downstream(e, &onmessage_dispatch);
         });
         ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
         onmessage_callback.forget();
@@ -59,66 +64,63 @@ pub fn start(dispatch: &Dispatch) {
     }
 }
 
-fn spawn_upstream_relay(receiver: &async_channel::Receiver<AppEvent>, ws: &WebSocket) {
-    let receiver = receiver.clone();
+fn spawn_upstream_relay(dispatch: &Dispatch, ws: &WebSocket) {
+    let receiver_dispatch = dispatch.clone();
     let ws = ws.clone();
     leptos::spawn_local(async move {
-        while let Ok(event) = receiver.recv().await {
+        log!("ws starting upstream relay");
+        let mut queue = Vec::<coldmod_msg::web::Event>::new();
+        while let Ok(event) = receiver_dispatch.receive().await {
+            log!("ws event received {:?}", event);
             match event {
                 AppEvent::ColdmodMsg(event) => {
-                    log!("todo: emit HydrateSourceView");
-                    let mut flexbuffers_serializer = flexbuffers::FlexbufferSerializer::new();
-                    event.serialize(&mut flexbuffers_serializer).unwrap();
-                    if let Err(err) =
-                        ws.send_with_u8_array(flexbuffers_serializer.take_buffer().as_slice())
-                    {
-                        error!("Error sending message: {:?}", err);
+                    if ws.ready_state() != WebSocket::OPEN {
+                        log!("ws queueing event for relay");
+                        queue.push(event);
+                        continue;
+                    }
+                    relay_message(&event, &ws);
+                }
+                AppEvent::WebSocketClientEvent(wse) => {
+                    log!("got websocket client event {:?}", wse);
+                    match wse {
+                        WebSocketEventType::Close(_) => break,
+                        WebSocketEventType::Open => {
+                            for event in queue.drain(..) {
+                                relay_message(&event, &ws);
+                            }
+                        }
                     }
                 }
-                AppEvent::WebSocketClientEvent(wse) => match wse {
-                    WebSocketEventType::Close(_) => break,
-                },
             }
         }
     });
 }
 
-fn relay_downstream(e: MessageEvent, _: &async_channel::Sender<AppEvent>) {
-    // Handle difference Text/Binary,...
-    if let Ok(_txt) = e.data().dyn_into::<js_sys::JsString>() {
-        // let s = format!("message event, received Text: {:?}", txt);
-        // match snd.try_send(s) {
-        //     Ok(_) => {}
-        //     Err(e) => {
-        //         log!("Error sending message: {:?}", e);
-        //     }
-        // }
+fn relay_message(event: &coldmod_msg::web::Event, ws: &WebSocket) {
+    log!("ws forwarding coldmod msg event {:?}", event);
+    let mut flexbuffers_serializer = flexbuffers::FlexbufferSerializer::new();
+    event.serialize(&mut flexbuffers_serializer).unwrap();
 
-        return;
+    if let Err(err) = ws.send_with_u8_array(flexbuffers_serializer.take_buffer().as_slice()) {
+        error!("Error sending message: {:?}", err);
     }
+}
 
+fn relay_downstream(e: MessageEvent, dispatch: &Dispatch) {
     if let Ok(data) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
         let buffer = js_sys::Uint8Array::new(&data).to_vec();
         let r = flexbuffers::Reader::get_root(buffer.as_slice()).unwrap();
         let e = coldmod_msg::web::Event::deserialize(r).unwrap();
 
         match e {
-            coldmod_msg::web::Event::SourceDataAvailable(src) => {
-                log!("source data available");
-                src.source_elements.iter().for_each(|e| {
-                    log!("source element: {:?}", e);
-                });
+            coldmod_msg::web::Event::SourceDataAvailable(_) => {
+                if let Err(e) = dispatch.send(AppEvent::ColdmodMsg(e)) {
+                    error!("Error dispatching websocket message on dispatcher: {:?}", e);
+                }
             }
-            _ => {
-                log!("message event, received bytes: {:?}", e);
-            }
+            _ => {}
         }
-        // match snd.try_send(s) {
-        //     Ok(_) => {}
-        //     Err(e) => {
-        //         log!("Error sending message: {:?}", e);
-        //     }
-        // }
 
         return;
     }

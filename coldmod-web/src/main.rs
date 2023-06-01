@@ -9,14 +9,16 @@ mod events;
 mod source;
 mod websocket;
 
+use crossfire::mpmc;
+
 #[component]
-fn Volume(cx: Scope, recv: async_channel::Receiver<String>) -> impl IntoView {
+fn Volume(cx: Scope, dispatch: Dispatch) -> impl IntoView {
     let (count, set_count) = create_signal(cx, 0);
     let (msgs, set_msgs) = create_signal::<Vec<String>>(cx, vec![]);
 
     leptos::spawn_local(async move {
-        while let Ok(msg) = recv.recv().await {
-            set_msgs.update(|msgs| msgs.push(msg));
+        while let Ok(msg) = dispatch.receive().await {
+            set_msgs.update(|msgs| msgs.push(format!("{:?}", msg)));
         }
     });
 
@@ -60,8 +62,6 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
 }
 
 fn main() {
-    //let (s, r) = async_channel::unbounded::<String>();
-    // stream::start(s);
     let dispatch = Dispatch::new();
 
     websocket::start(&dispatch);
