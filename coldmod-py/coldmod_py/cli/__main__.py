@@ -1,8 +1,14 @@
 import os
 import coldmod_py.source as source
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
+import logging
 
 class CLI:
+    def __init__(self, verbose=False):
+        if verbose:
+            import logging
+            logging.basicConfig(level=logging.DEBUG)
+
     def send(self, *, url=os.environ.get("COLDMOD_D_URL"), path=os.getcwd()):
         assert url is not None, "set COLDMOD_D_URL or pass it as an argument"
         print(f"coldmod daemon: {url}")

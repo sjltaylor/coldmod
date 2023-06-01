@@ -6,6 +6,9 @@ import libcst
 import libcst.metadata
 import coldmod_msg.proto.source_pb2 as source_pb2
 from coldmod_py.source.visitors import FunctionFinder
+import logging
+
+LOG=logging.getLogger(__name__)
 
 def find_root_markers(sources: Dict[str,str]) -> Iterable[str]:
    for path, source in sources.items():
@@ -14,7 +17,12 @@ def find_root_markers(sources: Dict[str,str]) -> Iterable[str]:
 
 def _parse_source(source: Tuple[str, str]) -> Tuple[str, libcst.Module]:
     path, raw = source
-    return path, libcst.parse_module(raw)
+    try:
+        parsed = libcst.parse_module(raw)
+    except:
+        LOG.exception(f"parsing failed: {path}")
+        raise
+    return path, parsed
 
 def parse_all(sources: Dict[str,str]) -> Dict[str, libcst.Module]:
     return dict(map(_parse_source, sources.items()))
