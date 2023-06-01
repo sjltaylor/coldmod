@@ -1,5 +1,6 @@
 use crate::dispatch::Dispatch;
 use crate::events;
+use coldmod_msg::proto::SourceElement;
 use leptos::*;
 
 #[component]
@@ -43,7 +44,24 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
             <For
                 each=source_elements
                 key=|u| format!("{:?}", u)
-                view=move |cx, s| view! {cx, <div>{format!("{:?}", s)}</div> } />
+                view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
         </Show>
     };
+}
+
+#[component]
+pub fn SourceElementView(cx: Scope, source_element: SourceElement) -> impl IntoView {
+    if source_element.elem.is_none() {
+        return view! {cx, <div>"???"</div> };
+    }
+    let s = match source_element.elem.unwrap() {
+        coldmod_msg::proto::source_element::Elem::Fn(f) => {
+            let mut buffer = String::from(format!("{}:{} [name={}]", f.path, f.line, f.name));
+            if f.class_name.is_some() {
+                buffer.push_str(format!(" [class={}]", f.class_name.unwrap()).as_str());
+            }
+            buffer
+        }
+    };
+    return view! {cx, <div>{s}</div> };
 }
