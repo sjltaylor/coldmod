@@ -1,5 +1,3 @@
-@import 'app_btn';
-
 @mixin text-font {
   font-family: 'Oxanium', cursive;
 }
@@ -17,9 +15,6 @@ body {
 }
 
 main {
-    position: absolute;
-    top: 50px;
-    left: 20vw;
-    width: 80vw;
-
+    @include code-font;
+    font-size: 0.85em;
 }

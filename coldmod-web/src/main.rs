@@ -1,9 +1,7 @@
-use app_btn::*;
 use dispatch::Dispatch;
 use leptos::*;
 use source::{SourceView, SourceViewProps};
 
-mod app_btn;
 mod dispatch;
 mod events;
 mod source;
@@ -48,15 +46,8 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
     provide_context(cx, dispatch);
 
     return view! { cx,
-        <AppBtn label="Source" on:click=move |_| {set_active_view.update(|s| { *s = 0 })}></AppBtn>
-        <AppBtn label="Tracing" on:click=move |_| { set_active_view.update(|s| { *s = 1 })}></AppBtn>
         <main>
-            <Show
-                when=move || active_view() == 1
-                fallback=|cx| view! { cx, <SourceView /> }
-            >
-            <TraceView />
-          </Show>
+            <SourceView />
         </main>
     };
 }
