@@ -74,7 +74,7 @@ impl Dispatch {
             }
             Event::SourceReceived(scan) => {
                 self.store.store_source_scan(&scan).await?;
-                self.emit(Event::SourceDataAvailable(scan)).await?;
+                self.emit(Event::SourceDataAvailable(Some(scan))).await?;
             }
             Event::RequestSourceData => {
                 let scan = self.store.get_source_scan().await?;

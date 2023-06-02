@@ -6,10 +6,11 @@ use leptos::*;
 #[component]
 pub fn SourceView(cx: Scope) -> impl IntoView {
     let dispatch = use_context::<Dispatch>(cx).expect("no dispatch");
-    let (source_data, w_source_scan) =
-        create_signal(cx, Option::<coldmod_msg::proto::SourceScan>::None);
 
-    let source_elements = move || source_data().unwrap().source_elements;
+    let (source_data, w_source_scan) =
+        create_signal(cx, Option::<Option<coldmod_msg::proto::SourceScan>>::None);
+
+    let source_elements = move || source_data().unwrap().unwrap().source_elements;
 
     if let Err(e) = dispatch.send(events::AppEvent::ColdmodMsg(
         coldmod_msg::web::Event::RequestSourceData,
@@ -40,11 +41,15 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
     return view! {cx,
         <Show
             when=move || source_data().is_some()
-                fallback=|cx| view! { cx, <div>"No Data..."</div> }>
-            <For
-                each=source_elements
-                key=|u| format!("{:?}", u)
-                view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
+            fallback=|cx| view! { cx, <div>"Loading..."</div> }>
+                <Show
+                    when=move || source_data().unwrap().is_some()
+                        fallback=|cx| view! { cx, <div>"No Data..."</div> }>
+                    <For
+                        each=source_elements
+                        key=|u| format!("{:?}", u)
+                        view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
+                </Show>
         </Show>
     };
 }

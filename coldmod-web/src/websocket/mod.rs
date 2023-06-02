@@ -70,17 +70,20 @@ fn spawn_upstream_relay(dispatch: &Dispatch, ws: &WebSocket) {
     leptos::spawn_local(async move {
         log!("ws starting upstream relay");
         let mut queue = Vec::<coldmod_msg::web::Event>::new();
-        while let Ok(event) = receiver_dispatch.receive().await {
-            log!("ws event received {:?}", event);
-            match event {
-                AppEvent::ColdmodMsg(event) => {
-                    if ws.ready_state() != WebSocket::OPEN {
-                        log!("ws queueing event for relay");
-                        queue.push(event);
-                        continue;
+        while let Ok(app_event) = receiver_dispatch.receive().await {
+            log!("ws event received {:?}", app_event);
+            match app_event {
+                AppEvent::ColdmodMsg(msg_event) => match msg_event {
+                    coldmod_msg::web::Event::RequestSourceData => {
+                        if ws.ready_state() != WebSocket::OPEN {
+                            log!("ws queueing event for relay");
+                            queue.push(msg_event);
+                            continue;
+                        }
+                        relay_message(&msg_event, &ws);
                     }
-                    relay_message(&event, &ws);
-                }
+                    _ => {}
+                },
                 AppEvent::WebSocketClientEvent(wse) => {
                     log!("got websocket client event {:?}", wse);
                     match wse {

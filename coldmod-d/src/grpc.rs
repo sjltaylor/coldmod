@@ -52,17 +52,19 @@ impl<Dispatch: WebDispatch> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
     }
 }
 
-pub async fn server<Dispatch: WebDispatch>(dispatch: Dispatch) {
+pub async fn server<Dispatch: WebDispatch>(dispatch: &Dispatch) {
     let addr = "127.0.0.1:7777".parse().expect("couldn't parse address");
     let tracing_d = ColdmodTracingDaemon {
         dispatch: dispatch.clone(),
     };
-    let source_d = ColdmodSourceDaemon { dispatch };
+    let source_d = ColdmodSourceDaemon {
+        dispatch: dispatch.clone(),
+    };
 
     match Server::builder()
         .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::default().include_headers(true)),
+            TraceLayer::new_for_grpc()
+                .make_span_with(DefaultMakeSpan::default().include_headers(false)),
         )
         .add_service(TracingDaemonServer::new(tracing_d))
         .add_service(SourceDaemonServer::new(source_d))

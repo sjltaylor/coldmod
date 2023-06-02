@@ -23,10 +23,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::dispatch::WebDispatch;
 
-pub async fn server<Dispatch: WebDispatch>(dispatch: Dispatch) {
+pub async fn server<Dispatch: WebDispatch>(dispatch: &Dispatch) {
     // build our application with some routes
     let app = Router::new()
-        .route("/ws", get(ws_handler::<Dispatch>).with_state(dispatch))
+        .route(
+            "/ws",
+            get(ws_handler::<Dispatch>).with_state(dispatch.clone()),
+        )
         .route("/", get(|| async { "Hello, World!" }))
         // logging so we can see whats going on
         .layer(
@@ -102,10 +105,28 @@ async fn websocket_to_dispatch<Dispatch: WebDispatch>(
     while let Some(Ok(msg)) = ws_receiver.next().await {
         match msg {
             Message::Binary(payload) => match unmarshall(&payload) {
-                Ok(event) => match dispatch.emit(event).await {
-                    Ok(_) => {}
-                    Err(e) => tracing::error!("websocket: error dispatching message: {:?}", e),
-                },
+                Ok(event) => {
+                    let et = match event {
+                        coldmod_msg::web::Event::RequestSourceData => {
+                            "coldmod_msg::web::Event::RequestSourceData"
+                        }
+                        coldmod_msg::web::Event::SourceDataAvailable(_) => {
+                            "coldmod_msg::web::Event::SourceDataAvailable"
+                        }
+                        coldmod_msg::web::Event::TraceReceived(_) => {
+                            "coldmod_msg::web::Event::TraceReceived"
+                        }
+                        coldmod_msg::web::Event::SourceReceived(_) => {
+                            "coldmod_msg::web::Event::SourceReceived"
+                        }
+                    };
+                    match dispatch.emit(event).await {
+                        Ok(_) => {
+                            tracing::info!("websocket -> dispatch: {}", et);
+                        }
+                        Err(e) => tracing::error!("websocket: error dispatching message: {:?}", e),
+                    }
+                }
                 Err(e) => tracing::error!("websocket: error unmarshalling message: {:?}", e),
             },
             _ => {
@@ -125,22 +146,29 @@ async fn dispatch_to_websocket<Dispatch: WebDispatch>(
             _ => None,
         };
 
-        println!("forwarding event {:?}", event);
-
         if event.is_none() {
             continue;
         }
 
         let event = event.unwrap();
 
+        let et = match event {
+            coldmod_msg::web::Event::SourceDataAvailable(_) => "SourceDataAvailable",
+            _ => "Unknown",
+        };
+
+        tracing::info!("dispatch -> websocket: {}", et);
+
         match marshall(event) {
             Ok(payload) => {
                 if let Err(e) = ws_sender.send(Message::Binary(payload)).await {
-                    tracing::error!("websocket: could not send message: {:?}", e);
+                    tracing::error!("could not send message: {:?}", e);
                     return;
+                } else {
+                    tracing::trace!("sent message");
                 }
             }
-            Err(e) => tracing::error!("websocket: error marshalling message: {:?}", e),
+            Err(e) => tracing::error!("error marshalling message: {:?}", e),
         }
     }
 }

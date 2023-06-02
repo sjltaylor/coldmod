@@ -35,16 +35,20 @@ impl RedisStore {
             .await
     }
 
-    pub async fn get_source_scan(&mut self) -> Result<SourceScan, RedisError> {
+    pub async fn get_source_scan(&mut self) -> Result<Option<SourceScan>, RedisError> {
         let raw: Vec<u8> = redis::cmd("HGET")
             .arg("source-scan")
             .arg("default")
             .query_async(&mut self.connection)
             .await?;
 
+        if raw.is_empty() {
+            return Ok(None);
+        }
+
         let scan = SourceScan::decode(&raw[..]).unwrap();
 
-        return Ok(scan);
+        return Ok(Some(scan));
     }
 
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {
