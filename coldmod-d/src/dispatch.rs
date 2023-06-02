@@ -1,87 +1,85 @@
 use crate::store;
-use coldmod_msg::web::Event;
+use coldmod_msg::web::Msg;
 use tokio::sync::broadcast;
 
+#[derive(Clone)]
 pub struct Dispatch {
-    pub store: store::RedisStore,
-    pub web_ch: (broadcast::Sender<Event>, broadcast::Receiver<Event>),
-}
-
-impl Clone for Dispatch {
-    fn clone(&self) -> Self {
-        let tx = self.web_ch.0.clone();
-        let rx = self.web_ch.0.subscribe();
-
-        Self {
-            store: self.store.clone(),
-            web_ch: (tx, rx),
-        }
-    }
+    store: store::RedisStore,
+    broadcast: broadcast::Sender<Msg>,
 }
 
 #[tonic::async_trait]
 pub trait WebDispatch: Clone + Send + Sync + 'static {
-    async fn emit(&self, event: Event) -> Result<(), anyhow::Error>;
-    async fn receive(&mut self) -> Result<Event, anyhow::Error>;
+    async fn emit(&self, event: Msg) -> Result<(), anyhow::Error>;
+    async fn receive(&mut self) -> Result<Msg, anyhow::Error>;
 }
 
 #[tonic::async_trait]
 impl WebDispatch for Dispatch {
     // using "emit" here - we might need a "send" in the future where we need a response payload
-    async fn emit(&self, event: Event) -> Result<(), anyhow::Error> {
-        match event {
-            _ => {
-                if let Err(e) = self.web_ch.0.send(event) {
-                    tracing::error!("failed to dispatch send event: {:?}", e);
-                    return Err(e.into());
-                }
-                Ok(())
-            }
-        }
+    async fn emit(&self, _event: Msg) -> Result<(), anyhow::Error> {
+        // match event {
+        //     _ => {
+        //         if let Err(e) = self.web_ch.0.send(event) {
+        //             tracing::error!("failed to dispatch send event: {:?}", e);
+        //             return Err(e.into());
+        //         }
+        //         Ok(())
+        //     }
+        // }
+        todo!("implement")
     }
 
-    async fn receive(&mut self) -> Result<Event, anyhow::Error> {
-        let event = self.web_ch.1.recv().await?;
-        Ok(event)
+    async fn receive(&mut self) -> Result<Msg, anyhow::Error> {
+        // let event = self.web_ch.1.recv().await?;
+        // Ok(event)
+        //retrun an error
+        todo!("implement")
     }
 }
 
 impl Dispatch {
     pub async fn new() -> Self {
+        let sender = broadcast::channel(65536).0;
         Self {
             store: store::RedisStore::new().await,
-            web_ch: broadcast::channel(65536),
+            broadcast: sender,
         }
     }
 
-    pub async fn start(&mut self) {
-        loop {
-            let event = self.receive().await;
-            if let Err(e) = event {
-                tracing::error!("dispatch: failed to receive event: {:?}", e);
-                return;
-            }
-            if let Err(e) = self.handle_event(event.unwrap()).await {
-                tracing::error!("dispatch: handling failed: {:?}", e);
-            }
-        }
-    }
+    pub async fn handle(&self, msg: Msg) -> Result<Option<Msg>, anyhow::Error> {
+        let mut store = self.store.clone();
 
-    async fn handle_event(&mut self, event: Event) -> Result<(), anyhow::Error> {
-        match event {
-            Event::TraceReceived(trace) => {
-                self.store.store_trace(trace).await?;
+        match msg {
+            Msg::TraceReceived(trace) => {
+                store.store_trace(trace).await?;
             }
-            Event::SourceReceived(scan) => {
-                self.store.store_source_scan(&scan).await?;
-                self.emit(Event::SourceDataAvailable(Some(scan))).await?;
+            Msg::SourceReceived(scan) => {
+                store.store_source_scan(&scan).await?;
+                self._broadcast(Msg::SourceDataAvailable(Some(scan)));
             }
-            Event::RequestSourceData => {
-                let scan = self.store.get_source_scan().await?;
-                self.emit(Event::SourceDataAvailable(scan)).await?;
+            Msg::RequestSourceData => {
+                let scan = store.get_source_scan().await?;
+                return Ok(Msg::SourceDataAvailable(scan).into());
             }
             _ => {}
         };
-        Ok(())
+
+        Ok(None)
+    }
+
+    pub fn receiver(&self) -> broadcast::Receiver<Msg> {
+        self.broadcast.subscribe()
+    }
+
+    fn _broadcast(&self, msg: Msg) {
+        match self.broadcast.send(msg) {
+            Ok(_) => {
+                tracing::trace!("message broadcast ok");
+            }
+            Err(e) => {
+                tracing::error!("failed to broadcast message: {:?}", e);
+            }
+        }
     }
 }

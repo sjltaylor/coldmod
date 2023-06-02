@@ -4,27 +4,27 @@ use coldmod_msg::proto::{SourceScan, Trace};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
-use crate::dispatch::WebDispatch;
+use crate::dispatch::Dispatch;
 
 #[derive(Clone)]
-pub struct ColdmodTracingDaemon<Dispatch: WebDispatch> {
+pub struct ColdmodTracingDaemon {
     dispatch: Dispatch,
 }
 
 #[derive(Clone)]
-pub struct ColdmodSourceDaemon<Dispatch: WebDispatch> {
+pub struct ColdmodSourceDaemon {
     dispatch: Dispatch,
 }
 
 #[tonic::async_trait]
-impl<Dispatch: WebDispatch> TracingDaemon for ColdmodTracingDaemon<Dispatch> {
+impl TracingDaemon for ColdmodTracingDaemon {
     async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md
         let mut stream = request.into_inner();
         while let Some(trace) = stream.message().await? {
             let result = self
                 .dispatch
-                .emit(coldmod_msg::web::Event::TraceReceived(trace))
+                .handle(coldmod_msg::web::Msg::TraceReceived(trace))
                 .await;
 
             if let Err(e) = result {
@@ -37,11 +37,14 @@ impl<Dispatch: WebDispatch> TracingDaemon for ColdmodTracingDaemon<Dispatch> {
 }
 
 #[tonic::async_trait]
-impl<Dispatch: WebDispatch> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
+impl SourceDaemon for ColdmodSourceDaemon {
     async fn submit(&self, request: Request<SourceScan>) -> Result<Response<()>, Status> {
         let scan = request.into_inner();
-        let event = coldmod_msg::web::Event::SourceReceived(scan);
-        match self.dispatch.emit(event).await {
+        match self
+            .dispatch
+            .handle(coldmod_msg::web::Msg::SourceReceived(scan))
+            .await
+        {
             Ok(_) => {}
             Err(e) => {
                 tracing::error!("failed to emit event: {:?}", e);
@@ -52,7 +55,7 @@ impl<Dispatch: WebDispatch> SourceDaemon for ColdmodSourceDaemon<Dispatch> {
     }
 }
 
-pub async fn server<Dispatch: WebDispatch>(dispatch: &Dispatch) {
+pub async fn server(dispatch: &Dispatch) {
     let addr = "127.0.0.1:7777".parse().expect("couldn't parse address");
     let tracing_d = ColdmodTracingDaemon {
         dispatch: dispatch.clone(),

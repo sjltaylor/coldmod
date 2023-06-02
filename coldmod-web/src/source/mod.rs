@@ -1,42 +1,31 @@
 use crate::dispatch::Dispatch;
 use crate::events;
 use coldmod_msg::proto::SourceElement;
+use coldmod_msg::web;
 use leptos::*;
 
 #[component]
 pub fn SourceView(cx: Scope) -> impl IntoView {
-    let dispatch = use_context::<Dispatch>(cx).expect("no dispatch");
+    let dispatch = use_context::<Dispatch>(cx).unwrap();
 
     let (source_data, w_source_scan) =
         create_signal(cx, Option::<Option<coldmod_msg::proto::SourceScan>>::None);
 
     let source_elements = move || source_data().unwrap().unwrap().source_elements;
 
-    if let Err(e) = dispatch.send(events::AppEvent::ColdmodMsg(
-        coldmod_msg::web::Event::RequestSourceData,
-    )) {
-        error!("failed emit hydrate event {}", e);
-    }
-
-    leptos::spawn_local(async move {
-        log!("ui waiting for source data");
-        while let Ok(app_event) = dispatch.receive().await {
-            log!("ui got app event {:?}", app_event);
-            match app_event {
-                events::AppEvent::ColdmodMsg(event) => {
-                    log!("ui matched coldmod msg {:?}", event);
-                    match event {
-                        coldmod_msg::web::Event::SourceDataAvailable(source_scan) => {
-                            log!("ui source data is available, setting: {:?}", source_scan);
-                            w_source_scan.set(Some(source_scan));
-                        }
-                        _ => {}
-                    }
-                }
-                _ => {}
+    dispatch.on_app_event(move |app_event| match app_event {
+        events::AppEvent::ColdmodMsg(msg) => match msg {
+            web::Msg::SourceDataAvailable(maybe_source_scan) => {
+                w_source_scan.set(Some(maybe_source_scan));
             }
-        }
+            _ => {}
+        },
+        _ => {}
     });
+
+    dispatch.emit(events::AppEvent::ColdmodMsg(
+        coldmod_msg::web::Msg::RequestSourceData,
+    ));
 
     return view! {cx,
         <Show

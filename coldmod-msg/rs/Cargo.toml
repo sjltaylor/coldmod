@@ -9,6 +9,8 @@ edition = "2021"
 prost = { version = "0.11.9"}
 tonic = { version = "0.9.2", optional = true }
 serde = { version = "1.0.163", features = ["derive"] }
+flexbuffers = "2.0.0"
+anyhow = "1.0.71"
 
 [dev-dependencies]
 futures-util = "0.3.28"
