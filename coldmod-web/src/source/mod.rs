@@ -23,10 +23,6 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
         _ => {}
     });
 
-    // dispatch.emit(events::AppEvent::ColdmodMsg(
-    //     coldmod_msg::web::Msg::RequestSourceData,
-    // ));
-
     return view! {cx,
         <Show
             when=move || source_data().is_some()

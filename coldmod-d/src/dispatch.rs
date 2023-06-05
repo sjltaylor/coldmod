@@ -37,10 +37,6 @@ impl Dispatch {
                 store.store_source_scan(&scan).await?;
                 self._broadcast(Msg::SourceDataAvailable(Some(scan)));
             }
-            Msg::RequestSourceData => {
-                let scan = store.get_source_scan().await?;
-                return Ok(vec![Msg::SourceDataAvailable(scan)]);
-            }
             _ => {}
         };
 

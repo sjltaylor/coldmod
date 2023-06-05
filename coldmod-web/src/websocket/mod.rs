@@ -59,14 +59,14 @@ fn spawn_upstream_relay(dispatch: Dispatch, ws: &WebSocket) {
 
     dispatch.on_app_event(move |app_event| match app_event {
         AppEvent::ColdmodMsg(msg_event) => match msg_event {
-            coldmod_msg::web::Msg::RequestSourceData => {
-                if ws.ready_state() != WebSocket::OPEN {
-                    log!("ws queueing event for relay");
-                    queue.push(msg_event);
-                    return;
-                }
-                relay_message(&msg_event, &ws);
-            }
+            // coldmod_msg::web::Msg::RequestSourceData => {
+            //     if ws.ready_state() != WebSocket::OPEN {
+            //         log!("ws queueing event for relay");
+            //         queue.push(msg_event);
+            //         return;
+            //     }
+            //     relay_message(&msg_event, &ws);
+            // }
             _ => {}
         },
         AppEvent::WebSocketClientEvent(wse) => {
