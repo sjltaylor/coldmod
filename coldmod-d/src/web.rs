@@ -67,9 +67,17 @@ async fn serve_socket(socket: WebSocket, who: SocketAddr, dispatch: Dispatch) {
         dispatch_to_websocket(dispatch_msgs, response_receiver, ws_sender).await;
     });
 
+    let receiver_dispatch = dispatch.clone();
     let mut recv_task = tokio::spawn(async move {
-        websocket_to_dispatch(ws_receiver, dispatch, response_sender).await;
+        websocket_to_dispatch(ws_receiver, receiver_dispatch, response_sender).await;
     });
+
+    if let Err(e) = dispatch
+        .handle(coldmod_msg::web::Msg::AppSocketConnected)
+        .await
+    {
+        tracing::error!("{:?}", e);
+    }
 
     // If any one of the tasks exit, abort the other.
     tokio::select! {
@@ -151,6 +159,7 @@ async fn dispatch_to_websocket(
 
         let msg = match msg {
             coldmod_msg::web::Msg::SourceDataAvailable(_) => Some(msg),
+            coldmod_msg::web::Msg::TracingStatsAvailable(_) => Some(msg),
             _ => None,
         };
 

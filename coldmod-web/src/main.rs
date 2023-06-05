@@ -1,3 +1,4 @@
+use coldmod_msg::web;
 use console_error_panic_hook;
 use dispatch::Dispatch;
 use leptos::*;
@@ -9,9 +10,28 @@ mod source;
 mod websocket;
 
 #[component]
-fn TraceView(cx: Scope) -> impl IntoView {
+fn TracingStatus(cx: Scope) -> impl IntoView {
+    let dispatch = use_context::<Dispatch>(cx).unwrap();
+    let (tracing_status, w_tracing_stats) = create_signal(cx, Option::<web::TracingStats>::None);
+    let tracing_status_repr = move || {
+        if tracing_status().is_none() {
+            return "-".into();
+        }
+        format!("TRACING: event count={}", tracing_status().unwrap().count)
+    };
+
+    dispatch.on_app_event(move |app_event| match app_event {
+        events::AppEvent::ColdmodMsg(msg) => match msg {
+            web::Msg::TracingStatsAvailable(tracing_stats) => {
+                w_tracing_stats.set(Some(tracing_stats));
+            }
+            _ => {}
+        },
+        _ => {}
+    });
+
     return view! {cx,
-        <h1>"Trace"</h1>
+        <div class="container tracing-status">{tracing_status_repr}</div>
     };
 }
 
@@ -22,6 +42,7 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
     provide_context(cx, dispatch);
 
     return view! { cx,
+        <TracingStatus />
         <main>
             <SourceView />
         </main>

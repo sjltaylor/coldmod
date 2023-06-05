@@ -34,10 +34,12 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
                 <Show
                     when=move || source_data().unwrap().is_some()
                         fallback=|cx| view! { cx, <NoData /> }>
-                    <For
-                        each=source_elements
-                        key=|u| format!("{:?}", u)
-                        view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
+                    <div class="container source-elements">
+                        <For
+                            each=source_elements
+                            key=|u| format!("{:?}", u)
+                            view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
+                    </div>
                 </Show>
         </Show>
     };
@@ -66,5 +68,5 @@ pub fn NoData(cx: Scope) -> impl IntoView {
     let url = format!("http://{hostname}:7777");
     let cli_cmd = format!("coldmod send --url {url}");
 
-    return view! {cx, <div class="container message">{"No Data. Send a source code scan with the CLI: "}<code>{cli_cmd}</code></div> };
+    return view! {cx, <div class="container message">{"No data, use the CLI to scan your source code: "}<code>{cli_cmd}</code></div> };
 }

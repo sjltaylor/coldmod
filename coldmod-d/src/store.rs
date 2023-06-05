@@ -17,6 +17,7 @@ impl RedisStore {
                 .get_multiplexed_async_connection()
                 .await
                 .expect("store couldn't connect to redis"),
+
             trace_connection: client
                 .get_multiplexed_async_connection()
                 .await
@@ -58,5 +59,14 @@ impl RedisStore {
             .arg(bytes)
             .query_async(&mut self.trace_connection)
             .await
+    }
+
+    pub async fn trace_count(&mut self) -> Result<i64, RedisError> {
+        let count: i64 = redis::cmd("XLEN")
+            .arg("tracing-stream")
+            .query_async(&mut self.trace_connection)
+            .await?;
+
+        Ok(count)
     }
 }

@@ -112,6 +112,9 @@ fn relay_downstream(e: MessageEvent, dispatch: Dispatch) {
             coldmod_msg::web::Msg::SourceDataAvailable(_) => {
                 dispatch.emit(AppEvent::ColdmodMsg(msg));
             }
+            coldmod_msg::web::Msg::TracingStatsAvailable(_) => {
+                dispatch.emit(AppEvent::ColdmodMsg(msg));
+            }
             _ => {}
         }
 

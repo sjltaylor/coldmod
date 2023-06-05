@@ -1,41 +1,11 @@
 use crate::store;
-use coldmod_msg::web::Msg;
+use coldmod_msg::web::{self, Msg};
 use tokio::sync::broadcast;
 
 #[derive(Clone)]
 pub struct Dispatch {
     store: store::RedisStore,
     broadcast: broadcast::Sender<Msg>,
-}
-
-#[tonic::async_trait]
-pub trait WebDispatch: Clone + Send + Sync + 'static {
-    async fn emit(&self, event: Msg) -> Result<(), anyhow::Error>;
-    async fn receive(&mut self) -> Result<Msg, anyhow::Error>;
-}
-
-#[tonic::async_trait]
-impl WebDispatch for Dispatch {
-    // using "emit" here - we might need a "send" in the future where we need a response payload
-    async fn emit(&self, _event: Msg) -> Result<(), anyhow::Error> {
-        // match event {
-        //     _ => {
-        //         if let Err(e) = self.web_ch.0.send(event) {
-        //             tracing::error!("failed to dispatch send event: {:?}", e);
-        //             return Err(e.into());
-        //         }
-        //         Ok(())
-        //     }
-        // }
-        todo!("implement")
-    }
-
-    async fn receive(&mut self) -> Result<Msg, anyhow::Error> {
-        // let event = self.web_ch.1.recv().await?;
-        // Ok(event)
-        //retrun an error
-        todo!("implement")
-    }
 }
 
 impl Dispatch {
@@ -51,8 +21,12 @@ impl Dispatch {
         let mut store = self.store.clone();
 
         match msg {
+            Msg::AppSocketConnected => {
+                self._broadcast_trace_count(store).await?;
+            }
             Msg::TraceReceived(trace) => {
                 store.store_trace(trace).await?;
+                self._broadcast_trace_count(store).await?;
             }
             Msg::SourceReceived(scan) => {
                 store.store_source_scan(&scan).await?;
@@ -70,6 +44,15 @@ impl Dispatch {
 
     pub fn receiver(&self) -> broadcast::Receiver<Msg> {
         self.broadcast.subscribe()
+    }
+
+    async fn _broadcast_trace_count(
+        &self,
+        mut store: store::RedisStore,
+    ) -> Result<(), anyhow::Error> {
+        let count = store.trace_count().await?;
+        self._broadcast(Msg::TracingStatsAvailable(web::TracingStats { count }));
+        Ok(())
     }
 
     fn _broadcast(&self, msg: Msg) {
