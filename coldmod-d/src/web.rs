@@ -19,8 +19,6 @@ use flexbuffers;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-use serde::{Deserialize, Serialize};
-
 use crate::dispatch::Dispatch;
 
 pub async fn server(dispatch: Dispatch) {

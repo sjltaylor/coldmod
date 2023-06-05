@@ -1,9 +1,8 @@
-
-
-
+use console_error_panic_hook;
 use dispatch::Dispatch;
 use leptos::*;
 use source::{SourceView, SourceViewProps};
+
 mod dispatch;
 mod events;
 mod source;
@@ -30,6 +29,8 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
 }
 
 fn main() {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let dispatch = Dispatch::new();
 
     websocket::start(dispatch.clone());
