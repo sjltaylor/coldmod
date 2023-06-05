@@ -17,12 +17,17 @@ impl Dispatch {
         }
     }
 
-    pub async fn handle(&self, msg: Msg) -> Result<Option<Msg>, anyhow::Error> {
+    pub async fn handle(&self, msg: Msg) -> Result<Vec<Msg>, anyhow::Error> {
         let mut store = self.store.clone();
 
         match msg {
             Msg::AppSocketConnected => {
-                self._broadcast_trace_count(store).await?;
+                let count = store.trace_count().await?;
+                let source_scan = store.get_source_scan().await?;
+                return Ok(vec![
+                    Msg::TracingStatsAvailable(web::TracingStats { count }),
+                    Msg::SourceDataAvailable(source_scan),
+                ]);
             }
             Msg::TraceReceived(trace) => {
                 store.store_trace(trace).await?;
@@ -34,12 +39,12 @@ impl Dispatch {
             }
             Msg::RequestSourceData => {
                 let scan = store.get_source_scan().await?;
-                return Ok(Msg::SourceDataAvailable(scan).into());
+                return Ok(vec![Msg::SourceDataAvailable(scan)]);
             }
             _ => {}
         };
 
-        Ok(None)
+        Ok(vec![])
     }
 
     pub fn receiver(&self) -> broadcast::Receiver<Msg> {

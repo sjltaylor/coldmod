@@ -1,3 +1,4 @@
+use crate::proto::{SourceScan, Trace};
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
@@ -6,9 +7,9 @@ use serde::{Deserialize, Serialize};
 pub enum Msg {
     AppSocketConnected,
     RequestSourceData,
-    SourceDataAvailable(Option<crate::proto::SourceScan>),
-    TraceReceived(crate::proto::Trace),
-    SourceReceived(crate::proto::SourceScan),
+    SourceDataAvailable(Option<SourceScan>),
+    TraceReceived(Trace),
+    SourceReceived(SourceScan),
     TracingStatsAvailable(TracingStats),
 }
 

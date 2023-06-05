@@ -61,6 +61,7 @@ async fn ws_handler(
 async fn serve_socket(socket: WebSocket, who: SocketAddr, dispatch: Dispatch) {
     let (ws_sender, ws_receiver) = socket.split();
     let (response_sender, response_receiver) = tokio::sync::mpsc::channel(65536);
+    let initialization_msg_sender = response_sender.clone();
 
     let dispatch_msgs = dispatch.receiver();
     let mut send_task = tokio::spawn(async move {
@@ -72,11 +73,23 @@ async fn serve_socket(socket: WebSocket, who: SocketAddr, dispatch: Dispatch) {
         websocket_to_dispatch(ws_receiver, receiver_dispatch, response_sender).await;
     });
 
-    if let Err(e) = dispatch
+    match dispatch
         .handle(coldmod_msg::web::Msg::AppSocketConnected)
         .await
     {
-        tracing::error!("{:?}", e);
+        Ok(msgs) => {
+            for msg in msgs {
+                match initialization_msg_sender.send(msg).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        tracing::error!("error sending initialization message {:?}", e);
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            tracing::error!("error handling AppSocketConnected {:?}", e);
+        }
     }
 
     // If any one of the tasks exit, abort the other.
@@ -109,11 +122,14 @@ async fn websocket_to_dispatch(
                 Ok(msg) => {
                     tracing::info!("websocket -> dispatch: {msg}");
                     match dispatch.handle(msg).await {
-                        Ok(Some(response)) => match response_sender.send(response).await {
-                            Ok(_) => tracing::info!("response relayed"),
-                            Err(e) => tracing::error!("error relaying response: {}", e),
-                        },
-                        Ok(None) => {}
+                        Ok(msgs) => {
+                            for msg in msgs {
+                                match response_sender.send(msg).await {
+                                    Ok(_) => tracing::info!("response relayed"),
+                                    Err(e) => tracing::error!("error relaying response: {}", e),
+                                }
+                            }
+                        }
                         Err(e) => tracing::error!("error dispatching message: {:?}", e),
                     }
                 }
