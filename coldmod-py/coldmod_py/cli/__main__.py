@@ -29,8 +29,9 @@ class CLI:
 
         modules = source.scan.parse_all(sources)
         source_fns = source.scan.find_functions_in_all(modules)
-
-        source.connect.submit_source_scan(source_prefix, source_fns)
+        source_fns_list = list(source_fns)
+        print(f"found {len(source_fns_list)} functions in {len(modules)} modules")
+        source.connect.submit_source_scan(source_prefix, source_fns_list)
 
 if __name__ == "__main__":
     fire.Fire(CLI)

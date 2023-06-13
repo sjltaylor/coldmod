@@ -10,7 +10,7 @@ pub fn start(dispatch: Dispatch) {
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 
-    spawn_upstream_relay(dispatch.clone(), &ws);
+    relay_upstream(dispatch.clone(), &ws);
 
     {
         // onopen
@@ -52,49 +52,16 @@ pub fn start(dispatch: Dispatch) {
     }
 }
 
-fn spawn_upstream_relay(dispatch: Dispatch, ws: &WebSocket) {
-    let ws = ws.clone();
-
-    let mut queue = Vec::<coldmod_msg::web::Msg>::new();
+fn relay_upstream(dispatch: Dispatch, ws: &WebSocket) {
+    // TODO: remove this fn if the app never emits events
+    let _ws = ws.clone();
 
     dispatch.on_app_event(move |app_event| match app_event {
         AppEvent::ColdmodMsg(msg_event) => match msg_event {
-            // coldmod_msg::web::Msg::RequestSourceData => {
-            //     if ws.ready_state() != WebSocket::OPEN {
-            //         log!("ws queueing event for relay");
-            //         queue.push(msg_event);
-            //         return;
-            //     }
-            //     relay_message(&msg_event, &ws);
-            // }
             _ => {}
         },
-        AppEvent::WebSocketClientEvent(wse) => {
-            log!("got websocket client event {:?}", wse);
-            match wse {
-                WebSocketEventType::Close(_) => return,
-                WebSocketEventType::Open => {
-                    for event in queue.drain(..) {
-                        relay_message(&event, &ws);
-                    }
-                }
-            }
-        }
+        _ => {}
     });
-}
-
-fn relay_message(msg: &coldmod_msg::web::Msg, ws: &WebSocket) {
-    log!("ws forwarding coldmod msg event {:?}", msg);
-    match flexbuffers::to_vec(msg) {
-        Ok(payload) => {
-            if let Err(err) = ws.send_with_u8_array(payload.as_slice()) {
-                error!("Error sending message: {:?}", err);
-            }
-        }
-        Err(err) => {
-            error!("Error serializing message: {:?}", err);
-        }
-    }
 }
 
 fn relay_downstream(e: MessageEvent, dispatch: Dispatch) {
@@ -108,15 +75,9 @@ fn relay_downstream(e: MessageEvent, dispatch: Dispatch) {
             }
         };
 
-        match msg {
-            coldmod_msg::web::Msg::SourceDataAvailable(_) => {
-                dispatch.emit(AppEvent::ColdmodMsg(msg));
-            }
-            coldmod_msg::web::Msg::TracingStatsAvailable(_) => {
-                dispatch.emit(AppEvent::ColdmodMsg(msg));
-            }
-            _ => {}
-        }
+        log!("recv: {:?}", msg);
+
+        dispatch.emit(AppEvent::ColdmodMsg(msg));
 
         return;
     }

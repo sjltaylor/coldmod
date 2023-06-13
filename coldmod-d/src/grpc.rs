@@ -1,6 +1,8 @@
+use coldmod_msg::proto::ops_daemon_server::{OpsDaemon, OpsDaemonServer};
 use coldmod_msg::proto::source_daemon_server::{SourceDaemon, SourceDaemonServer};
 use coldmod_msg::proto::tracing_daemon_server::{TracingDaemon, TracingDaemonServer};
-use coldmod_msg::proto::{SourceScan, Trace};
+use coldmod_msg::proto::{OpsStatus, SourceScan, Trace};
+use coldmod_msg::web::Msg;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
@@ -13,6 +15,11 @@ pub struct ColdmodTracingDaemon {
 
 #[derive(Clone)]
 pub struct ColdmodSourceDaemon {
+    dispatch: Dispatch,
+}
+
+#[derive(Clone)]
+pub struct ColdmodOpsDaemon {
     dispatch: Dispatch,
 }
 
@@ -46,11 +53,25 @@ impl SourceDaemon for ColdmodSourceDaemon {
             .await
         {
             Ok(_) => {}
-            Err(e) => {
-                tracing::error!("failed to emit event: {:?}", e);
+            Err(_e) => {
                 return Err(Status::internal("handling failed"));
             }
         }
+        Ok(Response::new(()))
+    }
+}
+
+#[tonic::async_trait]
+impl OpsDaemon for ColdmodOpsDaemon {
+    async fn status(&self, _: Request<()>) -> Result<Response<OpsStatus>, Status> {
+        Ok(Response::new(OpsStatus { ok: true }))
+    }
+
+    async fn reset_state(&self, _: Request<()>) -> Result<Response<()>, Status> {
+        self.dispatch
+            .handle(Msg::Reset)
+            .await
+            .expect("store to be reset");
         Ok(Response::new(()))
     }
 }
@@ -63,17 +84,23 @@ pub async fn server(dispatch: &Dispatch) {
     let source_d = ColdmodSourceDaemon {
         dispatch: dispatch.clone(),
     };
+    let ops_d = ColdmodOpsDaemon {
+        dispatch: dispatch.clone(),
+    };
 
-    match Server::builder()
+    let mut builder = Server::builder()
         .layer(
             TraceLayer::new_for_grpc()
                 .make_span_with(DefaultMakeSpan::default().include_headers(false)),
         )
         .add_service(TracingDaemonServer::new(tracing_d))
-        .add_service(SourceDaemonServer::new(source_d))
-        .serve(addr)
-        .await
-    {
+        .add_service(SourceDaemonServer::new(source_d));
+
+    if let Ok(_) = std::env::var("COLDMOD_OPS") {
+        builder = builder.add_service(OpsDaemonServer::new(ops_d));
+    }
+
+    match builder.serve(addr).await {
         Ok(_) => println!("grpc server exited"),
         Err(e) => eprintln!("grpc server exited with an error: {:?}", e),
     };

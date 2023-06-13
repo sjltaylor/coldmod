@@ -12,16 +12,8 @@ serde = { version = "1.0.163", features = ["derive"] }
 flexbuffers = "2.0.0"
 anyhow = "1.0.71"
 
-[dev-dependencies]
-futures-util = "0.3.28"
-tokio = { version = "1.28.0", features = ["full"] }
-
 [build-dependencies]
 tonic-build = { version = "0.9.2"}
-
-[[example]]
-name = "client"
-required-features = ["grpc-client"]
 
 [features]
 grpc-server = ["dep:tonic"]

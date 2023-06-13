@@ -1,113 +1,180 @@
-use coldmod_msg::web;
 
-use futures_util::{SinkExt, StreamExt};
 
-use tokio::sync::oneshot::Receiver;
-// we will use tungstenite for websocket client impl (same library as what axum is using)
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use coldmod_msg::web::HeatMap;
 
-const COLDMOD_D_URL: &str = "ws://127.0.0.1:3333/ws";
+use coldmod_msg::proto::SourceFn;
 
-/*
+mod clients;
 
-* create two clients
-* one sends a request for data
-* only _that_ client should received an event
-* a cli sends a source scan
-* both clients should receive an event
+use clients::Clients;
 
-*/
-
-#[tokio::test]
-async fn test_source_data_dispatch() {
-    // https://github.com/tokio-rs/axum/blob/main/examples/websockets/src/client.rs
-
-    let (timeout1, cancel1) = tokio::sync::oneshot::channel();
-    let events1 = vec![web::Msg::RequestSourceData];
-    let client1 = tokio::spawn(spawn_client(1, events1, cancel1));
-
-    let (timeout2, cancel2) = tokio::sync::oneshot::channel();
-    let events2 = vec![];
-    let client2 = tokio::spawn(spawn_client(2, events2, cancel2));
-
-    let timeouts = tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-        timeout1.send(()).expect("error sending cancel");
-        timeout2.send(()).expect("error sending cancel");
-    });
-
-    match tokio::join!(client1, client2, timeouts) {
-        (Ok(events1), Ok(events2), _) => {
-            // only the client that sent the event should get a reply
-            assert_eq!(
-                events1.len(),
-                1,
-                "the first client should have received an event"
-            );
-            match events1[0] {
-                web::Msg::SourceDataAvailable(_) => {}
-                _ => assert!(false, "wrong event received"),
-            }
-            assert_eq!(
-                events2.len(),
-                0,
-                "the second client should not have received an event"
-            );
-        }
-        _ => panic!("error running test"),
-    }
+fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, SourceFn)> {
+    heatmap
+        .sources
+        .into_iter()
+        .map(|elem| {
+            let function = match elem.source_element.elem.expect("expected a source element") {
+                coldmod_msg::proto::source_element::Elem::Fn(f) => f,
+            };
+            (elem.trace_count, function)
+        })
+        .collect()
 }
 
-async fn spawn_client(who: usize, msgs: Vec<web::Msg>, mut cancel: Receiver<()>) -> Vec<web::Msg> {
-    let mut received_messages = vec![];
+#[tokio::test]
+async fn test_heatmap_initialization() {
+    trace_before_source().await;
+    source_before_trace().await;
+}
 
-    let ws_stream = match connect_async(COLDMOD_D_URL).await {
-        Ok((stream, _)) => stream,
-        Err(e) => {
-            panic!("WebSocket handshake for client {who} failed with {e}!");
-        }
-    };
+// Scenario 1 (trace before source):
 
-    let (mut sender, mut receiver) = ws_stream.split();
+// * reset the store
+// * create a tracing client
+// * send some trace messages
+// * connect a source client and send source
+// * verify that the heatmap is present and correct
+// * verify that the trace stats are correct
+// * send another trace
+// * verify that the heatmap is up to date
+// * verify that the trace stats are correct
+//
+async fn trace_before_source() {
+    let clients = Clients::default();
+    clients.reset_state().await;
 
-    let send_task = tokio::spawn(async move {
-        for msg in msgs.iter() {
-            let payload = flexbuffers::to_vec(msg).unwrap();
-            if let Err(e) = sender.send(Message::Binary(payload)).await {
-                panic!("error sending message: {:?}", e);
-            }
-        }
-    });
+    let (trace_stats, heatmap) = clients.connect_and_wait_for_initial_messages().await;
 
-    let recv_task = tokio::spawn(async move {
-        loop {
-            tokio::select! {
-                _ = &mut cancel => {
-                    break;
-                }
-                rcv = receiver.next() => {
-                    if let Some(Ok(msg)) = rcv {
-                        match msg {
-                            Message::Binary(payload) => {
-                                let msg = flexbuffers::from_slice(payload.as_slice())
-                                    .expect("error deserializing message");
-                                received_messages.push(msg);
-                            }
-                            Message::Close(_) => {
-                                break;
-                            }
-                            _ => {
-                                unreachable!("This is never supposed to happen. {}", msg)
-                            }
-                        }
-                    }
+    assert_eq!(trace_stats.count, 0);
+    assert!(heatmap.is_none());
 
-                }
-            }
-        }
-        received_messages
-    });
+    clients.send_some_traces().await;
+    clients.send_the_source().await;
 
-    send_task.await.expect("error sending messages");
-    return recv_task.await.unwrap();
+    let (trace_stats, heatmap) = clients.connect_and_wait_for_initial_messages().await;
+
+    assert_eq!(trace_stats.count, 3);
+    assert!(heatmap.is_some());
+    let heatmap = heatmap.unwrap();
+
+    let functions_and_counts: Vec<(i64, SourceFn)> = heatmap_to_functions_and_counts(heatmap);
+
+    assert_eq!(functions_and_counts.len(), 3);
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 7263 && *count == 2 }),
+        "there is a function in the heatmap with two traces"
+    );
+    assert!(
+        functions_and_counts.iter().any(|(count, f)| {
+            f.path == "/a/path/to/another/file" && f.line == 191 && *count == 1
+        }),
+        "there is a function in the heatmap with 1 trace"
+    );
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 1323 && *count == 0 }),
+        "there is a cold function in the heatmap"
+    );
+
+    clients.send_some_traces().await;
+
+    let (trace_stats, heatmap) = clients.connect_and_wait_for_initial_messages().await;
+
+    assert_eq!(trace_stats.count, 6);
+    assert!(heatmap.is_some());
+
+    let functions_and_counts: Vec<(i64, SourceFn)> =
+        heatmap_to_functions_and_counts(heatmap.expect("expected a heatmap"));
+
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 7263 && *count == 4 }),
+        "there is a function in the heatmap with two traces"
+    );
+    assert!(
+        functions_and_counts.iter().any(|(count, f)| {
+            f.path == "/a/path/to/another/file" && f.line == 191 && *count == 2
+        }),
+        "there is a function in the heatmap with 1 trace"
+    );
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 1323 && *count == 0 }),
+        "there is a cold function in the heatmap"
+    );
+}
+
+// Scenario 2 (source before trace):
+
+// * send a source
+// * verify the heatmap is up to date
+// * send trace events
+// * verify the heatmap is up to date
+async fn source_before_trace() {
+    let clients = Clients::default();
+    clients.reset_state().await;
+    clients.send_the_source().await;
+
+    let (trace_stats, heatmap) = clients.connect_and_wait_for_initial_messages().await;
+
+    assert_eq!(trace_stats.count, 0);
+    assert!(heatmap.is_some());
+
+    let functions_and_counts: Vec<(i64, SourceFn)> =
+        heatmap_to_functions_and_counts(heatmap.unwrap());
+
+    assert_eq!(functions_and_counts.len(), 3);
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 7263 && *count == 0 }),
+        "there is a function in the heatmap with two traces"
+    );
+    assert!(
+        functions_and_counts.iter().any(|(count, f)| {
+            f.path == "/a/path/to/another/file" && f.line == 191 && *count == 0
+        }),
+        "there is a function in the heatmap with 1 trace"
+    );
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 1323 && *count == 0 }),
+        "there is a cold function in the heatmap"
+    );
+
+    clients.send_some_traces().await;
+
+    let (trace_stats, heatmap) = clients.connect_and_wait_for_initial_messages().await;
+
+    assert_eq!(trace_stats.count, 3);
+    assert!(heatmap.is_some());
+    let heatmap = heatmap.unwrap();
+
+    let functions_and_counts: Vec<(i64, SourceFn)> = heatmap_to_functions_and_counts(heatmap);
+
+    assert_eq!(functions_and_counts.len(), 3);
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 7263 && *count == 2 }),
+        "there is a function in the heatmap with two traces"
+    );
+    assert!(
+        functions_and_counts.iter().any(|(count, f)| {
+            f.path == "/a/path/to/another/file" && f.line == 191 && *count == 1
+        }),
+        "there is a function in the heatmap with 1 trace"
+    );
+    assert!(
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 1323 && *count == 0 }),
+        "there is a cold function in the heatmap"
+    );
 }

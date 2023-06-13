@@ -1,3 +1,5 @@
+use anyhow::anyhow;
+use async_trait::async_trait;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -7,8 +9,8 @@ use axum::{
     routing::get,
     Router,
 };
+use coldmod_msg::web::Msg;
 
-use futures_util::stream::{SplitSink, SplitStream};
 use std::net::SocketAddr;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
@@ -16,10 +18,7 @@ use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 use axum::extract::connect_info::ConnectInfo;
 use flexbuffers;
 
-//allows to split the websocket stream into separate TX and RX branches
-use futures::{sink::SinkExt, stream::StreamExt};
-
-use crate::dispatch::Dispatch;
+use crate::dispatch::{self, Dispatch};
 
 pub async fn server(dispatch: Dispatch) {
     // build our application with some routes
@@ -55,148 +54,182 @@ async fn ws_handler(
 ) -> impl IntoResponse {
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    ws.on_upgrade(move |socket| serve_socket(socket, addr, dispatch))
+    tracing::info!("websocket upgrade request from {}", addr);
+    ws.on_upgrade(move |socket| serve_socket_2(socket, dispatch))
 }
 
-async fn serve_socket(socket: WebSocket, who: SocketAddr, dispatch: Dispatch) {
-    let (ws_sender, ws_receiver) = socket.split();
-    let (response_sender, response_receiver) = tokio::sync::mpsc::channel(65536);
-    let initialization_msg_sender = response_sender.clone();
-
-    let dispatch_msgs = dispatch.receiver();
-    let mut send_task = tokio::spawn(async move {
-        dispatch_to_websocket(dispatch_msgs, response_receiver, ws_sender).await;
-    });
-
-    let receiver_dispatch = dispatch.clone();
-    let mut recv_task = tokio::spawn(async move {
-        websocket_to_dispatch(ws_receiver, receiver_dispatch, response_sender).await;
-    });
-
-    match dispatch
-        .handle(coldmod_msg::web::Msg::AppSocketConnected)
-        .await
-    {
-        Ok(msgs) => {
-            for msg in msgs {
-                match initialization_msg_sender.send(msg).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        tracing::error!("error sending initialization message {:?}", e);
-                    }
-                }
-            }
-        }
-        Err(e) => {
-            tracing::error!("error handling AppSocketConnected {:?}", e);
-        }
-    }
-
-    // If any one of the tasks exit, abort the other.
-    tokio::select! {
-        rv_a = (&mut send_task) => {
-            match rv_a {
-                Ok(_) => tracing::trace!("messages forwarding finished, closing {}", who),
-                Err(a) => tracing::error!("error sending messages {:?}", a)
-            }
-            recv_task.abort();
-        },
-        rv_b = (&mut recv_task) => {
-            match rv_b {
-                Ok(_) =>  tracing::trace!("message listening finished {}", who),
-                Err(b) =>  tracing::error!("error receiving messages {:?}", b)
-            }
-            send_task.abort();
-        }
-    }
+struct WebSocketAdapter {
+    socket: WebSocket,
 }
 
-async fn websocket_to_dispatch(
-    mut ws_receiver: SplitStream<WebSocket>,
-    dispatch: Dispatch,
-    response_sender: tokio::sync::mpsc::Sender<coldmod_msg::web::Msg>,
-) {
-    while let Some(Ok(msg)) = ws_receiver.next().await {
-        match msg {
-            Message::Binary(payload) => match flexbuffers::from_slice(&payload) {
-                Ok(msg) => {
-                    tracing::info!("websocket -> dispatch: {msg}");
-                    match dispatch.handle(msg).await {
-                        Ok(msgs) => {
-                            for msg in msgs {
-                                match response_sender.send(msg).await {
-                                    Ok(_) => tracing::info!("response relayed"),
-                                    Err(e) => tracing::error!("error relaying response: {}", e),
-                                }
-                            }
-                        }
-                        Err(e) => tracing::error!("error dispatching message: {:?}", e),
-                    }
-                }
-                Err(e) => tracing::error!("error unmarshalling message: {:?}", e),
+#[async_trait]
+impl dispatch::WebSocket for WebSocketAdapter {
+    async fn send(&mut self, msg: &Msg) -> Result<(), anyhow::Error> {
+        let payload = flexbuffers::to_vec(msg)?;
+        self.socket.send(Message::Binary(payload)).await?;
+        Ok(())
+    }
+
+    async fn receive(&mut self) -> Option<Result<Msg, anyhow::Error>> {
+        match self.socket.recv().await {
+            None | Some(Ok(Message::Close(_))) => {
+                tracing::info!("socket closed");
+                return None;
+            }
+            Some(Ok(Message::Binary(payload))) => match flexbuffers::from_slice(&payload) {
+                Ok(msg) => Some(Ok(msg)),
+                Err(e) => Some(Err(e.into())),
             },
-            Message::Close(_) => {
-                tracing::info!("closing connection");
-                return;
-            }
-            _ => {
-                tracing::debug!("ignoring message: {:?}", msg);
-            }
+            Some(Ok(_)) => Some(Err(anyhow!("unexpected message type"))),
+            Some(Err(e)) => Some(Err(e.into())),
         }
     }
 }
 
-async fn dispatch_to_websocket(
-    mut dispatch_msgs: tokio::sync::broadcast::Receiver<coldmod_msg::web::Msg>,
-    mut response_msgs: tokio::sync::mpsc::Receiver<coldmod_msg::web::Msg>,
-    mut ws_sender: SplitSink<WebSocket, Message>,
-) {
-    loop {
-        let msg = tokio::select! {
-            dispatch_r = dispatch_msgs.recv() => {
-               match dispatch_r {
-                    Ok(msg) => msg,
-                    Err(e) => {
-                        tracing::error!("dispatch receiver error: {:?}", e);
-                        break;
-                    },
-               }
-            },
-            response_r = response_msgs.recv() => {
-                match response_r {
-                    Some(msg) => msg,
-                    None => {
-                        tracing::error!("response recveiver closed");
-                        break;
-                    },
-                }
-            }
-        };
-
-        let msg = match msg {
-            coldmod_msg::web::Msg::SourceDataAvailable(_) => Some(msg),
-            coldmod_msg::web::Msg::TracingStatsAvailable(_) => Some(msg),
-            _ => None,
-        };
-
-        if msg.is_none() {
-            continue;
-        }
-
-        let msg = msg.unwrap();
-
-        tracing::info!("dispatch -> websocket: {msg}");
-
-        match flexbuffers::to_vec(msg) {
-            Ok(payload) => {
-                if let Err(e) = ws_sender.send(Message::Binary(payload)).await {
-                    tracing::error!("could not send message: {:?}", e);
-                    return;
-                } else {
-                    tracing::trace!("sent message");
-                }
-            }
-            Err(e) => tracing::error!("error marshalling message: {:?}", e),
-        }
-    }
+async fn serve_socket_2(socket: WebSocket, dispatch: Dispatch) {
+    let ws = WebSocketAdapter { socket };
+    dispatch.serve_socket(ws).await;
 }
+
+// async fn serve_socket(socket: WebSocket, who: SocketAddr, dispatch: Dispatch) {
+//     let (ws_sender, ws_receiver) = socket.split();
+//     let (response_sender, response_receiver) = tokio::sync::mpsc::channel(65536);
+//     let initialization_msg_sender = response_sender.clone();
+
+//     let dispatch_msgs = dispatch.receiver();
+//     let mut send_task = tokio::spawn(async move {
+//         dispatch_to_websocket(dispatch_msgs, response_receiver, ws_sender).await;
+//     });
+
+//     let receiver_dispatch = dispatch.clone();
+//     let mut recv_task = tokio::spawn(async move {
+//         websocket_to_dispatch(ws_receiver, receiver_dispatch, response_sender).await;
+//     });
+
+//     match dispatch
+//         .handle(coldmod_msg::web::Msg::AppSocketConnected)
+//         .await
+//     {
+//         Ok(msgs) => {
+//             for msg in msgs {
+//                 match initialization_msg_sender.send(msg).await {
+//                     Ok(_) => {}
+//                     Err(e) => {
+//                         tracing::error!("error sending initialization message {:?}", e);
+//                     }
+//                 }
+//             }
+//         }
+//         Err(e) => {
+//             tracing::error!("error handling AppSocketConnected {:?}", e);
+//         }
+//     }
+
+//     // If any one of the tasks exit, abort the other.
+//     tokio::select! {
+//         rv_a = (&mut send_task) => {
+//             match rv_a {
+//                 Ok(_) => tracing::trace!("messages forwarding finished, closing {}", who),
+//                 Err(a) => tracing::error!("error sending messages {:?}", a)
+//             }
+//             recv_task.abort();
+//         },
+//         rv_b = (&mut recv_task) => {
+//             match rv_b {
+//                 Ok(_) =>  tracing::trace!("message listening finished {}", who),
+//                 Err(b) =>  tracing::error!("error receiving messages {:?}", b)
+//             }
+//             send_task.abort();
+//         }
+//     }
+// }
+
+// async fn websocket_to_dispatch(
+//     mut ws_receiver: SplitStream<WebSocket>,
+//     dispatch: Dispatch,
+//     response_sender: tokio::sync::mpsc::Sender<coldmod_msg::web::Msg>,
+// ) {
+//     while let Some(Ok(msg)) = ws_receiver.next().await {
+//         match msg {
+//             Message::Binary(payload) => match flexbuffers::from_slice(&payload) {
+//                 Ok(msg) => {
+//                     tracing::info!("websocket -> dispatch: {msg}");
+//                     match dispatch.handle(msg).await {
+//                         Ok(msgs) => {
+//                             for msg in msgs {
+//                                 match response_sender.send(msg).await {
+//                                     Ok(_) => tracing::info!("response relayed"),
+//                                     Err(e) => tracing::error!("error relaying response: {}", e),
+//                                 }
+//                             }
+//                         }
+//                         Err(e) => tracing::error!("error dispatching message: {:?}", e),
+//                     }
+//                 }
+//                 Err(e) => tracing::error!("error unmarshalling message: {:?}", e),
+//             },
+//             Message::Close(_) => {
+//                 tracing::info!("closing connection");
+//                 return;
+//             }
+//             _ => {
+//                 tracing::debug!("ignoring message: {:?}", msg);
+//             }
+//         }
+//     }
+// }
+
+// async fn dispatch_to_websocket(
+//     mut dispatch_msgs: tokio::sync::broadcast::Receiver<coldmod_msg::web::Msg>,
+//     mut response_msgs: tokio::sync::mpsc::Receiver<coldmod_msg::web::Msg>,
+//     mut ws_sender: SplitSink<WebSocket, Message>,
+// ) {
+//     loop {
+//         let msg = tokio::select! {
+//             dispatch_r = dispatch_msgs.recv() => {
+//                match dispatch_r {
+//                     Ok(msg) => msg,
+//                     Err(e) => {
+//                         tracing::error!("dispatch receiver error: {:?}", e);
+//                         break;
+//                     },
+//                }
+//             },
+//             response_r = response_msgs.recv() => {
+//                 match response_r {
+//                     Some(msg) => msg,
+//                     None => {
+//                         tracing::error!("response recveiver closed");
+//                         break;
+//                     },
+//                 }
+//             }
+//         };
+
+//         let msg = match msg {
+//             coldmod_msg::web::Msg::HeatMapAvailable(_) => Some(msg),
+//             coldmod_msg::web::Msg::TracingStatsAvailable(_) => Some(msg),
+//             _ => None,
+//         };
+
+//         if msg.is_none() {
+//             continue;
+//         }
+
+//         let msg = msg.unwrap();
+
+//         tracing::info!("dispatch -> websocket: {msg}");
+
+//         match flexbuffers::to_vec(msg) {
+//             Ok(payload) => {
+//                 if let Err(e) = ws_sender.send(Message::Binary(payload)).await {
+//                     tracing::error!("could not send message: {:?}", e);
+//                     return;
+//                 } else {
+//                     tracing::trace!("sent message");
+//                 }
+//             }
+//             Err(e) => tracing::error!("error marshalling message: {:?}", e),
+//         }
+//     }
+// }

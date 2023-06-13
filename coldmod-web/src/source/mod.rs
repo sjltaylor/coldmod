@@ -1,22 +1,41 @@
 use crate::dispatch::Dispatch;
 use crate::events;
-use coldmod_msg::proto::SourceElement;
-use coldmod_msg::web;
+
+use coldmod_msg::web::{self, ElementKey, HeatSource};
 use leptos::*;
 
 #[component]
 pub fn SourceView(cx: Scope) -> impl IntoView {
     let dispatch = use_context::<Dispatch>(cx).unwrap();
 
-    let (source_data, w_source_scan) =
-        create_signal(cx, Option::<Option<coldmod_msg::proto::SourceScan>>::None);
+    let (heat_map, w_heat_map) = create_signal(cx, Option::<coldmod_msg::web::HeatMap>::None);
 
-    let source_elements = move || source_data().unwrap().unwrap().source_elements;
+    let heat_sources = move || heat_map().unwrap().sources;
 
     dispatch.on_app_event(move |app_event| match app_event {
         events::AppEvent::ColdmodMsg(msg) => match msg {
-            web::Msg::SourceDataAvailable(maybe_source_scan) => {
-                w_source_scan.set(Some(maybe_source_scan));
+            web::Msg::HeatMapAvailable(heat_map) => {
+                w_heat_map.set(Some(heat_map));
+            }
+            web::Msg::HeatMapChanged(delta) => {
+                w_heat_map.update(|heatmap| {
+                    if heatmap.is_none() {
+                        error!("no heatmap but we got a heatmap delta :/");
+                        return;
+                    }
+                    let heatmap = heatmap.as_mut().unwrap();
+
+                    for source in heatmap.sources.iter_mut() {
+                        let key = source.source_element.key();
+                        if let Some(d) = delta.deltas.get(&key) {
+                            source.trace_count += d;
+                        }
+                    }
+                });
+                for (k, d) in delta.deltas.iter() {
+                    log!("heatmap delta: {:?} {:?}", k, d);
+                }
+                log!("heatmap delta: {:?}", delta);
             }
             _ => {}
         },
@@ -25,16 +44,16 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
 
     return view! {cx,
         <Show
-            when=move || source_data().is_some()
-            fallback=|cx| view! { cx, <div>"Loading..."</div> }>
+            when=move || heat_map().is_some()
+            fallback=|cx| view! { cx, <div>"no data."</div> }>
                 <Show
-                    when=move || source_data().unwrap().is_some()
+                    when=move || heat_map().is_some()
                         fallback=|cx| view! { cx, <NoData /> }>
                     <div class="container source-elements">
                         <For
-                            each=source_elements
-                            key=|u| format!("{:?}", u)
-                            view=move |cx, s| view! {cx, <SourceElementView source_element=s /> } />
+                            each=heat_sources
+                            key=|u| u.source_element.key()
+                            view=move |cx, s| view! {cx, <HeatSourceView heat_source=s /> } />
                     </div>
                 </Show>
         </Show>
@@ -42,16 +61,17 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-pub fn SourceElementView(cx: Scope, source_element: SourceElement) -> impl IntoView {
-    if source_element.elem.is_none() {
+pub fn HeatSourceView(cx: Scope, heat_source: HeatSource) -> impl IntoView {
+    if heat_source.source_element.elem.is_none() {
         return view! {cx, <div>"???"</div> };
     }
-    let s = match source_element.elem.unwrap() {
+    let s = match heat_source.source_element.elem.unwrap() {
         coldmod_msg::proto::source_element::Elem::Fn(f) => {
             let mut buffer = String::from(format!("{}:{} [name={}]", f.path, f.line, f.name));
             if f.class_name.is_some() {
                 buffer.push_str(format!(" [class={}]", f.class_name.unwrap()).as_str());
             }
+            buffer.push_str(format!(" [trace_count={}]", heat_source.trace_count).as_str());
             buffer
         }
     };
