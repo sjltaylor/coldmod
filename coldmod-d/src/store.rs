@@ -264,4 +264,22 @@ impl RedisStore {
         let count: i64 = self.trace_connection.xlen("tracing-stream").await?;
         Ok(count)
     }
+
+    pub async fn _raw_trace_data(&mut self) -> Result<Vec<Vec<u8>>, anyhow::Error> {
+        let mut stream_range: StreamRangeReply =
+            self.connection.xrange_all("tracing-stream").await?;
+        let mut traces: Vec<Vec<u8>> = Vec::new();
+
+        for id in stream_range.ids.iter_mut() {
+            match id.map.remove("trace") {
+                Some(Value::Data(raw)) => traces.push(raw),
+                Some(_) => return Err(anyhow::anyhow!("trace in {:?} is the wrong type", id.id)),
+                None => {
+                    return Err(anyhow::anyhow!("no trace in {:?}", id.id));
+                }
+            }
+        }
+
+        Ok(traces)
+    }
 }
