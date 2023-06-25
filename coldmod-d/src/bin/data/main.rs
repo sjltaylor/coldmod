@@ -17,7 +17,8 @@ struct Data {
 #[argh(subcommand)]
 enum Subcommand {
     Dump(Dump),
-    Simulate(Simulate),
+    Load(Load),
+    Trace(Trace),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
@@ -30,12 +31,25 @@ struct Dump {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// Simulate a client sending data
-#[argh(subcommand, name = "simulate")]
-struct Simulate {
+/// Load data dumped from the store
+#[argh(subcommand, name = "load")]
+struct Load {
     #[argh(positional)]
-    /// dataset key
+    /// data key
     key: DataKey,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+/// Simulate tracing
+#[argh(subcommand, name = "trace")]
+struct Trace {
+    #[argh(positional)]
+    /// source element key
+    key: String,
+
+    #[argh(option, short = 'n')]
+    /// source element key
+    incr: Option<usize>,
 }
 
 #[derive(Eq, PartialEq, Debug)]
@@ -67,7 +81,7 @@ async fn main() {
                 dump::dump_tracing_stream().await;
             }
         },
-        Subcommand::Simulate(simulate) => match simulate.key {
+        Subcommand::Load(simulate) => match simulate.key {
             DataKey::SourceScan => {
                 simulate::send_source_scan().await;
             }
@@ -75,5 +89,8 @@ async fn main() {
                 simulate::send_tracing_stream().await;
             }
         },
+        Subcommand::Trace(trace) => {
+            simulate::simulate_tracing(trace.key, trace.incr).await;
+        }
     }
 }
