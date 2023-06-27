@@ -4,6 +4,7 @@ use std::str::FromStr;
 use argh::FromArgs;
 
 mod dump;
+mod load;
 mod simulate;
 
 #[derive(FromArgs)]
@@ -83,10 +84,10 @@ async fn main() {
         },
         Subcommand::Load(simulate) => match simulate.key {
             DataKey::SourceScan => {
-                simulate::send_source_scan().await;
+                load::send_source_scan().await;
             }
             DataKey::TracingStream => {
-                simulate::send_tracing_stream().await;
+                load::send_tracing_stream().await;
             }
         },
         Subcommand::Trace(trace) => {
