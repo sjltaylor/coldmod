@@ -1,5 +1,3 @@
-
-
 use coldmod_msg::web::HeatMap;
 
 use coldmod_msg::proto::SourceFn;
@@ -177,4 +175,9 @@ async fn source_before_trace() {
             .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.line == 1323 && *count == 0 }),
         "there is a cold function in the heatmap"
     );
+
+    // connect a heatmap socket
+    // send a burst of traces
+    // check I get more than 1 event
+    // and the deltas sum up to the new heatmap values
 }

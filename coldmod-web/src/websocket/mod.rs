@@ -67,7 +67,7 @@ fn relay_upstream(dispatch: Dispatch, ws: &WebSocket) {
 fn relay_downstream(e: MessageEvent, dispatch: Dispatch) {
     if let Ok(data) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
         let buffer = js_sys::Uint8Array::new(&data).to_vec();
-        let msg = match flexbuffers::from_slice(&buffer) {
+        let msg: coldmod_msg::web::Msg = match flexbuffers::from_slice(&buffer) {
             Ok(msg) => msg,
             Err(e) => {
                 error!("{:?}", e);
@@ -75,7 +75,7 @@ fn relay_downstream(e: MessageEvent, dispatch: Dispatch) {
             }
         };
 
-        log!("recv: {:?}", msg);
+        log!("{}", msg);
 
         dispatch.emit(AppEvent::ColdmodMsg(msg));
 

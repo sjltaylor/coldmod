@@ -32,10 +32,6 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
                         }
                     }
                 });
-                for (k, d) in delta.deltas.iter() {
-                    log!("heatmap delta: {:?} {:?}", k, d);
-                }
-                log!("heatmap delta: {:?}", delta);
             }
             _ => {}
         },

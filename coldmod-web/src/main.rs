@@ -1,11 +1,13 @@
 use coldmod_msg::web;
 use console_error_panic_hook;
 use dispatch::Dispatch;
+use heatmap_ui::{HeatMapUI, HeatMapUIProps};
 use leptos::*;
-use source::{SourceView, SourceViewProps};
+
 
 mod dispatch;
 mod events;
+mod heatmap_ui;
 mod source;
 mod websocket;
 
@@ -44,7 +46,7 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
     return view! { cx,
         <TracingStatus />
         <main>
-            <SourceView />
+            <HeatMapUI />
         </main>
     };
 }
@@ -55,7 +57,6 @@ fn main() {
     let dispatch = Dispatch::new();
 
     websocket::start(dispatch.clone());
-    // TODO: handle reconnection if there's an error
 
     mount_to_body(|cx| view! { cx,  <Container dispatch=dispatch></Container> });
 }
