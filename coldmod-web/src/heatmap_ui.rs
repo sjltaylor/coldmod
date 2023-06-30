@@ -1,6 +1,7 @@
 use crate::events;
 use crate::{dispatch::Dispatch, events::AppEvent};
 
+use crate::controls_ui::{ControlsUI, ControlsUIProps};
 use coldmod_msg::web::{self, ElementKey, HeatSource};
 use leptos::*;
 
@@ -17,28 +18,13 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
             web::Msg::HeatMapAvailable(heat_map) => {
                 w_heat_map.set(Some(heat_map));
             }
-            // web::Msg::HeatMapChanged(delta) => {
-            //     w_heat_map.update(|heatmap| {
-            //         if heatmap.is_none() {
-            //             error!("no heatmap but we got a heatmap delta :/");
-            //             return;
-            //         }
-            //         let heatmap = heatmap.as_mut().unwrap();
-
-            //         for source in heatmap.sources.iter_mut() {
-            //             let key = source.source_element.key();
-            //             if let Some(d) = delta.deltas.get(&key) {
-            //                 source.trace_count += d;
-            //             }
-            //         }
-            //     });
-            // }
             _ => {}
         },
         _ => {}
     });
 
     return view! {cx,
+        <ControlsUI />
         <Show
             when=move || heat_map().is_some()
                 fallback=|cx| view! { cx, <NoDataUI /> }>

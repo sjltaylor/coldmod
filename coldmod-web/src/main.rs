@@ -4,7 +4,7 @@ use dispatch::Dispatch;
 use heatmap_ui::{HeatMapUI, HeatMapUIProps};
 use leptos::*;
 
-
+mod controls_ui;
 mod dispatch;
 mod events;
 mod heatmap_ui;
@@ -48,6 +48,7 @@ fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
         <main>
             <HeatMapUI />
         </main>
+        <div class="coldmod">"Coldmod"</div>
     };
 }
 
