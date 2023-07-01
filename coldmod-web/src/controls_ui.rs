@@ -1,9 +1,8 @@
-use crate::dispatch::Dispatch;
 use leptos::*;
 
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
-    let dispatch = use_context::<Dispatch>(cx).unwrap();
+    // let dispatch = use_context::<Dispatch>(cx).unwrap();
 
     return view! {cx,
     <div class="area controls">
@@ -23,7 +22,7 @@ pub fn ToggleButton(cx: Scope, #[prop(into)] label: String) -> impl IntoView {
     let (is_on, w_is_on) = create_signal(cx, false);
 
     let class_name = move || {
-        if is_on() {
+        if is_on.get() {
             return "toggle-button on";
         }
         return "toggle-button off";

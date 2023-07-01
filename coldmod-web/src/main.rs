@@ -1,7 +1,7 @@
 use coldmod_msg::web;
 use console_error_panic_hook;
 use dispatch::Dispatch;
-use heatmap_ui::{HeatMapUI, HeatMapUIProps};
+use heatmap_ui::HeatMapUI;
 use leptos::*;
 
 mod controls_ui;
@@ -16,10 +16,13 @@ fn TracingStatus(cx: Scope) -> impl IntoView {
     let dispatch = use_context::<Dispatch>(cx).unwrap();
     let (tracing_status, w_tracing_stats) = create_signal(cx, Option::<web::TracingStats>::None);
     let tracing_status_repr = move || {
-        if tracing_status().is_none() {
+        if tracing_status.get().is_none() {
             return "-".into();
         }
-        format!("TRACING: event count={}", tracing_status().unwrap().count)
+        format!(
+            "TRACING: event count={}",
+            tracing_status.get().unwrap().count
+        )
     };
 
     dispatch.on_app_event(move |app_event| match app_event {

@@ -1,7 +1,7 @@
 use crate::events;
 use crate::{dispatch::Dispatch, events::AppEvent};
 
-use crate::controls_ui::{ControlsUI, ControlsUIProps};
+use crate::controls_ui::ControlsUI;
 use coldmod_msg::web::{self, ElementKey, HeatSource};
 use leptos::*;
 
@@ -11,7 +11,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 
     let (heat_map, w_heat_map) = create_signal(cx, Option::<coldmod_msg::web::HeatMap>::None);
 
-    let heat_sources = move || heat_map().unwrap().sources;
+    let heat_sources = move || heat_map.get().unwrap().sources;
 
     dispatch.on_app_event(move |app_event| match app_event {
         events::AppEvent::ColdmodMsg(msg) => match msg {
@@ -26,7 +26,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
     return view! {cx,
         <ControlsUI />
         <Show
-            when=move || heat_map().is_some()
+            when=move || heat_map.get().is_some()
                 fallback=|cx| view! { cx, <NoDataUI /> }>
             <div class="container source-elements">
                 <For
@@ -67,7 +67,7 @@ pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
         _ => {}
     });
 
-    return view! {cx, <div>{s}" [trace_count="{count}"]"</div> };
+    return view! {cx, <div>{s}" [trace_count="{count.get()}"]"</div> };
 }
 
 #[component]

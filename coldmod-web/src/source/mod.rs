@@ -10,7 +10,7 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
 
     let (heat_map, w_heat_map) = create_signal(cx, Option::<coldmod_msg::web::HeatMap>::None);
 
-    let heat_sources = move || heat_map().unwrap().sources;
+    let heat_sources = move || heat_map.get().unwrap().sources;
 
     dispatch.on_app_event(move |app_event| match app_event {
         events::AppEvent::ColdmodMsg(msg) => match msg {
@@ -40,10 +40,10 @@ pub fn SourceView(cx: Scope) -> impl IntoView {
 
     return view! {cx,
         <Show
-            when=move || heat_map().is_some()
+            when=move || heat_map.get().is_some()
             fallback=|cx| view! { cx, <div>"no data."</div> }>
                 <Show
-                    when=move || heat_map().is_some()
+                    when=move || heat_map.get().is_some()
                         fallback=|cx| view! { cx, <NoData /> }>
                     <div class="container source-elements">
                         <For
