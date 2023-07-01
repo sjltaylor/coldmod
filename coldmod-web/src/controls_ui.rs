@@ -11,7 +11,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                 <div class="button-group">
                     <ToggleButton label="COLD" />
                 </div>
-                <div class="button-group">
+                <div class="button-group pxx-hot">
                     <ToggleButton label="P10" />
                     <ToggleButton label="P20" />
                     <ToggleButton label="P40" />
