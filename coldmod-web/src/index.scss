@@ -91,5 +91,6 @@ code {
 
 .toggle-button:active,
 .toggle-button.on {
-   background-color: #ffffa4;
+   background-color: #ffff42;
+   box-shadow: inset 0 0 20px RGBA(0,0,0,0.1);
 }
