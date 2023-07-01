@@ -77,20 +77,26 @@ code {
 
 .toggle-button {
     display: inline-block;
-    padding: 0.5em 1em;
     width: 3.25em;
     text-align: center;
+    padding: 0.5em 1em;
     cursor: pointer;
-    border-radius: 3px;
     font-weight: 100;
     user-select: none;
-    margin: 5px;
-    border: solid 1px rgba(0, 0, 0, 0.05);
-    box-shadow: 0 0 1px rgba(0,0,0,0.1);
+}
+
+.toggle-button:not(:first-child) {
+    border-left: solid 1px rgba(0, 0, 0, 0.05);
 }
 
 .toggle-button:active,
 .toggle-button.on {
    background-color: #ffff42;
-   box-shadow: inset 0 0 20px RGBA(0,0,0,0.1);
+}
+
+.button-group {
+    display: inline-block;
+    background-color: white;
+    border: solid 1px rgba(0, 0, 0, 0.05);
+    margin: 5px;
 }

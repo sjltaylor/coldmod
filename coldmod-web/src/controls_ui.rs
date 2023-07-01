@@ -8,10 +8,16 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
     <div class="area controls">
         <div class="container controls">
             <div class="buttons">
-                <ToggleButton label="COLD" />
-                <ToggleButton label="P10" />
-                <ToggleButton label="P40" />
-                <ToggleButton label="ALL" />
+                <div class="button-group">
+                    <ToggleButton label="COLD" />
+                </div>
+                <div class="button-group">
+                    <ToggleButton label="P10" />
+                    <ToggleButton label="P20" />
+                    <ToggleButton label="P40" />
+                    <ToggleButton label="P90" />
+                    <ToggleButton label="HOT" />
+                </div>
             </div>
         </div>
     </div> };
@@ -29,6 +35,7 @@ pub fn ToggleButton(cx: Scope, #[prop(into)] label: String) -> impl IntoView {
     };
 
     return view! {cx,
+
     <div class={class_name} on:click=move |_| w_is_on.update(|v| *v = !*v)>
         <div class="toggle-button-label">{label}</div>
     </div> };
