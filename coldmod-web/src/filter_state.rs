@@ -56,7 +56,13 @@ impl FilterState {
         }
 
         if self.cold {
-            if idx == 0 && end == 1 {
+            if idx == 0 && end > 1 {
+                if start == 1 {
+                    start = 0;
+                } else {
+                    start = 1;
+                }
+            } else if idx == 0 && end == 1 {
                 end = 0;
                 self.cold = true;
             } else if idx == end - 1 {
@@ -170,13 +176,13 @@ mod tests {
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), false);
         s.toggle("COLD");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), true);
         assert_eq!(s.get("P20"), false);
         assert_eq!(s.get("P40"), false);
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), false);
-        s.toggle("COLD");
+        s.toggle("P10");
         assert_eq!(s.get("COLD"), false);
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
@@ -306,6 +312,32 @@ mod tests {
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
         assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+    }
+
+    #[test]
+    fn test_toggle_cold_when_cold() {
+        let mut s = FilterState::default();
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("COLD");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("COLD");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), false);
     }
