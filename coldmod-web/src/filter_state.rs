@@ -4,11 +4,12 @@ static FILTER_OPTIONS: [&str; 6] = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
 static FILTER_GROUPS: [(usize, usize); 2] = [(0, 1), (1, 6)];
 
 const _SZ: usize = 6;
+const _iSZ: i32 = _SZ as i32;
 
 #[derive(Debug, Copy, Clone)]
 pub struct FilterState {
     names: [&'static str; _SZ],
-    range: (usize, usize),
+    range: (i32, i32),
     cold: bool,
 }
 
@@ -30,13 +31,13 @@ impl FilterState {
         return FILTER_GROUPS;
     }
 
-    fn idx(&self, key: &str) -> usize {
+    fn idx(&self, key: &str) -> i32 {
         self.names
             .iter()
             .position(|k| *k == key)
-            .expect("key not valid")
+            .expect("key not valid") as i32
     }
-    fn state_at(&self, idx: usize) -> bool {
+    fn state_at(&self, idx: i32) -> bool {
         let (a, b) = self.range;
         idx >= a && idx < b
     }
@@ -47,15 +48,19 @@ impl FilterState {
         let idx = self.idx(key);
 
         let (mut start, mut end) = self.range;
-        let hot_idx = _SZ - 1;
+        let hot_idx = _iSZ - 1;
 
         if start == end && idx == hot_idx {
             self.cold = false;
-            end = _SZ;
+            end = _iSZ;
         }
 
         if self.cold {
             if idx == 0 && end == 1 {
+                end = 0;
+                self.cold = true;
+            } else if idx == end - 1 {
+                start = 0;
                 end = 0;
                 self.cold = true;
             } else {
@@ -63,6 +68,10 @@ impl FilterState {
             }
         } else {
             if idx == hot_idx && start == hot_idx {
+                start = 0;
+                end = 0;
+                self.cold = true;
+            } else if idx == start {
                 start = 0;
                 end = 0;
                 self.cold = true;
@@ -248,6 +257,51 @@ mod tests {
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), true);
         s.toggle("HOT");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+    }
+
+    #[test]
+    fn test_clearing_a_hot_toggle() {
+        let mut s = FilterState::default();
+        s.toggle("HOT");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+    }
+
+    #[test]
+    fn test_clearing_a_cold_toggle() {
+        let mut s = FilterState::default();
+        s.toggle("P20");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P20");
         assert_eq!(s.get("COLD"), false);
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
