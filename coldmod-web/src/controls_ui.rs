@@ -67,11 +67,13 @@ pub fn ToggleButton(
     is_on: Signal<bool>,
     w_is_on: SignalSetter<()>,
 ) -> impl IntoView {
+    let label_class = label.clone().to_lowercase();
+
     let class_name = move || {
         if is_on.get() {
-            return "toggle-button on";
+            return format!("toggle-button on {}", label_class);
         }
-        return "toggle-button off";
+        return format!("toggle-button off");
     };
 
     return view! {cx,

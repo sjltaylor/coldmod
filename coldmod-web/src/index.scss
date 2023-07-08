@@ -115,9 +115,32 @@ code {
     border-left: solid 1px black;
 }
 
-.toggle-button:active,
 .toggle-button.on {
    background-color: #ffff42;
+}
+
+.toggle-button.on.cold {
+   background-color: #3aa0ec;
+}
+
+.toggle-button.on.p10 {
+   background-color: #8de4f7;
+}
+
+.toggle-button.on.p20 {
+   background-color: #8ee2a9;
+}
+
+.toggle-button.on.p40 {
+   background-color: #dfeebb;
+}
+
+.toggle-button.on.p90 {
+   background-color: #ffa442;
+}
+
+.toggle-button.on.hot {
+   background-color: #f06e6e;
 }
 
 .button-group {
