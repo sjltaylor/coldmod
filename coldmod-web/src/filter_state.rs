@@ -67,7 +67,9 @@ impl FilterState {
                 end = idx + 1;
             }
         } else {
-            if idx == start || (idx == hot_idx && start == hot_idx) {
+            if idx == 0 && start == 0 {
+                start = 1;
+            } else if idx == start || (idx == hot_idx && start == hot_idx) {
                 start = 0;
                 end = 0;
                 self.cold = true;
@@ -361,5 +363,42 @@ mod tests {
         assert_eq!(s.get("P40"), true);
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), false);
+    }
+
+    #[test]
+    fn test_toggle_cold_when_hot() {
+        let mut s = FilterState::default();
+        s.toggle("HOT");
+        assert_eq!(s.is_ascending(), false);
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("COLD");
+        assert_eq!(s.is_ascending(), false);
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("COLD");
+        assert_eq!(s.is_ascending(), false);
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("COLD");
+        assert_eq!(s.is_ascending(), false);
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
     }
 }
