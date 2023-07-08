@@ -39,17 +39,18 @@ code {
 }
 
 .container.heatmap {
+    @include code-font;
     margin-top: 6em;
     margin-left: 1em;
 }
 
 .container.heatmap.hydrated {
-    @include code-font;
     font-size: 0.85em;
 }
 
 .container.heatmap.nodata {
     line-height: 2em;
+    margin-left: 2em;
 }
 
 .container.tracing-status {

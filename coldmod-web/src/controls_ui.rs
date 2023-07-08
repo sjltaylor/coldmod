@@ -19,10 +19,6 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
         cx.join(" ")
     };
 
-    create_effect(cx, move |_| {
-        log!("filter changed: {:?}", rw_filters.get());
-    });
-
     return view! {cx,
     <div class="area controls">
         <div class="container controls">
