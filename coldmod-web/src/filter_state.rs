@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display, ops::Range};
 
 static FILTER_OPTIONS: [&str; 6] = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
 static FILTER_GROUPS: [(usize, usize); 2] = [(0, 1), (1, 6)];
@@ -9,13 +9,16 @@ const _SZ: usize = 6;
 pub struct FilterState {
     names: [&'static str; _SZ],
     range: (usize, usize),
+    cold: bool,
 }
 
 impl Default for FilterState {
     fn default() -> Self {
         let names = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
         let range = (0, 0);
-        Self { names, range }
+        let r = 0..0;
+        let cold = true;
+        Self { names, range, cold }
     }
 }
 
@@ -40,22 +43,35 @@ impl FilterState {
     pub fn get(&self, key: &'static str) -> bool {
         self.state_at(self.idx(key))
     }
-    pub fn toggle(&mut self, key: &'static str) -> bool {
+    pub fn toggle(&mut self, key: &'static str) {
         let idx = self.idx(key);
-        let value = self.state_at(idx);
-        let new_value = !value;
 
-        let (a, mut b) = self.range;
+        let (mut start, mut end) = self.range;
+        let hot_idx = _SZ - 1;
 
-        if idx == 0 && b == 1 {
-            b = 0
-        } else {
-            b = idx + 1
+        if start == end && idx == hot_idx {
+            self.cold = false;
+            end = _SZ;
         }
 
-        self.range = (a, b);
+        if self.cold {
+            if idx == 0 && end == 1 {
+                end = 0;
+                self.cold = true;
+            } else {
+                end = idx + 1;
+            }
+        } else {
+            if idx == hot_idx && start == hot_idx {
+                start = 0;
+                end = 0;
+                self.cold = true;
+            } else {
+                start = idx
+            }
+        }
 
-        new_value
+        self.range = (start, end);
     }
 }
 
@@ -74,116 +90,164 @@ mod tests {
     }
 
     #[test]
-    fn test_sliding_toggle_from_default() {
+    fn test_increasing_cold_toggle() {
         let mut s = FilterState::default();
+        s.toggle("P10");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P20");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P90");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("HOT");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+    }
+
+    #[test]
+    fn test_decreasing_cold_toggle() {
+        let mut s = FilterState::default();
+        s.toggle("P90");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P20");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("P10");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("COLD");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), false);
+        s.toggle("COLD");
         assert_eq!(s.get("COLD"), false);
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
         assert_eq!(s.get("P40"), false);
         assert_eq!(s.get("P90"), false);
         assert_eq!(s.get("HOT"), false);
-        s.toggle("P40");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("HOT");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), true);
-        assert_eq!(s.get("HOT"), true);
     }
 
     #[test]
-    fn test_increasing_toggle() {
-        let mut s = FilterState::default();
-        s.toggle("P10");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), false);
-        assert_eq!(s.get("P40"), false);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P20");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), false);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P40");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P90");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), true);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("HOT");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), true);
-        assert_eq!(s.get("HOT"), true);
-    }
-
-    #[test]
-    fn test_decreasing_toggle() {
+    fn test_increasing_hot_toggle() {
         let mut s = FilterState::default();
         s.toggle("HOT");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), true);
-        assert_eq!(s.get("HOT"), true);
-        s.toggle("P90");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), true);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P40");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), true);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P20");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), true);
-        assert_eq!(s.get("P40"), false);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("P10");
-        assert_eq!(s.get("COLD"), true);
-        assert_eq!(s.get("P10"), true);
-        assert_eq!(s.get("P20"), false);
-        assert_eq!(s.get("P40"), false);
-        assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
-        s.toggle("COLD");
-        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("COLD"), false);
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
         assert_eq!(s.get("P40"), false);
         assert_eq!(s.get("P90"), false);
-        assert_eq!(s.get("HOT"), false);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P90");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P20");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P10");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
         s.toggle("COLD");
+        assert_eq!(s.get("COLD"), true);
+        assert_eq!(s.get("P10"), true);
+        assert_eq!(s.get("P20"), true);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+    }
+
+    #[test]
+    fn test_decreasing_hot_toggle() {
+        let mut s = FilterState::default();
+        s.toggle("HOT");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("P40");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), true);
+        assert_eq!(s.get("P90"), true);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("HOT");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.get("P10"), false);
+        assert_eq!(s.get("P20"), false);
+        assert_eq!(s.get("P40"), false);
+        assert_eq!(s.get("P90"), false);
+        assert_eq!(s.get("HOT"), true);
+        s.toggle("HOT");
         assert_eq!(s.get("COLD"), false);
         assert_eq!(s.get("P10"), false);
         assert_eq!(s.get("P20"), false);
