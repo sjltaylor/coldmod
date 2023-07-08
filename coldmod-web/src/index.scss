@@ -85,6 +85,32 @@ code {
     user-select: none;
 }
 
+.buttons.ascending .button-group:first-child .toggle-button::after {
+    content: "";
+    position: absolute;
+    top: 110%;
+    left: 55%;
+    margin-left: -8px;
+    width: 0;
+    height: 0;
+    border-top: solid 6px black;
+    border-left: solid 6px transparent;
+    border-right: solid 6px transparent;
+}
+
+.buttons.descending .button-group:last-child .toggle-button:last-child::after {
+    content: "";
+    position: absolute;
+    top: 110%;
+    right: 2em;
+    margin-left: -8px;
+    width: 0;
+    height: 0;
+    border-top: solid 6px black;
+    border-left: solid 6px transparent;
+    border-right: solid 6px transparent;
+}
+
 .toggle-button:not(:first-child) {
     border-left: solid 1px black;
 }

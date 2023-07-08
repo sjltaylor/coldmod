@@ -1,8 +1,3 @@
-use std::{collections::HashMap, fmt::Display, ops::Range};
-
-static FILTER_OPTIONS: [&str; 6] = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
-static FILTER_GROUPS: [(usize, usize); 2] = [(0, 1), (1, 6)];
-
 const _SZ: usize = 6;
 const _iSZ: i32 = _SZ as i32;
 
@@ -17,7 +12,6 @@ impl Default for FilterState {
     fn default() -> Self {
         let names = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
         let range = (0, 0);
-        let r = 0..0;
         let cold = true;
         Self { names, range, cold }
     }
@@ -25,10 +19,7 @@ impl Default for FilterState {
 
 impl FilterState {
     pub fn keys(&self) -> Vec<&'static str> {
-        return FILTER_OPTIONS.to_vec();
-    }
-    pub fn groups(&self) -> [(usize, usize); 2] {
-        return FILTER_GROUPS;
+        return self.names.to_vec();
     }
 
     fn idx(&self, key: &str) -> i32 {

@@ -3,12 +3,9 @@ use std::collections::HashMap;
 use crate::filter_state::FilterState;
 use leptos::*;
 
-static FILTER_OPTIONS: [&str; 6] = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
-static FILTER_GROUPS: [(usize, usize); 2] = [(0, 1), (1, 6)];
-
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
-    let mut filter_state = FilterState::default();
+    let filter_state = FilterState::default();
     let keys = filter_state.keys();
     let groups = [keys[0..1].to_vec(), keys[1..keys.len()].to_vec()];
 
@@ -21,6 +18,16 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
 
     let rw_filters = create_rw_signal(cx, filter_state);
 
+    let buttons_classes = move || {
+        let mut cx = vec!["buttons"];
+        if rw_filters.get().is_ascending() {
+            cx.push("ascending");
+        } else {
+            cx.push("descending");
+        }
+        cx.join(" ")
+    };
+
     create_effect(cx, move |_| {
         log!("filter changed: {:?}", rw_filters.get());
     });
@@ -28,7 +35,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
     return view! {cx,
     <div class="area controls">
         <div class="container controls">
-            <div class="buttons">
+            <div class={buttons_classes}>
             {groups.map(|group| {
                     view! {cx,
                     <div class="button-group">
