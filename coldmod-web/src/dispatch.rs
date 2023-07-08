@@ -1,10 +1,6 @@
-use std::{cell::RefCell, rc::Rc, time::Duration};
-
-use coldmod_msg::web::Msg;
-
 use crate::events::AppEvent;
-
-use leptos::*;
+use coldmod_msg::web::Msg;
+use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
 pub struct Dispatch {

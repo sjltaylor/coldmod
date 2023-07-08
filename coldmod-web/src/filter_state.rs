@@ -1,5 +1,5 @@
 const _SZ: usize = 6;
-const _iSZ: i32 = _SZ as i32;
+const _ISZ32: i32 = _SZ as i32;
 
 #[derive(Debug, Copy, Clone)]
 pub struct FilterState {
@@ -42,11 +42,11 @@ impl FilterState {
         let idx = self.idx(key);
 
         let (mut start, mut end) = self.range;
-        let hot_idx = _iSZ - 1;
+        let hot_idx = _ISZ32 - 1;
 
         if start == end && idx == hot_idx {
             self.cold = false;
-            end = _iSZ;
+            end = _ISZ32;
         }
 
         if self.cold {
@@ -67,11 +67,7 @@ impl FilterState {
                 end = idx + 1;
             }
         } else {
-            if idx == hot_idx && start == hot_idx {
-                start = 0;
-                end = 0;
-                self.cold = true;
-            } else if idx == start {
+            if idx == start || (idx == hot_idx && start == hot_idx) {
                 start = 0;
                 end = 0;
                 self.cold = true;
