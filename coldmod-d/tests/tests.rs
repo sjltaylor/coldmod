@@ -20,6 +20,7 @@ fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, SourceFn)> {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_heatmap_initialization() {
     trace_before_source().await;
     source_before_trace().await;

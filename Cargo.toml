@@ -5,3 +5,6 @@ members = [
     "coldmod-msg/rs",
     "coldmod-web"
 ]
+
+[workspace.dependencies]
+cargo-watch =  "8.4.0"

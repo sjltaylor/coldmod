@@ -7,6 +7,7 @@ use leptos::*;
 mod controls_ui;
 mod dispatch;
 mod events;
+mod filter_state;
 mod heatmap_ui;
 mod source;
 mod websocket;

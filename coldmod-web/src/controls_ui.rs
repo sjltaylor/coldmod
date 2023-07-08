@@ -1,18 +1,25 @@
 use std::collections::HashMap;
 
+use crate::filter_state::FilterState;
 use leptos::*;
+
+static FILTER_OPTIONS: [&str; 6] = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
+static FILTER_GROUPS: [(usize, usize); 2] = [(0, 1), (1, 6)];
 
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
-    let keys = vec![vec!["COLD"], vec!["P10", "P20", "P40", "P90", "HOT"]];
+    let mut filter_state = FilterState::default();
+    let keys = filter_state.keys();
+    let groups = [keys[0..1].to_vec(), keys[1..keys.len()].to_vec()];
+
     let mut initial_filter_state = HashMap::<&str, bool>::new();
-    for group in keys.iter() {
-        for key in group {
+    for group in groups.iter() {
+        for key in group.iter() {
             initial_filter_state.insert(key, false);
         }
     }
 
-    let rw_filters = create_rw_signal(cx, initial_filter_state);
+    let rw_filters = create_rw_signal(cx, filter_state);
 
     create_effect(cx, move |_| {
         log!("filter changed: {:?}", rw_filters.get());
@@ -22,16 +29,16 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
     <div class="area controls">
         <div class="container controls">
             <div class="buttons">
-                {keys.into_iter().map(|group| {
+            {groups.map(|group| {
                     view! {cx,
                     <div class="button-group">
                         {group.into_iter().map(|key| {
                             let (is_on,w_is_on) = create_slice(cx, rw_filters,
-                                |h| {
-                                    *h.get(key).unwrap()
+                                |filter_state| {
+                                    filter_state.get(key)
                                 },
-                                |h, n| {
-                                    h.insert(key, n);
+                                move |filter_state, _: ()| {
+                                    filter_state.toggle(key);
                                 })
                             ;
 
@@ -51,7 +58,7 @@ pub fn ToggleButton(
     cx: Scope,
     #[prop(into)] label: String,
     is_on: Signal<bool>,
-    w_is_on: SignalSetter<bool>,
+    w_is_on: SignalSetter<()>,
 ) -> impl IntoView {
     let class_name = move || {
         if is_on.get() {
@@ -62,7 +69,7 @@ pub fn ToggleButton(
 
     return view! {cx,
 
-    <div class={class_name} on:click=move |_| w_is_on.set(!is_on.get())>
+    <div class={class_name} on:click=move |_| w_is_on.set(())>
         <div class="toggle-button-label">{label}</div>
     </div> };
 }
