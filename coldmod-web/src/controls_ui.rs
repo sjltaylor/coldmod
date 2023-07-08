@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::filter_state::FilterState;
 use leptos::*;
 
@@ -8,13 +6,6 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
     let filter_state = FilterState::default();
     let keys = filter_state.keys();
     let groups = [keys[0..1].to_vec(), keys[1..keys.len()].to_vec()];
-
-    let mut initial_filter_state = HashMap::<&str, bool>::new();
-    for group in groups.iter() {
-        for key in group.iter() {
-            initial_filter_state.insert(key, false);
-        }
-    }
 
     let rw_filters = create_rw_signal(cx, filter_state);
 

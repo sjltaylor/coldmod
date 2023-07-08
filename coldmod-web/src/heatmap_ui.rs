@@ -67,7 +67,7 @@ pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
         _ => {}
     });
 
-    return view! {cx, <div>{s}" [trace_count="{count.get()}"]"</div> };
+    return view! {cx, <div>{s}" [trace_count="{count}"]"</div> };
 }
 
 #[component]
