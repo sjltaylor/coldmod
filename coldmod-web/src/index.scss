@@ -38,15 +38,17 @@ code {
     cursor: default;
 }
 
-.container.source-elements {
-    @include code-font;
-    font-size: 0.85em;
-    margin-top: 5em;
+.container.heatmap {
+    margin-top: 6em;
     margin-left: 1em;
 }
 
-.container.message {
-    margin: 0.5em;
+.container.heatmap.hydrated {
+    @include code-font;
+    font-size: 0.85em;
+}
+
+.container.heatmap.nodata {
     line-height: 2em;
 }
 

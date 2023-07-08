@@ -28,7 +28,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
         <Show
             when=move || heat_map.get().is_some()
                 fallback=|cx| view! { cx, <NoDataUI /> }>
-            <div class="container source-elements">
+            <div class="container heatmap hydrated">
                 <For
                     each=heat_sources
                     key=|u| u.source_element.key()
@@ -76,5 +76,5 @@ pub fn NoDataUI(cx: Scope) -> impl IntoView {
     let url = format!("http://{hostname}:7777");
     let cli_cmd = format!("coldmod send --url {url}");
 
-    return view! {cx, <div class="container message">{"No data, use the CLI to scan your source code: "}<code>{cli_cmd}</code></div> };
+    return view! {cx, <div class="container heatmap nodata">"No data."<br />"Use the CLI to scan your source code: "<code>{cli_cmd}</code></div> };
 }
