@@ -18,6 +18,10 @@ impl Default for FilterState {
 }
 
 impl FilterState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn keys(&self) -> Vec<&'static str> {
         return self.names.to_vec();
     }

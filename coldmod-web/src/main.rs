@@ -8,6 +8,7 @@ mod controls_ui;
 mod dispatch;
 mod events;
 mod filter_state;
+mod heatmap_filter;
 mod heatmap_ui;
 mod tracing_status_ui;
 mod websocket;
