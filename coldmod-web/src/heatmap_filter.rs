@@ -6,19 +6,20 @@ use coldmod_msg::web::HeatSource;
     provides an iterator which respects a filter state
 */
 
-struct HeatmapFilter {
-    filter_state: FilterState,
-    heatmap: HeatMap,
+#[derive(Clone)]
+pub struct HeatmapFilter {
+    pub filter_state: FilterState,
+    pub heatmap: HeatMap,
 }
 
 impl HeatmapFilter {
-    fn sources(&self) -> Vec<HeatSource> {
+    pub fn sources(&self) -> Vec<HeatSource> {
         if self.filter_state.is_ascending() {
             return self.heatmap.sources.clone();
         }
         self.heatmap.sources.clone().into_iter().rev().collect()
     }
-    fn set_state(&mut self, filter_state: FilterState) {
+    pub fn set_state(&mut self, filter_state: FilterState) {
         self.filter_state = filter_state;
     }
 }
