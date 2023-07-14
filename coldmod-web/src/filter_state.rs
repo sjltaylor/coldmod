@@ -5,23 +5,23 @@ const _ISZ32: i32 = _SZ as i32;
 pub struct FilterState {
     names: [&'static str; _SZ],
     range: (i32, i32),
-    cold: bool,
+    ascending: bool,
 }
 
 impl Default for FilterState {
     fn default() -> Self {
         let names = ["COLD", "P10", "P20", "P40", "P90", "HOT"];
         let range = (0, 0);
-        let cold = true;
-        Self { names, range, cold }
+        let ascending = true;
+        Self {
+            names,
+            range,
+            ascending,
+        }
     }
 }
 
 impl FilterState {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn keys(&self) -> Vec<&'static str> {
         return self.names.to_vec();
     }
@@ -40,7 +40,22 @@ impl FilterState {
         self.state_at(self.idx(key))
     }
     pub fn is_ascending(&self) -> bool {
-        self.cold
+        self.ascending
+    }
+    pub fn selection(&self) -> (bool, f64, f64) {
+        let (a, b) = self.range;
+
+        if b == 0 {
+            return (true, 0.0, 1.0);
+        }
+
+        let p_values_f = [0.0, 0.1, 0.2, 0.4, 0.9, 0.95];
+
+        if self.ascending {
+            (a == 0, 0.0, p_values_f[(b - 1) as usize])
+        } else {
+            (a == 0, p_values_f[a as usize], 1.0)
+        }
     }
     pub fn toggle(&mut self, key: &'static str) {
         let idx = self.idx(key);
@@ -49,11 +64,11 @@ impl FilterState {
         let hot_idx = _ISZ32 - 1;
 
         if start == end && idx == hot_idx {
-            self.cold = false;
+            self.ascending = false;
             end = _ISZ32;
         }
 
-        if self.cold {
+        if self.ascending {
             if idx == 0 && end > 1 {
                 if start == 1 {
                     start = 0;
@@ -62,11 +77,11 @@ impl FilterState {
                 }
             } else if idx == 0 && end == 1 {
                 end = 0;
-                self.cold = true;
+                self.ascending = true;
             } else if idx == end - 1 {
                 start = 0;
                 end = 0;
-                self.cold = true;
+                self.ascending = true;
             } else {
                 end = idx + 1;
             }
@@ -76,7 +91,7 @@ impl FilterState {
             } else if idx == start || (idx == hot_idx && start == hot_idx) {
                 start = 0;
                 end = 0;
-                self.cold = true;
+                self.ascending = true;
             } else {
                 start = idx
             }
@@ -404,5 +419,34 @@ mod tests {
         assert_eq!(s.get("P40"), true);
         assert_eq!(s.get("P90"), true);
         assert_eq!(s.get("HOT"), true);
+    }
+
+    #[test]
+    fn test_percentile_range() {
+        let mut s = FilterState::default();
+        assert_eq!(s.selection(), (true, 0.0, 1.0));
+
+        s.toggle("COLD");
+        assert_eq!(s.selection(), (true, 0.0, 0.0));
+
+        s.toggle("COLD");
+        assert_eq!(s.get("COLD"), false);
+        assert_eq!(s.selection(), (true, 0.0, 1.0));
+
+        s.toggle("P40");
+        assert_eq!(s.selection(), (true, 0.0, 0.4));
+
+        s.toggle("COLD");
+        assert_eq!(s.selection(), (false, 0.0, 0.4));
+        let mut s = FilterState::default();
+
+        s.toggle("HOT");
+        assert_eq!(s.selection(), (false, 0.95, 1.0));
+
+        s.toggle("P90");
+        assert_eq!(s.selection(), (false, 0.9, 1.0));
+
+        s.toggle("P40");
+        assert_eq!(s.selection(), (false, 0.4, 1.0));
     }
 }

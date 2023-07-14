@@ -1,4 +1,4 @@
-use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
+use crate::heatmap_filter::HeatmapFilter;
 use leptos::*;
 
 #[component]
