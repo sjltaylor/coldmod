@@ -3,7 +3,7 @@ use leptos::*;
 
 #[component]
 pub fn ControlsUI(cx: Scope, rw_filters: RwSignal<Option<HeatmapFilter>>) -> impl IntoView {
-    let keys = rw_filters.get().unwrap().filter_state.keys();
+    let keys = rw_filters.get_untracked().unwrap().filter_state.keys();
     let groups = [keys[0..1].to_vec(), keys[1..keys.len()].to_vec()];
 
     let buttons_classes = move || {

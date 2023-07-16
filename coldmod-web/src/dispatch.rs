@@ -29,16 +29,6 @@ impl Dispatch {
     pub fn emit(&self, event: AppEvent) {
         *self._calling_back.borrow_mut() = true;
 
-        match event {
-            AppEvent::ColdmodMsg(Msg::HeatMapChanged(ref heatmap_delta)) => {
-                for delta in heatmap_delta.deltas.iter() {
-                    let (k, d) = (delta.0.clone(), *delta.1);
-                    self.emit(AppEvent::SourceElementTraceCountChanged((k, d)));
-                }
-            }
-            _ => {}
-        };
-
         self.app_event_cbs
             .borrow_mut()
             .iter_mut()

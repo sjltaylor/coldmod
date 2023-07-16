@@ -1,12 +1,11 @@
 use std::collections::BTreeMap;
 
 use crate::filter_state::FilterState;
+use coldmod_msg::web::ElementKey;
 use coldmod_msg::web::HeatMap;
+use coldmod_msg::web::HeatMapDelta;
 use coldmod_msg::web::HeatSource;
-/*
-    takes a heat map and groups it into buckets according to filter keys
-    provides an iterator which respects a filter state
-*/
+use leptos::*;
 
 #[derive(Clone)]
 pub struct HeatmapFilter {
@@ -78,6 +77,21 @@ impl HeatmapFilter {
         }
 
         selection
+    }
+    pub fn update(&mut self, heatmap_delta: &HeatMapDelta) {
+        // this doesn't need to be a loop, but we haven't created the data structure to look up the heat source
+        // so for now there's a simple optimization - loop from hottest first because that's most likely
+        for source in self.heatmap.sources.iter_mut().rev() {
+            if source.source_element.elem.is_none() {
+                continue;
+            }
+
+            let k = source.source_element.key();
+
+            if let Some(delta) = heatmap_delta.deltas.get(&k) {
+                source.trace_count += *delta;
+            }
+        }
     }
 }
 

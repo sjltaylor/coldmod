@@ -20,6 +20,11 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                 filter_state: FilterState::default(),
                 heatmap: heat_map,
             })),
+            web::Msg::HeatMapChanged(ref heatmap_delta) => {
+                for delta in heatmap_delta.deltas.iter() {
+                    rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
+                }
+            }
             _ => {}
         },
         _ => {}
@@ -35,7 +40,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <div class="container heatmap data">
                         <For
                             each=heat_sources
-                            key=|u| u.source_element.key()
+                            key=|u| format!("{}-{}", u.source_element.key(), u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_source=s /> } />
                     </div>
             </div>
@@ -45,10 +50,6 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
-    let dispatch = use_context::<Dispatch>(cx).unwrap();
-
-    let (count, w_count) = create_signal(cx, heat_source.trace_count);
-
     if heat_source.source_element.elem.is_none() {
         return view! {cx, <div>"???"</div> };
     }
@@ -63,16 +64,7 @@ pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
         }
     };
 
-    dispatch.on_app_event(move |app_event| match app_event {
-        AppEvent::SourceElementTraceCountChanged(ref kd) => {
-            if kd.0 == heat_source.source_element.key() {
-                w_count.update(|c| *c += kd.1);
-            }
-        }
-        _ => {}
-    });
-
-    return view! {cx, <div>{s}" [trace_count="{count}"]"</div> };
+    return view! {cx, <div>{s}" [trace_count="{heat_source.trace_count}"]"</div> };
 }
 
 #[component]
