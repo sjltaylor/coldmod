@@ -1,0 +1,6 @@
+[srcs]
+root="."
+ignore = [
+    "files/**/*",
+    "not_me.py"
+]
