@@ -1,10 +1,10 @@
 import os
 import threading
-from coldmod_py.tracing.queue import Q
+from coldmod_py.tracing.sender import Q
 
 _root_marker_prefix: str = ''
 
-def coldmod_trace_fn(frame, event, _):
+def fn(frame, event, _):
     f_code = frame.f_code
     path = f_code.co_filename
     # path can be None, check the event refers to something in the marked root
