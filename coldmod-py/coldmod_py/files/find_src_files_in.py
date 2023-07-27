@@ -5,7 +5,7 @@ import sys
 import logging
 import tomllib
 
-def find_srcs_in(path: str, ignore: List[str] = []) -> Iterable[str]:
+def find_src_files_in(path: str, ignore: List[str] = []) -> Iterable[str]:
     exclude = set()
 
     for pattern in ignore:

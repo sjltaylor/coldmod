@@ -3,24 +3,18 @@ import os
 import threading
 from . import sender
 from .settrace import fn
-from coldmod_py.files import find_srcs_in
+from coldmod_py.files import find_src_files_in
+from coldmod_py.tracing.src import key_by_location, find_tracing_srcs_in
 import coldmod_py.config
 
-def coldmod_tracing(path: str|None):
+def start(path: str|None):
     config = coldmod_py.config.load(path)
-    srcs = find_srcs_in(config.srcs_root_dir, config.ignore_patterns)
-    # functions = ...
-    # lookup = ...
+    srcs = find_src_files_in(config.srcs_root_dir, config.ignore_patterns)
+    tracing_srcs = key_by_location(find_tracing_srcs_in(config.srcs_root_dir, srcs))
+    _install()
+    sender.start(tracing_srcs)
 
-def coldmod_tracing_root_marker():
-    return _start(path=os.path.dirname(sys._getframe().f_back.f_code.co_filename)) #noqa
-
-def _start(*, path: str):
-    _install(path=path)
-    sender.start()
-
-def _install(*, path: str):
-    # functions._root_marker_prefix = path
+def _install():
     threading.settrace(fn)
     sys.settrace(fn)
 

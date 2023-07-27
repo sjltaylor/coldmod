@@ -6,7 +6,7 @@ def test_find_srcs():
 
     example_app_path = os.path.join(module_dir, "samples", "trace_target_1")
 
-    file_list = coldmod_py.files.find_srcs_in(example_app_path, [
+    file_list = coldmod_py.files.find_src_files_in(example_app_path, [
         "files/**/*",
         "not_me.py"])
 
@@ -25,7 +25,7 @@ def test_find_srcs_without_ignores():
 
     example_app_path = os.path.join(module_dir, "samples", "trace_target_1")
 
-    file_list = coldmod_py.files.find_srcs_in(example_app_path)
+    file_list = coldmod_py.files.find_src_files_in(example_app_path)
 
     file_1 = os.path.join(example_app_path, "__main__.py")
     file_2 = os.path.join(example_app_path, "helper.py")

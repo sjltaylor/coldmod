@@ -16,6 +16,9 @@ For example, we make use of assert to cause runtime exceptions.
 * Run the cli: `python -m coldmod <tracefile> <sourcepath>`
 * to debug just add `breakpoint()`
 
+## Development
+
+### Editable install
 
 
 ## CLI

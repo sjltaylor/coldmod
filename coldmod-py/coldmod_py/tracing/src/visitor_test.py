@@ -1,8 +1,8 @@
-import ast
+import libcst as cst
 from .visitor import _visit_module
 
 def test_visit_no_functions():
-    module = ast.parse('')
+    module = cst.parse_module('')
     tracing_srcs = _visit_module("path", module)
     assert len(list(tracing_srcs)) == 0
 
@@ -27,7 +27,7 @@ class Class1():
 
 def test_visit_many_functions():
     # a file with multiple functions incl one in a class and one with a duplicate body
-    module = ast.parse(_src)
+    module = cst.parse_module(_src)
     tracing_srcs = list(_visit_module("the/path", module))
     assert len(tracing_srcs) == 4
 
@@ -38,3 +38,4 @@ def test_visit_many_functions():
     assert tracing_src.name == "__init__"
     assert tracing_src.path == "the/path"
     assert tracing_src.lineno == 15
+    assert tracing_src.class_name_path == "Class1"
