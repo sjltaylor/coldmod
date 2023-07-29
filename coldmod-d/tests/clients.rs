@@ -1,10 +1,8 @@
-use coldmod_msg::proto::{
-    ops_daemon_client::OpsDaemonClient, source_daemon_client::SourceDaemonClient, source_element,
-    tracing_daemon_client::TracingDaemonClient, SourceElement, SourceFn, SourceScan, Trace,
-};
+use coldmod_msg::proto::traces_client::TracesClient;
+use coldmod_msg::proto::{ops_daemon_client::OpsDaemonClient, Trace, TraceSrc, TraceSrcs};
 use coldmod_msg::web::{HeatMap, TracingStats};
 use futures_util::stream;
-use futures_util::{StreamExt};
+use futures_util::StreamExt;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
@@ -25,27 +23,24 @@ impl Clients {
     }
 
     pub async fn send_some_traces(&self) {
-        let mut client = TracingDaemonClient::connect("http://127.0.0.1:7777")
+        let mut client = TracesClient::connect("http://127.0.0.1:7777")
             .await
             .unwrap();
 
         let trace_1 = Trace {
-            path: "/a/path/to/a/file".into(),
-            line: 7263,
+            digest: "7263".into(),
             process_id: 1231231,
             thread_id: 1230920,
         };
 
         let trace_2 = Trace {
-            path: "/a/path/to/another/file".into(),
-            line: 191,
+            digest: "191".into(),
             process_id: 1231231,
             thread_id: 1230920,
         };
 
         let trace_3 = Trace {
-            path: "/a/path/to/a/file".into(),
-            line: 7263,
+            digest: "7263".into(),
             process_id: 1231231,
             thread_id: 1230920,
         };
@@ -57,43 +52,43 @@ impl Clients {
     }
 
     pub async fn send_the_source(&self) {
-        let mut client = SourceDaemonClient::connect("http://127.0.0.1:7777")
+        let mut client = TracesClient::connect("http://127.0.0.1:7777")
             .await
             .unwrap();
 
         let es = vec![
-            SourceElement {
-                elem: Some(source_element::Elem::Fn(SourceFn {
-                    name: "fn_name".into(),
-                    class_name: None,
-                    path: "/a/path/to/a/file".into(),
-                    line: 7263,
-                })),
+            TraceSrc {
+                name: "fn_name".into(),
+                class_name_path: None,
+                path: "/a/path/to/a/file".into(),
+                src: "src_code".into(),
+                digest: "7263".into(),
+                lineno: 7263,
             },
-            SourceElement {
-                elem: Some(source_element::Elem::Fn(SourceFn {
-                    name: "fn_name".into(),
-                    class_name: None,
-                    path: "/a/path/to/another/file".into(),
-                    line: 191,
-                })),
+            TraceSrc {
+                name: "fn_name".into(),
+                class_name_path: None,
+                path: "/a/path/to/another/file".into(),
+                src: "src_code".into(),
+                digest: "191".into(),
+                lineno: 191,
             },
-            SourceElement {
-                elem: Some(source_element::Elem::Fn(SourceFn {
-                    name: "fn_name".into(),
-                    class_name: None,
-                    path: "/a/path/to/a/file".into(),
-                    line: 1323,
-                })),
+            TraceSrc {
+                name: "fn_name".into(),
+                path: "/a/path/to/a/file".into(),
+                class_name_path: None,
+                src: "src_code".into(),
+                digest: "1323".into(),
+                lineno: 1323,
             },
         ];
 
-        let source = SourceScan {
-            coldmod_root_marker_path: "/a".into(),
-            source_elements: es,
+        let source = TraceSrcs {
+            root_path: "/a".into(),
+            trace_srcs: es,
         };
 
-        let response = client.submit(source).await;
+        let response = client.register(source).await;
 
         assert!(response.is_ok(), "{:?}", response);
     }

@@ -75,16 +75,12 @@ impl RedisStore {
         &mut self,
         compute_delta: bool,
     ) -> Result<Option<HeatMapDelta>, RedisError> {
-        let (heatmap_exists, last_update_id_from_tracing_stream, root_path): (
-            bool,
-            Option<String>,
-            Option<String>,
-        ) = redis::pipe()
-            .exists("heat-map")
-            .hget("heat-map-status", "last-update-id-from-tracing-stream")
-            .hget("source-scan", "root_path")
-            .query_async(&mut self.connection)
-            .await?;
+        let (heatmap_exists, last_update_id_from_tracing_stream): (bool, Option<String>) =
+            redis::pipe()
+                .exists("heat-map")
+                .hget("heat-map-status", "last-update-id-from-tracing-stream")
+                .query_async(&mut self.connection)
+                .await?;
 
         if !heatmap_exists {
             tracing::info!("no heatmap exists");
@@ -94,13 +90,6 @@ impl RedisStore {
         let mut tracing_stream_last_id = last_update_id_from_tracing_stream;
 
         let mut heat_map_deltas = HeatMapDelta::default();
-
-        let root_path = root_path.expect("no root_path");
-        let coldmod_root_marker_prefix = std::path::Path::new(&root_path)
-            .parent()
-            .unwrap()
-            .to_str()
-            .unwrap();
 
         loop {
             let start_specifier = match &tracing_stream_last_id {
@@ -220,17 +209,6 @@ impl RedisStore {
     }
 
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {
-        let root_path: String = self
-            .trace_connection
-            .hget("source-scan", "root_path")
-            .await?;
-
-        let coldmod_root_marker_prefix = std::path::Path::new(&root_path)
-            .parent()
-            .unwrap()
-            .to_str()
-            .unwrap();
-
         let exists: bool = self
             .trace_connection
             .hexists("heat-map", &trace.digest)
