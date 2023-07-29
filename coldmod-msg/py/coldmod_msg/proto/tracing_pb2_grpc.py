@@ -2,11 +2,11 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from coldmod_msg.proto import heat_pb2 as coldmod__msg_dot_proto_dot_heat__pb2
+from coldmod_msg.proto import tracing_pb2 as coldmod__msg_dot_proto_dot_tracing__pb2
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-class HeatMapsStub(object):
+class TracesStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,58 +15,58 @@ class HeatMapsStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.availability = channel.unary_unary(
-                '/coldmod_msg.proto.source.HeatMaps/availability',
-                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=coldmod__msg_dot_proto_dot_heat__pb2.HeatMapRegister.FromString,
+        self.collect = channel.stream_unary(
+                '/coldmod_msg.proto.tracing.Traces/collect',
+                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.Trace.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
-        self.submit = channel.unary_unary(
-                '/coldmod_msg.proto.source.HeatMaps/submit',
-                request_serializer=coldmod__msg_dot_proto_dot_heat__pb2.HeatMap.SerializeToString,
+        self.register = channel.unary_unary(
+                '/coldmod_msg.proto.tracing.Traces/register',
+                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
 
 
-class HeatMapsServicer(object):
+class TracesServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def availability(self, request, context):
+    def collect(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def submit(self, request, context):
+    def register(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_HeatMapsServicer_to_server(servicer, server):
+def add_TracesServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'availability': grpc.unary_unary_rpc_method_handler(
-                    servicer.availability,
-                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=coldmod__msg_dot_proto_dot_heat__pb2.HeatMapRegister.SerializeToString,
+            'collect': grpc.stream_unary_rpc_method_handler(
+                    servicer.collect,
+                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.Trace.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
-            'submit': grpc.unary_unary_rpc_method_handler(
-                    servicer.submit,
-                    request_deserializer=coldmod__msg_dot_proto_dot_heat__pb2.HeatMap.FromString,
+            'register': grpc.unary_unary_rpc_method_handler(
+                    servicer.register,
+                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'coldmod_msg.proto.source.HeatMaps', rpc_method_handlers)
+            'coldmod_msg.proto.tracing.Traces', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class HeatMaps(object):
+class Traces(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def availability(request,
+    def collect(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -76,14 +76,14 @@ class HeatMaps(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.source.HeatMaps/availability',
-            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            coldmod__msg_dot_proto_dot_heat__pb2.HeatMapRegister.FromString,
+        return grpc.experimental.stream_unary(request_iterator, target, '/coldmod_msg.proto.tracing.Traces/collect',
+            coldmod__msg_dot_proto_dot_tracing__pb2.Trace.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def submit(request,
+    def register(request,
             target,
             options=(),
             channel_credentials=None,
@@ -93,8 +93,8 @@ class HeatMaps(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.source.HeatMaps/submit',
-            coldmod__msg_dot_proto_dot_heat__pb2.HeatMap.SerializeToString,
+        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/register',
+            coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

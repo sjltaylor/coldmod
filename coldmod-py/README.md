@@ -31,3 +31,7 @@ The CLI is used to apply code mods and check trace configuration.
 ```
 insert generated man page here
 ```
+
+## pyright
+
+run it with brew install, it uses node... so I don't want to make every install it as a dep

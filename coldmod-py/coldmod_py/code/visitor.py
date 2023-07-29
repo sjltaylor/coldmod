@@ -1,6 +1,6 @@
 import os
 from typing import Dict, Iterable, List, Tuple, Any, Optional
-from .tracing_src import TracingSrc
+from coldmod_msg.proto.tracing_pb2 import TraceSrc
 from hashlib import blake2b
 import ast
 import libcst
@@ -14,7 +14,7 @@ class FunctionFinder(libcst.CSTVisitor):
         self.path = path
         # stack for storing the canonical name of the current function
         self.class_name_stack: List[str] = []
-        self.tracing_srcs: List[TracingSrc] = []
+        self.trace_srcs: List[TraceSrc] = []
 
     def visit_ClassDef(self, node: libcst.ClassDef) -> Optional[bool]:
         self.class_name_stack.append(node.name.value)
@@ -25,24 +25,24 @@ class FunctionFinder(libcst.CSTVisitor):
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
         name = node.name.value
         class_name_path = '.'.join(self.class_name_stack) if self.class_name_stack else None
-        line = self.get_metadata(libcst.metadata.PositionProvider, node).start.line
+        lineno = self.get_metadata(libcst.metadata.PositionProvider, node).start.line
         stripped_src = ast.dump(ast.parse(self.module.code_for_node(node)))
         digest = blake2b(stripped_src.encode('utf-8')).hexdigest()
 
-        self.tracing_srcs.append(TracingSrc(path=self.path, name=name, lineno=line, digest=digest, class_name_path=class_name_path, src=stripped_src))
+        self.trace_srcs.append(TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=stripped_src))
 
         return False # don't visit nested functions
 
 
-def _visit_module(path: str, module: libcst.Module) -> Iterable[TracingSrc]:
+def _visit_module(path: str, module: libcst.Module) -> Iterable[TraceSrc]:
     wrapper = libcst.metadata.MetadataWrapper(module)
 
     visitor = FunctionFinder(module=module, path=path)
     wrapper.visit(visitor)
 
-    return visitor.tracing_srcs
+    return visitor.trace_srcs
 
-def _visit_all(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> Iterable[TracingSrc]:
+def _visit_all(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> Iterable[TraceSrc]:
     for abs_path, module in modules.items():
         path = os.path.relpath(abs_path, srcs_root_dir)
         for source in _visit_module(path, module):
