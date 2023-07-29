@@ -22,12 +22,12 @@ class CLI:
         for path in files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns):
             print(path)
 
-    def tracing_src(self):
+    def heat_srcs(self):
         """
         print the src scan used to generate the coldmod tracing
         """
         paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        for tracing_src in src.find_tracing_srcs_in(paths):
+        for tracing_src in src.find_heat_srcs_in(self.config.srcs_root_dir, paths):
             print(f"{tracing_src.name}:{tracing_src.digest}\n{tracing_src.path}:{tracing_src.lineno}\n")
 
 if __name__ == "__main__":

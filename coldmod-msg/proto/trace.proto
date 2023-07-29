@@ -5,12 +5,11 @@ import "google/protobuf/empty.proto";
 package coldmod_msg.proto.trace;
 
 message Trace {
-  string path = 1;
-  uint32 line = 2;
-  uint64 thread_id = 3;
-  uint64 process_id = 4;
+  string digest = 1;
+  uint64 thread_id = 2;
+  uint64 process_id = 3;
 }
 
-service TracingDaemon {
+service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
 }
