@@ -1,4 +1,4 @@
-use crate::proto::{SourceElement, SourceScan, Trace};
+use crate::proto::{Trace, TraceSrc, TraceSrcs};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum Msg {
     Reset,
     TraceReceived(Trace),
-    SourceReceived(SourceScan),
+    SourceReceived(TraceSrcs),
     HeatMapAvailable(HeatMap),
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
@@ -43,29 +43,6 @@ pub struct HeatMapDelta {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatSource {
-    pub source_element: SourceElement,
+    pub source_element: TraceSrc,
     pub trace_count: i64,
-}
-
-pub trait ElementKey {
-    fn key(&self) -> String;
-}
-
-impl ElementKey for SourceElement {
-    fn key(&self) -> String {
-        match self.elem.as_ref().expect("source element to be present") {
-            crate::proto::source_element::Elem::Fn(f) => format!("{}:{}", f.path, f.line),
-        }
-    }
-}
-
-impl Trace {
-    pub fn key(&self, coldmod_root_marker_prefix: impl Into<String>) -> String {
-        format!(
-            "{}/{}:{}",
-            coldmod_root_marker_prefix.into(),
-            self.path,
-            self.line
-        )
-    }
 }

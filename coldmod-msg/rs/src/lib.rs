@@ -1,11 +1,7 @@
 pub mod proto {
     include!(concat!(
         env!("OUT_DIR"),
-        concat!("/", "coldmod_msg.proto.trace", ".rs")
-    ));
-    include!(concat!(
-        env!("OUT_DIR"),
-        concat!("/", "coldmod_msg.proto.source", ".rs")
+        concat!("/", "coldmod_msg.proto.tracing", ".rs")
     ));
     include!(concat!(
         env!("OUT_DIR"),

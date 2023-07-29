@@ -45,11 +45,11 @@ struct Load {
 #[argh(subcommand, name = "trace")]
 struct Trace {
     #[argh(positional)]
-    /// source element key
-    key: String,
+    /// tracing src digest
+    digest: String,
 
     #[argh(option, short = 'n')]
-    /// source element key
+    /// how many traces to simulated
     incr: Option<usize>,
 }
 
@@ -91,7 +91,7 @@ async fn main() {
             }
         },
         Subcommand::Trace(trace) => {
-            simulate::simulate_tracing(trace.key, trace.incr).await;
+            simulate::simulate_tracing(trace.digest, trace.incr).await;
         }
     }
 }
