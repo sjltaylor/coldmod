@@ -8,9 +8,9 @@ use clients::Clients;
 
 fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, TraceSrc)> {
     heatmap
-        .sources
+        .srcs
         .into_iter()
-        .map(|elem| (elem.trace_count, elem.source_element))
+        .map(|elem| (elem.trace_count, elem.trace_src))
         .collect()
 }
 

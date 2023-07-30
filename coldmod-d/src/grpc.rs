@@ -1,4 +1,4 @@
-use coldmod_msg::proto::ops_daemon_server::{OpsDaemon, OpsDaemonServer};
+use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
 use coldmod_msg::proto::{OpsStatus, Trace, TraceSrcs};
 use coldmod_msg::web::Msg;
@@ -13,7 +13,7 @@ pub struct Tracing {
 }
 
 #[derive(Clone)]
-pub struct ColdmodOpsDaemon {
+pub struct ColdmodOps {
     dispatch: Dispatch,
 }
 
@@ -40,7 +40,7 @@ impl Traces for Tracing {
         let scan = request.into_inner();
         match self
             .dispatch
-            .handle(coldmod_msg::web::Msg::SourceReceived(scan))
+            .handle(coldmod_msg::web::Msg::TraceSrcsReceived(scan))
             .await
         {
             Ok(_) => {}
@@ -53,7 +53,7 @@ impl Traces for Tracing {
 }
 
 #[tonic::async_trait]
-impl OpsDaemon for ColdmodOpsDaemon {
+impl Ops for ColdmodOps {
     async fn status(&self, _: Request<()>) -> Result<Response<OpsStatus>, Status> {
         Ok(Response::new(OpsStatus { ok: true }))
     }
@@ -72,7 +72,7 @@ pub async fn server(dispatch: &Dispatch) {
     let tracing_d = Tracing {
         dispatch: dispatch.clone(),
     };
-    let ops_d = ColdmodOpsDaemon {
+    let ops_d = ColdmodOps {
         dispatch: dispatch.clone(),
     };
 
@@ -84,7 +84,7 @@ pub async fn server(dispatch: &Dispatch) {
         .add_service(TracesServer::new(tracing_d));
 
     if let Ok(_) = std::env::var("COLDMOD_OPS") {
-        builder = builder.add_service(OpsDaemonServer::new(ops_d));
+        builder = builder.add_service(OpsServer::new(ops_d));
     }
 
     match builder.serve(addr).await {

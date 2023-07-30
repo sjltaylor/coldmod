@@ -8,7 +8,7 @@ message OpsStatus {
     bool ok = 1;
 }
 
-service OpsDaemon {
+service Ops {
  rpc status(google.protobuf.Empty) returns (OpsStatus);
  rpc reset_state(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

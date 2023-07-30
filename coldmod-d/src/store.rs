@@ -1,6 +1,6 @@
 use coldmod_msg::{
     proto::{Trace, TraceSrc, TraceSrcs},
-    web::{HeatMap, HeatMapDelta, HeatSource},
+    web::{HeatMap, HeatMapDelta, HeatSrc},
 };
 use prost::Message;
 use redis::AsyncCommands;
@@ -164,15 +164,13 @@ impl RedisStore {
         let heat_sources = trace_srcs
             .into_iter()
             .zip(counts)
-            .map(|(trace_src, trace_count)| HeatSource {
-                source_element: trace_src,
+            .map(|(trace_src, trace_count)| HeatSrc {
+                trace_src,
                 trace_count,
             })
             .collect();
 
-        Ok(Some(HeatMap {
-            sources: heat_sources,
-        }))
+        Ok(Some(HeatMap { srcs: heat_sources }))
     }
 
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {

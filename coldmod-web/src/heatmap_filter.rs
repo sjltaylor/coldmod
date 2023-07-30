@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::filter_state::FilterState;
 use coldmod_msg::web::HeatMap;
 use coldmod_msg::web::HeatMapDelta;
-use coldmod_msg::web::HeatSource;
+use coldmod_msg::web::HeatSrc;
 
 #[derive(Clone)]
 pub struct HeatmapFilter {
@@ -12,13 +12,13 @@ pub struct HeatmapFilter {
 }
 
 impl HeatmapFilter {
-    pub fn sources(&self) -> Vec<HeatSource> {
-        let mut not_cold: BTreeMap<i64, Vec<&HeatSource>> = BTreeMap::new();
+    pub fn sources(&self) -> Vec<HeatSrc> {
+        let mut not_cold: BTreeMap<i64, Vec<&HeatSrc>> = BTreeMap::new();
         let mut not_cold_count = 0;
 
-        let mut cold = Vec::<&HeatSource>::new();
+        let mut cold = Vec::<&HeatSrc>::new();
 
-        for source in self.heatmap.sources.iter() {
+        for source in self.heatmap.srcs.iter() {
             let trace_count = source.trace_count;
             if trace_count == 0 {
                 cold.push(source);
@@ -26,7 +26,7 @@ impl HeatmapFilter {
             }
             let bucket = not_cold
                 .entry(trace_count)
-                .or_insert(Vec::<&HeatSource>::new());
+                .or_insert(Vec::<&HeatSrc>::new());
             bucket.push(source);
             not_cold_count += 1;
         }
@@ -37,7 +37,7 @@ impl HeatmapFilter {
             (not_cold_count as f64 * p_upper).ceil() as usize,
         );
 
-        let mut buckets: Vec<&Vec<&HeatSource>> = Vec::new();
+        let mut buckets: Vec<&Vec<&HeatSrc>> = Vec::new();
 
         let _all = not_cold
             .clone()
@@ -58,7 +58,7 @@ impl HeatmapFilter {
             i = j;
         }
 
-        let base: Box<dyn Iterator<Item = &Vec<&HeatSource>>> = if include_zero {
+        let base: Box<dyn Iterator<Item = &Vec<&HeatSrc>>> = if include_zero {
             Box::new(vec![&cold].into_iter().chain(buckets.into_iter()))
         } else {
             Box::new(buckets.into_iter())
@@ -79,8 +79,8 @@ impl HeatmapFilter {
     pub fn update(&mut self, heatmap_delta: &HeatMapDelta) {
         // this doesn't need to be a loop, but we haven't created the data structure to look up the heat source
         // so for now there's a simple optimization - loop from hottest first because that's most likely
-        for source in self.heatmap.sources.iter_mut().rev() {
-            let k = source.source_element.digest.clone();
+        for source in self.heatmap.srcs.iter_mut().rev() {
+            let k = source.trace_src.digest.clone();
 
             if let Some(delta) = heatmap_delta.deltas.get(&k) {
                 source.trace_count += *delta;
@@ -116,44 +116,44 @@ mod tests {
     }
 
     fn heatmap_sample_1() -> HeatMap {
-        let mut sources = Vec::<HeatSource>::new();
+        let mut sources = Vec::<HeatSrc>::new();
         let vs: Vec<i64> = vec![1, 6, 7, 3, 4, 0, 2, 8, 9, 10, 5];
 
         for i in vs.iter() {
-            sources.push(HeatSource {
-                source_element: trace_src_stub(),
+            sources.push(HeatSrc {
+                trace_src: trace_src_stub(),
                 trace_count: *i,
             });
         }
 
-        HeatMap { sources }
+        HeatMap { srcs: sources }
     }
 
     fn heatmap_sample_2() -> HeatMap {
-        let mut sources = Vec::<HeatSource>::new();
+        let mut sources = Vec::<HeatSrc>::new();
 
         let vs: Vec<i64> = vec![1, 5, 2, 0, 6, 324, 0, 4, 23, 166, 0];
 
         for i in vs.iter() {
-            sources.push(HeatSource {
-                source_element: trace_src_stub(),
+            sources.push(HeatSrc {
+                trace_src: trace_src_stub(),
                 trace_count: *i,
             });
         }
 
-        HeatMap { sources }
+        HeatMap { srcs: sources }
     }
 
     fn heatmap_sample_3() -> HeatMap {
-        let mut sources = Vec::<HeatSource>::new();
+        let mut sources = Vec::<HeatSrc>::new();
         for _ in 0..10 {
-            sources.push(HeatSource {
-                source_element: trace_src_stub(),
+            sources.push(HeatSrc {
+                trace_src: trace_src_stub(),
                 trace_count: 5,
             });
         }
 
-        HeatMap { sources }
+        HeatMap { srcs: sources }
     }
 
     #[test]

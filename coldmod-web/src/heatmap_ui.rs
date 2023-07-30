@@ -3,7 +3,7 @@ use crate::dispatch::Dispatch;
 use crate::events;
 use crate::filter_state::FilterState;
 use crate::heatmap_filter::HeatmapFilter;
-use coldmod_msg::web::{self, HeatSource};
+use coldmod_msg::web::{self, HeatSrc};
 use leptos::*;
 
 #[component]
@@ -38,7 +38,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <div class="container heatmap data">
                         <For
                             each=heat_sources
-                            key=|u| format!("{}-{}", u.source_element.digest, u.trace_count)
+                            key=|u| format!("{}-{}", u.trace_src.digest, u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_source=s /> } />
                     </div>
             </div>
@@ -47,8 +47,8 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
-    let trace_src = heat_source.source_element;
+pub fn HeatSourceUI(cx: Scope, heat_source: HeatSrc) -> impl IntoView {
+    let trace_src = heat_source.trace_src;
 
     let mut buffer = String::from(format!(
         "{}:{} [name={}]",
