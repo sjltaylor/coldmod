@@ -51,7 +51,7 @@ impl Clients {
         assert!(response.is_ok(), "{:?}", response);
     }
 
-    pub async fn send_the_source(&self) {
+    pub async fn send_tracing_srcs(&self) {
         let mut client = TracesClient::connect("http://127.0.0.1:7777")
             .await
             .unwrap();
