@@ -1,3 +1,4 @@
+use coldmod_msg::web;
 use console_error_panic_hook;
 use dispatch::Dispatch;
 use heatmap_ui::HeatMapUI;
@@ -14,10 +15,24 @@ mod tracing_status_ui;
 mod websocket;
 
 #[component]
-fn Container(cx: Scope, dispatch: Dispatch) -> impl IntoView {
+fn App(cx: Scope, dispatch: Dispatch) -> impl IntoView {
     let (_active_view, _set_active_view) = create_signal(cx, 0);
 
-    provide_context(cx, dispatch);
+    provide_context(cx, dispatch.clone());
+
+    let (tracing_status, w_tracing_stats) = create_signal(cx, Option::<web::TracingStats>::None);
+
+    provide_context(cx, tracing_status);
+
+    dispatch.on_app_event(move |app_event| match app_event {
+        events::AppEvent::ColdmodMsg(msg) => match msg {
+            web::Msg::TracingStatsAvailable(tracing_stats) => {
+                w_tracing_stats.set(Some(tracing_stats));
+            }
+            _ => {}
+        },
+        _ => {}
+    });
 
     return view! { cx,
         <main>
@@ -35,5 +50,5 @@ fn main() {
 
     websocket::start(dispatch.clone());
 
-    mount_to_body(|cx| view! { cx,  <Container dispatch=dispatch></Container> });
+    mount_to_body(|cx| view! { cx,  <App dispatch=dispatch></App> });
 }

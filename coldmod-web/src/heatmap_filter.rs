@@ -1,11 +1,9 @@
 use std::collections::BTreeMap;
 
 use crate::filter_state::FilterState;
-use coldmod_msg::web::ElementKey;
 use coldmod_msg::web::HeatMap;
 use coldmod_msg::web::HeatMapDelta;
 use coldmod_msg::web::HeatSource;
-use leptos::*;
 
 #[derive(Clone)]
 pub struct HeatmapFilter {
@@ -82,11 +80,7 @@ impl HeatmapFilter {
         // this doesn't need to be a loop, but we haven't created the data structure to look up the heat source
         // so for now there's a simple optimization - loop from hottest first because that's most likely
         for source in self.heatmap.sources.iter_mut().rev() {
-            if source.source_element.elem.is_none() {
-                continue;
-            }
-
-            let k = source.source_element.key();
+            let k = source.source_element.digest.clone();
 
             if let Some(delta) = heatmap_delta.deltas.get(&k) {
                 source.trace_count += *delta;
@@ -98,7 +92,18 @@ impl HeatmapFilter {
 #[cfg(test)]
 mod tests {
 
-    use coldmod_msg::proto::SourceElement;
+    use coldmod_msg::proto::TraceSrc;
+
+    fn trace_src_stub() -> TraceSrc {
+        TraceSrc {
+            src: "STUB".to_string(),
+            digest: "STUB".to_string(),
+            path: "STUB".to_string(),
+            lineno: 0,
+            name: "STUB".to_string(),
+            class_name_path: None,
+        }
+    }
 
     use super::*;
 
@@ -112,13 +117,11 @@ mod tests {
 
     fn heatmap_sample_1() -> HeatMap {
         let mut sources = Vec::<HeatSource>::new();
-        let source_element = SourceElement { elem: None };
-
         let vs: Vec<i64> = vec![1, 6, 7, 3, 4, 0, 2, 8, 9, 10, 5];
 
         for i in vs.iter() {
             sources.push(HeatSource {
-                source_element: source_element.clone(),
+                source_element: trace_src_stub(),
                 trace_count: *i,
             });
         }
@@ -128,13 +131,12 @@ mod tests {
 
     fn heatmap_sample_2() -> HeatMap {
         let mut sources = Vec::<HeatSource>::new();
-        let source_element = SourceElement { elem: None };
 
         let vs: Vec<i64> = vec![1, 5, 2, 0, 6, 324, 0, 4, 23, 166, 0];
 
         for i in vs.iter() {
             sources.push(HeatSource {
-                source_element: source_element.clone(),
+                source_element: trace_src_stub(),
                 trace_count: *i,
             });
         }
@@ -144,10 +146,9 @@ mod tests {
 
     fn heatmap_sample_3() -> HeatMap {
         let mut sources = Vec::<HeatSource>::new();
-        let source_element = SourceElement { elem: None };
         for _ in 0..10 {
             sources.push(HeatSource {
-                source_element: source_element.clone(),
+                source_element: trace_src_stub(),
                 trace_count: 5,
             });
         }

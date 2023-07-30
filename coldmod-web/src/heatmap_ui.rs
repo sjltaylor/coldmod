@@ -1,9 +1,9 @@
 use crate::controls_ui::ControlsUI;
+use crate::dispatch::Dispatch;
 use crate::events;
 use crate::filter_state::FilterState;
 use crate::heatmap_filter::HeatmapFilter;
-use crate::{dispatch::Dispatch, events::AppEvent};
-use coldmod_msg::web::{self, ElementKey, HeatSource};
+use coldmod_msg::web::{self, HeatSource};
 use leptos::*;
 
 #[component]
@@ -21,9 +21,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                 heatmap: heat_map,
             })),
             web::Msg::HeatMapChanged(ref heatmap_delta) => {
-                for delta in heatmap_delta.deltas.iter() {
-                    rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
-                }
+                rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
             }
             _ => {}
         },
@@ -40,7 +38,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <div class="container heatmap data">
                         <For
                             each=heat_sources
-                            key=|u| format!("{}-{}", u.source_element.key(), u.trace_count)
+                            key=|u| format!("{}-{}", u.source_element.digest, u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_source=s /> } />
                     </div>
             </div>
@@ -50,21 +48,17 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn HeatSourceUI(cx: Scope, heat_source: HeatSource) -> impl IntoView {
-    if heat_source.source_element.elem.is_none() {
-        return view! {cx, <div>"???"</div> };
+    let trace_src = heat_source.source_element;
+
+    let mut buffer = String::from(format!(
+        "{}:{} [name={}]",
+        trace_src.path, trace_src.lineno, trace_src.name
+    ));
+    if let Some(class_name_path) = trace_src.class_name_path {
+        buffer.push_str(format!(" [class={}]", class_name_path).as_str());
     }
 
-    let s = match heat_source.source_element.elem.as_ref().unwrap() {
-        coldmod_msg::proto::source_element::Elem::Fn(f) => {
-            let mut buffer = String::from(format!("{}:{} [name={}]", f.path, f.line, f.name));
-            if f.class_name.is_some() {
-                buffer.push_str(format!(" [class={}]", f.class_name.as_ref().unwrap()).as_str());
-            }
-            buffer
-        }
-    };
-
-    return view! {cx, <div>{s}" [trace_count="{heat_source.trace_count}"]"</div> };
+    return view! {cx, <div>{buffer}" [trace_count="{heat_source.trace_count}"]"</div> };
 }
 
 #[component]

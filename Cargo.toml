@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "coldmod-d",
     "coldmod-msg/rs",
-    "coldmod-web"
+    "coldmod-web",
 ]
 
 [workspace.dependencies]

@@ -1,5 +1,4 @@
 use crate::events::AppEvent;
-use coldmod_msg::web::Msg;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
