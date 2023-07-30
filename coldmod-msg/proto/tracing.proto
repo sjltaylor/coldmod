@@ -6,8 +6,8 @@ package coldmod_msg.proto.tracing;
 
 message Trace {
   string digest = 1;
-  uint64 thread_id = 2;
-  uint64 process_id = 3;
+  string thread_id = 2;
+  string process_id = 3;
 }
 
 message TraceSrc {

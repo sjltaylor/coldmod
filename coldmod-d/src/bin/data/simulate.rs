@@ -13,8 +13,8 @@ pub(crate) async fn simulate_tracing(digest: String, incr: Option<usize>) {
     for _ in 0..c {
         traces.push(Trace {
             digest: digest.clone(),
-            process_id: 0,
-            thread_id: 0,
+            process_id: "0".into(),
+            thread_id: "0".into(),
         });
     }
 

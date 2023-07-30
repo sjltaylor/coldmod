@@ -34,7 +34,7 @@ impl Dispatch {
                 self._pulse_rate_limiter();
             }
             Msg::SourceReceived(scan) => {
-                store.initialize_heat_map(&scan).await?;
+                store.register_trace_srcs(&scan).await?;
                 let heat_map = store.get_heat_map().await?.unwrap();
                 self._broadcast(Msg::HeatMapAvailable(heat_map));
             }

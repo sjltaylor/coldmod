@@ -29,20 +29,20 @@ impl Clients {
 
         let trace_1 = Trace {
             digest: "7263".into(),
-            process_id: 1231231,
-            thread_id: 1230920,
+            process_id: "1231231".into(),
+            thread_id: "1230920".into(),
         };
 
         let trace_2 = Trace {
             digest: "191".into(),
-            process_id: 1231231,
-            thread_id: 1230920,
+            process_id: "1231231".into(),
+            thread_id: "1230920".into(),
         };
 
         let trace_3 = Trace {
             digest: "7263".into(),
-            process_id: 1231231,
-            thread_id: 1230920,
+            process_id: "1231231".into(),
+            thread_id: "1230920".into(),
         };
 
         let traces = vec![trace_1, trace_2, trace_3];

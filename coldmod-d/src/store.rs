@@ -1,10 +1,10 @@
 use coldmod_msg::{
-    proto::{Trace, TraceSrcs},
+    proto::{Trace, TraceSrc, TraceSrcs},
     web::{HeatMap, HeatMapDelta, HeatSource},
 };
 use prost::Message;
 use redis::AsyncCommands;
-use redis::{streams::StreamRangeReply, RedisError, Value};
+use redis::{streams::StreamRangeReply, RedisError};
 
 #[derive(Clone)]
 pub struct RedisStore {
@@ -35,50 +35,48 @@ impl RedisStore {
         }
     }
 
-    pub async fn initialize_heat_map(&mut self, trace_srcs: &TraceSrcs) -> Result<(), RedisError> {
-        let bytes = trace_srcs.encode_to_vec();
+    pub async fn register_trace_srcs(&mut self, trace_srcs: &TraceSrcs) -> Result<(), RedisError> {
         let mut q = redis::pipe();
 
         q.atomic();
-        q.hset("source-scan", "raw", bytes).ignore();
-        q.hset("source-scan", "root_path", &trace_srcs.root_path)
+
+        q.hset("tracing_srcs", "root_path", &trace_srcs.root_path)
             .ignore();
 
         for trace_src in trace_srcs.trace_srcs.iter() {
-            q.hset("heat-map", trace_src.digest.clone(), 0).ignore();
+            let digest = &trace_src.digest;
+            q.hset_nx("heat_map", digest, 0).ignore();
+            let key = format!("tracing_src:{digest}");
+            let bytes = trace_src.encode_to_vec();
+            q.hset(&key, "raw", bytes);
+            if let Some(class_name_path) = &trace_src.class_name_path {
+                q.hset(&key, "class_name_path", class_name_path);
+            }
         }
 
         q.query_async(&mut self.heatmap_connection).await?;
-        self._update_heatmap(false).await?;
 
         Ok(())
-    }
-
-    pub async fn update_heatmap(&mut self) -> Result<Option<HeatMapDelta>, RedisError> {
-        self._update_heatmap(true).await
     }
 
     pub async fn reset(&mut self) -> Result<(), RedisError> {
         let mut q = redis::pipe();
         q.atomic();
-        q.del("source-scan").ignore();
-        q.del("heat-map").ignore();
-        q.del("heat-map-status").ignore();
-        q.del("tracing-stream").ignore();
+        q.del("tracing_srcs").ignore();
+        q.del("heat_map").ignore();
+        q.del("heat_map_status").ignore();
+        q.del("tracing_stream").ignore();
         q.query_async(&mut self.connection).await?;
 
         tracing::info!("state reset");
         Ok(())
     }
 
-    async fn _update_heatmap(
-        &mut self,
-        compute_delta: bool,
-    ) -> Result<Option<HeatMapDelta>, RedisError> {
+    pub async fn update_heatmap(&mut self) -> Result<Option<HeatMapDelta>, RedisError> {
         let (heatmap_exists, last_update_id_from_tracing_stream): (bool, Option<String>) =
             redis::pipe()
-                .exists("heat-map")
-                .hget("heat-map-status", "last-update-id-from-tracing-stream")
+                .exists("heat_map")
+                .hget("heat_map_status", "last_update_id_from_tracing_stream")
                 .query_async(&mut self.connection)
                 .await?;
 
@@ -99,7 +97,7 @@ impl RedisStore {
 
             let traces: StreamRangeReply = self
                 .heatmap_connection
-                .xrange_count("tracing-stream", &start_specifier, "+", 65536)
+                .xrange_count("tracing_stream", &start_specifier, "+", 65536)
                 .await?;
 
             if traces.ids.is_empty() {
@@ -112,43 +110,23 @@ impl RedisStore {
             for id in traces.ids.iter() {
                 tracing_stream_last_id = Some(id.id.clone());
 
-                let trace = match id.map.get("trace") {
-                    Some(Value::Data(raw)) => match Trace::decode(&raw[..]) {
-                        Ok(trace) => trace,
-                        Err(e) => {
-                            tracing::error!("error decoding trace in {:?}: {:?}", id.id, e);
-                            continue;
-                        }
-                    },
-                    Some(_) => {
-                        tracing::error!("trace in {:?} is the wrong type", id.id);
-                        continue;
+                let digest: String = id.get("digest").unwrap();
+
+                match heat_map_deltas.deltas.get_mut(&digest) {
+                    Some(count) => {
+                        *count += 1;
                     }
                     None => {
-                        tracing::error!("no trace in {:?}", id.id);
-                        continue;
-                    }
-                };
-
-                let key = trace.digest;
-
-                if compute_delta {
-                    match heat_map_deltas.deltas.get_mut(&key) {
-                        Some(count) => {
-                            *count += 1;
-                        }
-                        None => {
-                            heat_map_deltas.deltas.insert(key.clone(), 1);
-                        }
+                        heat_map_deltas.deltas.insert(digest.clone(), 1);
                     }
                 }
 
-                q.hincr("heat-map", key, 1).ignore();
+                q.hincr("heat_map", &digest, 1).ignore();
             }
 
             q.hset(
-                "heat-map-status",
-                "last-update-id-from-tracing-stream",
+                "heat_map_status",
+                "last_update_id_from_tracing_stream",
                 &tracing_stream_last_id,
             )
             .ignore()
@@ -156,33 +134,38 @@ impl RedisStore {
             .await?;
         }
 
-        if compute_delta {
-            Ok(Some(heat_map_deltas))
-        } else {
-            Ok(None)
-        }
+        Ok(Some(heat_map_deltas))
     }
 
     pub async fn get_heat_map(&mut self) -> Result<Option<HeatMap>, RedisError> {
-        let source_scan = match self.get_source_scan().await? {
-            Some(source_scan) => source_scan,
-            None => return Ok(None),
-        };
+        let tracing_src_keys: Vec<String> = self.heatmap_connection.get("tracing_src:*").await?;
 
         let mut q = redis::pipe();
+        for key in tracing_src_keys.iter() {
+            q.hget(key, "raw");
+        }
+        let trace_srcs_raw: Vec<Vec<u8>> = q.query_async(&mut self.heatmap_connection).await?;
 
-        for source_element in source_scan.trace_srcs.iter() {
-            q.hget("heat-map", source_element.digest.clone());
+        if trace_srcs_raw.is_empty() {
+            return Ok(None);
         }
 
-        let result: Vec<i64> = q.query_async(&mut self.heatmap_connection).await?;
+        let trace_srcs: Vec<TraceSrc> = trace_srcs_raw
+            .iter()
+            .map(|raw| TraceSrc::decode(&raw[..]).unwrap())
+            .collect();
 
-        let heat_sources = source_scan
-            .trace_srcs
+        q = redis::pipe();
+        for trace_src in trace_srcs.iter() {
+            q.hget("heat_map", &trace_src.digest);
+        }
+        let counts: Vec<i64> = q.query_async(&mut self.heatmap_connection).await?;
+
+        let heat_sources = trace_srcs
             .into_iter()
-            .zip(result)
-            .map(|(source_element, trace_count)| HeatSource {
-                source_element,
+            .zip(counts)
+            .map(|(trace_src, trace_count)| HeatSource {
+                source_element: trace_src,
                 trace_count,
             })
             .collect();
@@ -192,39 +175,11 @@ impl RedisStore {
         }))
     }
 
-    pub async fn get_source_scan(&mut self) -> Result<Option<TraceSrcs>, RedisError> {
-        let raw: Vec<u8> = redis::cmd("HGET")
-            .arg("source-scan")
-            .arg("raw")
-            .query_async(&mut self.connection)
-            .await?;
-
-        if raw.is_empty() {
-            return Ok(None);
-        }
-
-        let scan = TraceSrcs::decode(&raw[..]).unwrap();
-
-        return Ok(Some(scan));
-    }
-
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {
-        let exists: bool = self
-            .trace_connection
-            .hexists("heat-map", &trace.digest)
-            .await?;
-
-        if !exists {
-            tracing::info!(
-                "source scan did not include the traced function: {:?}",
-                trace
-            );
-            return Ok(());
-        }
-
         let bytes = trace.encode_to_vec();
         redis::cmd("XADD")
-            .arg(&["tracing-stream", "*", "trace"])
+            .arg(&["tracing_stream", "*", "digest", &trace.digest])
+            .arg("raw")
             .arg(bytes)
             .query_async(&mut self.trace_connection)
             .await?;
@@ -232,25 +187,25 @@ impl RedisStore {
     }
 
     pub async fn trace_count(&mut self) -> Result<i64, RedisError> {
-        let count: i64 = self.trace_connection.xlen("tracing-stream").await?;
+        let count: i64 = self.trace_connection.xlen("tracing_stream").await?;
         Ok(count)
     }
 
-    pub async fn _raw_trace_data(&mut self) -> Result<Vec<Vec<u8>>, anyhow::Error> {
-        let mut stream_range: StreamRangeReply =
-            self.connection.xrange_all("tracing-stream").await?;
-        let mut traces: Vec<Vec<u8>> = Vec::new();
+    // pub async fn _raw_trace_data(&mut self) -> Result<Vec<Vec<u8>>, anyhow::Error> {
+    //     let mut stream_range: StreamRangeReply =
+    //         self.connection.xrange_all("tracing_stream").await?;
+    //     let mut traces: Vec<Vec<u8>> = Vec::new();
 
-        for id in stream_range.ids.iter_mut() {
-            match id.map.remove("trace") {
-                Some(Value::Data(raw)) => traces.push(raw),
-                Some(_) => return Err(anyhow::anyhow!("trace in {:?} is the wrong type", id.id)),
-                None => {
-                    return Err(anyhow::anyhow!("no trace in {:?}", id.id));
-                }
-            }
-        }
+    //     for id in stream_range.ids.iter_mut() {
+    //         match id.map.remove("trace") {
+    //             Some(Value::Data(raw)) => traces.push(raw),
+    //             Some(_) => return Err(anyhow::anyhow!("trace in {:?} is the wrong type", id.id)),
+    //             None => {
+    //                 return Err(anyhow::anyhow!("no trace in {:?}", id.id));
+    //             }
+    //         }
+    //     }
 
-        Ok(traces)
-    }
+    //     Ok(traces)
+    // }
 }

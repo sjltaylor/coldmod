@@ -27,7 +27,7 @@ def fn(frame, event, _):
     thread_ident = threading.current_thread().ident
     assert(thread_ident is not None) # because the thread must have started
 
-    trace = Trace(digest=trace_src.digest, thread_id=thread_ident,process_id=os.getpid())
+    trace = Trace(digest=trace_src.digest, thread_id=str(thread_ident),process_id=str(os.getpid()))
 
     # don't block - if the queue cannot drain (e.g. because the sender dies)
     # put_nowait raises a Full exception which will cause the trace function to be unset

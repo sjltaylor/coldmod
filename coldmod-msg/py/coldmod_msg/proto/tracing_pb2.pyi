@@ -12,9 +12,9 @@ class Trace(_message.Message):
     THREAD_ID_FIELD_NUMBER: _ClassVar[int]
     PROCESS_ID_FIELD_NUMBER: _ClassVar[int]
     digest: str
-    thread_id: int
-    process_id: int
-    def __init__(self, digest: _Optional[str] = ..., thread_id: _Optional[int] = ..., process_id: _Optional[int] = ...) -> None: ...
+    thread_id: str
+    process_id: str
+    def __init__(self, digest: _Optional[str] = ..., thread_id: _Optional[str] = ..., process_id: _Optional[str] = ...) -> None: ...
 
 class TraceSrc(_message.Message):
     __slots__ = ["path", "lineno", "name", "class_name_path", "src", "digest"]
