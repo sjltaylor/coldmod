@@ -26,8 +26,11 @@ class FunctionFinder(libcst.CSTVisitor):
         name = node.name.value
         class_name_path = '.'.join(self.class_name_stack) if self.class_name_stack else None
         lineno = self.get_metadata(libcst.metadata.PositionProvider, node).start.line
-        stripped_src = ast.dump(ast.parse(self.module.code_for_node(node)))
-        digest = blake2b(stripped_src.encode('utf-8')).hexdigest()
+        stripped_src = ast.unparse(ast.parse(self.module.code_for_node(node)))
+        buffer = [self.path]
+        buffer.append(f"[{class_name_path or ''}]")
+        buffer.append(stripped_src)
+        digest = blake2b("".join(buffer).encode('utf-8')).hexdigest()
 
         self.trace_srcs.append(TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=stripped_src))
 

@@ -12,3 +12,14 @@ def key_by_location(trace_srcs: Iterable[TraceSrc]) -> Dict[str,TraceSrc]:
 
 def key_by_digest(trace_srcs: Iterable[TraceSrc]) -> Dict[str,TraceSrc]:
     return {ts.digest : ts for ts in trace_srcs}
+
+def duplicates(trace_srcs: Iterable[TraceSrc]) -> Dict[str,Iterable[TraceSrc]]:
+    by_digest = {}
+
+    for trace_src in trace_srcs:
+        digest = trace_src.digest
+        if digest not in by_digest:
+            by_digest[digest] = []
+        by_digest[digest].append(trace_src)
+
+    return {digest: by_digest[digest] for digest, ts in by_digest.items() if len(ts) > 1}

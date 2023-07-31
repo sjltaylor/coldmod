@@ -26,8 +26,22 @@ class CLI:
         print the src scan used to generate the coldmod tracing
         """
         paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        for tracing_src in code.find_trace_srcs_in(self.config.srcs_root_dir, paths):
-            print(f"{tracing_src.name}:{tracing_src.digest}\n{tracing_src.path}:{tracing_src.lineno}\n")
+        trace_srcs = code.find_trace_srcs_in(self.config.srcs_root_dir, paths)
+        for trace_src in trace_srcs:
+            print(f"{trace_src.name}:{trace_src.digest}\n{trace_src.path}:{trace_src.lineno}\n")
+
+    def duplicates(self):
+        """
+        print any srcs that have the same digest
+        """
+        paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
+        trace_srcs = code.find_trace_srcs_in(self.config.srcs_root_dir, paths)
+        duplicates = code.duplicates(trace_srcs)
+        for digest, duplicate_trace_srcs in duplicates.items():
+            print(f"{len(list(duplicate_trace_srcs))} => {digest}\n")
+            for trace_src in duplicate_trace_srcs:
+                print(f"{trace_src.name} -> {trace_src.path}:{trace_src.lineno}\n")
+                print(f"{trace_src.src}\n")
 
 if __name__ == "__main__":
     fire.Fire(CLI)
