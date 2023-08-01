@@ -1,7 +1,7 @@
 use coldmod_msg::proto::{traces_client::TracesClient, Trace};
 use futures_util::stream;
 
-pub(crate) async fn simulate_tracing(digest: String, incr: Option<usize>) {
+pub(crate) async fn trace(digest: String, incr: Option<usize>) {
     let mut client = TracesClient::connect("http://127.0.0.1:7777")
         .await
         .expect("failed to connect to source daemon");
