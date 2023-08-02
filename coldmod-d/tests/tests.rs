@@ -18,8 +18,11 @@ fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, TraceSrc)> {
 // * verify the heatmap is up to date
 // * send trace events
 // * verify the heatmap is up to date
+//
+// # avoid accidentally running this descrutive test
 #[tokio::test]
-async fn source_before_trace() {
+#[ignore]
+async fn test_heatmap() {
     let clients = Clients::default();
     clients.reset_state().await;
     clients.send_tracing_srcs().await;

@@ -14,7 +14,7 @@ class Config:
 def load(path: str|None) -> Config:
     """
         Takes an optional path, assumes CWD if not specified.
-        Can also take a directory, assumes a filename: Coldmod.toml.
+        Can also take a directory, assumes a filename: coldmod.toml.
         A relative srcs.root value in config is resolved relative to the config file directory.
     """
     if path is None:
@@ -24,7 +24,7 @@ def load(path: str|None) -> Config:
     logging.debug(f"Loading config from: {path}")
 
     if os.path.isdir(path):
-        path = os.path.join(path, "Coldmod.toml")
+        path = os.path.join(path, "coldmod.toml")
         logging.debug(f"Assuming config filename: {path}")
 
     path = os.path.abspath(path)

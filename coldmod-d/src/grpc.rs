@@ -36,11 +36,11 @@ impl Traces for Tracing {
         Ok(Response::new(()))
     }
 
-    async fn register(&self, request: Request<TraceSrcs>) -> Result<Response<()>, Status> {
+    async fn set(&self, request: Request<TraceSrcs>) -> Result<Response<()>, Status> {
         let scan = request.into_inner();
         match self
             .dispatch
-            .handle(coldmod_msg::web::Msg::TraceSrcsReceived(scan))
+            .handle(coldmod_msg::web::Msg::SetTraceSrcs(scan))
             .await
         {
             Ok(_) => {}

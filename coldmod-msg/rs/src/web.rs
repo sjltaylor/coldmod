@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum Msg {
     Reset,
     TraceReceived(Trace),
-    TraceSrcsReceived(TraceSrcs),
+    SetTraceSrcs(TraceSrcs),
     HeatMapAvailable(HeatMap),
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
@@ -18,7 +18,7 @@ impl Display for Msg {
         match self {
             Msg::HeatMapAvailable(_) => write!(f, "SourceDataAvailable"),
             Msg::TraceReceived(_) => write!(f, "TraceReceived"),
-            Msg::TraceSrcsReceived(_) => write!(f, "SourceReceived"),
+            Msg::SetTraceSrcs(_) => write!(f, "SourceReceived"),
             Msg::TracingStatsAvailable(_) => write!(f, "TracingStatsAvailable"),
             Msg::HeatMapChanged(_) => write!(f, "HeatMapChanged"),
             Msg::Reset => write!(f, "Reset"),

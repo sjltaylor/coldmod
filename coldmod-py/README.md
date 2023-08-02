@@ -45,7 +45,7 @@ run it with brew install, it uses node... so I don't want to make every install 
 * poetry install
 * pip install -r requirements.txt
 * add a line to the entrypoint `import coldmod_py; coldmod_py.tracing.start()`
-* add a Coldmod.toml
+* add a coldmod.toml
 * start the app
 * if coldmod-d isn't running the app should carry on and start but with no tracing
 * start coldmod-d

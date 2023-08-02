@@ -1,5 +1,5 @@
 use coldmod_msg::proto::traces_client::TracesClient;
-use coldmod_msg::proto::{ops_daemon_client::OpsDaemonClient, Trace, TraceSrc, TraceSrcs};
+use coldmod_msg::proto::{ops_client::OpsClient, Trace, TraceSrc, TraceSrcs};
 use coldmod_msg::web::{HeatMap, TracingStats};
 use futures_util::stream;
 use futures_util::StreamExt;
@@ -13,9 +13,7 @@ pub struct Clients {}
 
 impl Clients {
     pub async fn reset_state(&self) {
-        let mut client = OpsDaemonClient::connect("http://127.0.0.1:7777")
-            .await
-            .unwrap();
+        let mut client = OpsClient::connect("http://127.0.0.1:7777").await.unwrap();
 
         let response = client.reset_state(()).await;
 
@@ -88,7 +86,7 @@ impl Clients {
             trace_srcs: es,
         };
 
-        let response = client.register(source).await;
+        let response = client.set(source).await;
 
         assert!(response.is_ok(), "{:?}", response);
     }

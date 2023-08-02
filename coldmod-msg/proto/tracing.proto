@@ -26,5 +26,5 @@ message TraceSrcs {
 
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
-  rpc register(TraceSrcs) returns (google.protobuf.Empty);
+  rpc set(TraceSrcs) returns (google.protobuf.Empty);
 }

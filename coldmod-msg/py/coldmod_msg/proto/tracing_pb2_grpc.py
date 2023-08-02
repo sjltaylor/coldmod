@@ -20,8 +20,8 @@ class TracesStub(object):
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.Trace.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
-        self.register = channel.unary_unary(
-                '/coldmod_msg.proto.tracing.Traces/register',
+        self.set = channel.unary_unary(
+                '/coldmod_msg.proto.tracing.Traces/set',
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
@@ -36,7 +36,7 @@ class TracesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def register(self, request, context):
+    def set(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -50,8 +50,8 @@ def add_TracesServicer_to_server(servicer, server):
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.Trace.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
-            'register': grpc.unary_unary_rpc_method_handler(
-                    servicer.register,
+            'set': grpc.unary_unary_rpc_method_handler(
+                    servicer.set,
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
@@ -83,7 +83,7 @@ class Traces(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def register(request,
+    def set(request,
             target,
             options=(),
             channel_credentials=None,
@@ -93,7 +93,7 @@ class Traces(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/register',
+        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/set',
             coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,

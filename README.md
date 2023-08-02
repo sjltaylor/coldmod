@@ -15,3 +15,7 @@ Notes about the monorepo setup
 
 * Root level Cargo workspace
 * flat namesspaces for libraries, e.g `coldmod_msg_rs` not `coldmod::msg_rs`
+
+
+
+* it's really important to check what trace_srcs are sent to the server since it's a destructive operation (us the py cli)
