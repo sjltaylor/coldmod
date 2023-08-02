@@ -169,7 +169,7 @@ impl RedisStore {
             return Ok(None);
         }
 
-        let trace_src_keys: Vec<String> = self.heatmap_connection.get("trace_src:*").await?;
+        let trace_src_keys: Vec<String> = self.heatmap_connection.keys("trace_src:*").await?;
 
         let mut q = redis::pipe();
         for key in trace_src_keys.iter() {

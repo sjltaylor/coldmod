@@ -19,7 +19,7 @@ def fn(frame, event, _):
         # if it isn't give up, raise an exception so the settrace function is unset
         raise Exception("lookup not initialized")
 
-    trace_src = trace_srcs_by_location.get(path)
+    trace_src = trace_srcs_by_location.get(key)
 
     if trace_src is None:
         return None
