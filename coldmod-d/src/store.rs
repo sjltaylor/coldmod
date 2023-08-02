@@ -60,12 +60,14 @@ impl RedisStore {
     }
 
     pub async fn reset(&mut self) -> Result<(), RedisError> {
+        let keys: Vec<String> = self.connection.keys("*").await?;
+
         let mut q = redis::pipe();
-        q.atomic();
-        q.del("tracing_srcs").ignore();
-        q.del("heat_map").ignore();
-        q.del("heat_map_status").ignore();
-        q.del("tracing_stream").ignore();
+
+        for key in keys {
+            q.del(key).ignore();
+        }
+
         q.query_async(&mut self.connection).await?;
 
         tracing::info!("state reset");
