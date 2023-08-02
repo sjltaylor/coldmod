@@ -1,13 +1,8 @@
-import sys
-import os
-import threading
 from coldmod_py.files import find_src_files_in
 from coldmod_py.code import key_by_location, find_trace_srcs_in
 import coldmod_py.config
-from typing import Dict
-from . import sender
+from . import sender, settrace
 from .connect import register_trace_srcs
-from .settrace import fn
 from coldmod_msg.proto.tracing_pb2 import TraceSrc
 import logging
 
@@ -25,16 +20,5 @@ def start(path: str|None = None):
         LOG.error(f"Failed to register trace srcs: {e}")
         return
 
-    _install(trace_srcs_by_location)
+    settrace.install(trace_srcs_by_location)
     sender.start()
-
-def _install(trace_srcs_by_location: Dict[str, TraceSrc]):
-    settrace.trace_srcs_by_location = trace_srcs_by_location
-    threading.settrace(fn)
-    sys.settrace(fn)
-
-def _uninstall():
-    if sys.gettrace() == fn:
-        sys.settrace(None)
-    if threading.gettrace() == fn:
-        threading.settrace(None) # type: ignore

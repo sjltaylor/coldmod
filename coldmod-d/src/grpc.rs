@@ -22,18 +22,29 @@ impl Traces for Tracing {
     async fn collect(&self, request: Request<Streaming<Trace>>) -> Result<Response<()>, Status> {
         // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md
         let mut stream = request.into_inner();
-        while let Some(trace) = stream.message().await? {
-            let result = self
-                .dispatch
-                .handle(coldmod_msg::web::Msg::TraceReceived(trace))
-                .await;
 
-            if let Err(e) = result {
-                tracing::error!("failed to send trace: {:?}", e);
+        loop {
+            let stream_result = stream.message().await;
+            match stream_result {
+                Ok(Some(trace)) => {
+                    let result = self
+                        .dispatch
+                        .handle(coldmod_msg::web::Msg::TraceReceived(trace))
+                        .await;
+                    if let Err(e) = result {
+                        tracing::error!("failed to handle trace: {:?}", e);
+                    }
+                }
+                Ok(None) => {
+                    tracing::warn!("the trace was None");
+                    continue;
+                }
+                Err(e) => {
+                    tracing::warn!("failed to receive trace: {:?}", e);
+                    return Err(Status::internal("failed to receive trace"));
+                }
             }
         }
-
-        Ok(Response::new(()))
     }
 
     async fn set(&self, request: Request<TraceSrcs>) -> Result<Response<()>, Status> {
