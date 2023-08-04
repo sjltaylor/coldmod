@@ -75,9 +75,5 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
 
 #[component]
 pub fn NoDataUI(cx: Scope) -> impl IntoView {
-    let hostname = window().location().hostname().unwrap();
-    let url = format!("http://{hostname}:7777");
-    let cli_cmd = format!("coldmod send --url {url}");
-
-    return view! {cx, <div class="container heatmap nodata">"No data. Use the CLI to scan your source code: "<code>{cli_cmd}</code></div> };
+    return view! {cx, <div class="container heatmap nodata"></div> };
 }

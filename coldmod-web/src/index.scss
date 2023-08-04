@@ -56,6 +56,9 @@ ul {
 .container.heatmap.nodata {
     line-height: 2em;
     margin-left: 2em;
+    position: fixed;
+    top: 0;
+    left: 0;
 }
 
 .container.tracing-status {
