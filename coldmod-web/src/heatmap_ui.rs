@@ -35,30 +35,42 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                 fallback=|cx| view! { cx, <NoDataUI /> }>
                 <div class="container heatmap">
                     <ControlsUI rw_filters />
-                    <div class="container heatmap data">
+                    <ul class="container heatmap data">
                         <For
                             each=heat_sources
                             key=|u| format!("{}-{}", u.trace_src.digest, u.trace_count)
-                            view=move |cx, s| view! {cx, <HeatSourceUI heat_source=s /> } />
-                    </div>
+                            view=move |cx, s| view! {cx, <HeatSourceUI heat_src=s /> } />
+                    </ul>
             </div>
         </Show>
     };
 }
 
 #[component]
-pub fn HeatSourceUI(cx: Scope, heat_source: HeatSrc) -> impl IntoView {
-    let trace_src = heat_source.trace_src;
+pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
+    let trace_src = heat_src.trace_src;
 
-    let mut buffer = String::from(format!(
-        "{}:{} [name={}]",
-        trace_src.path, trace_src.lineno, trace_src.name
-    ));
+    let loc = format!("{}:{}", trace_src.path, trace_src.lineno);
+
+    let mut buffer = String::new();
+
     if let Some(class_name_path) = trace_src.class_name_path {
-        buffer.push_str(format!(" [class={}]", class_name_path).as_str());
+        buffer.push_str(&class_name_path);
+        buffer.push_str(".");
     }
 
-    return view! {cx, <div>{buffer}" [trace_count="{heat_source.trace_count}"]"</div> };
+    buffer.push_str(&trace_src.name);
+
+    return view! {cx,
+        <li class="container heat-src">
+            <div class="heat-src-count">
+                <div class="heat-src-count-label">Traces</div>
+                <div class="heat-src-count-value">{heat_src.trace_count}</div>
+            </div>
+            <div class="heat-src-name">{buffer}</div>
+            <div class="heat-src-loc">{loc}</div>
+        </li>
+    };
 }
 
 #[component]
