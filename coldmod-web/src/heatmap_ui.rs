@@ -1,57 +1,17 @@
 use crate::controls_ui::ControlsUI;
-use crate::dispatch::Dispatch;
-use crate::events;
-use crate::filter_state::FilterState;
-use crate::heatmap_filter::HeatmapFilter;
-use crate::websocket::WS;
-use coldmod_msg::web::{self, HeatSrc};
+use coldmod_msg::web::HeatSrc;
 use leptos::*;
 
 #[component]
 pub fn HeatMapUI(cx: Scope) -> impl IntoView {
-    let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
-
-    let dispatch = use_context::<Dispatch>(cx).unwrap();
-
-    let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
-        Some(heatmap) => Some(heatmap.heat_srcs()),
-        None => None,
-    });
-
-    let ws = use_context::<WS>(cx).unwrap();
-
-    create_effect(cx, move |_| {
-        if let Some(heat_srcs) = heat_srcs_memo.get() {
-            log!("HeatMapUI/count: {}", heat_srcs.len());
-
-            let filterset = coldmod_msg::proto::FilterSet {
-                trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
-            };
-            ws.send(web::Msg::SetFilterSetInContext(filterset));
-        }
-    });
-
-    dispatch.on_app_event(move |app_event| match app_event {
-        events::AppEvent::ColdmodMsg(msg) => match msg {
-            web::Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
-                filter_state: FilterState::default(),
-                heatmap: heat_map,
-            })),
-            web::Msg::HeatMapChanged(ref heatmap_delta) => {
-                rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
-            }
-            _ => {}
-        },
-        _ => {}
-    });
+    let heat_srcs_memo = use_context::<Memo<Option<Vec<HeatSrc>>>>(cx).unwrap();
 
     return view! {cx,
-
         <Show
-            when=move || rw_filters.get().is_some()
+            when=move || heat_srcs_memo.get().is_some()
                 fallback=|cx| view! { cx, <NoDataUI /> }>
                 <div class="container heatmap">
-                    <ControlsUI rw_filters />
+                    <ControlsUI />
                     <ul class="container heatmap data">
                         <For
                             each=move || heat_srcs_memo.get().unwrap()

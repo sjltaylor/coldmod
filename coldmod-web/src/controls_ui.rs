@@ -2,13 +2,18 @@ use crate::heatmap_filter::HeatmapFilter;
 use leptos::*;
 
 #[component]
-pub fn ControlsUI(cx: Scope, rw_filters: RwSignal<Option<HeatmapFilter>>) -> impl IntoView {
-    let keys = rw_filters.get_untracked().unwrap().filter_state.keys();
+pub fn ControlsUI(cx: Scope) -> impl IntoView {
+    let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context(cx).unwrap();
+    let keys = rw_heatmap_filter
+        .get_untracked()
+        .unwrap()
+        .filter_state
+        .keys();
     let groups = [keys[0..1].to_vec(), keys[1..keys.len()].to_vec()];
 
     let buttons_classes = move || {
         let mut cx = vec!["buttons"];
-        if rw_filters.get().unwrap().filter_state.is_ascending() {
+        if rw_heatmap_filter.get().unwrap().filter_state.is_ascending() {
             cx.push("ascending");
         } else {
             cx.push("descending");
@@ -24,7 +29,7 @@ pub fn ControlsUI(cx: Scope, rw_filters: RwSignal<Option<HeatmapFilter>>) -> imp
                     view! {cx,
                     <div class="button-group">
                         {group.into_iter().map(|key| {
-                            let (is_on,w_is_on) = create_slice(cx, rw_filters,
+                            let (is_on,w_is_on) = create_slice(cx, rw_heatmap_filter,
                                 |heatmap_filter| {
                                     heatmap_filter.as_ref().unwrap().filter_state.get(key)
                                 },
