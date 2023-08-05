@@ -1,6 +1,6 @@
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
-use coldmod_msg::proto::{OpsStatus, Trace, TraceSrcs};
+use coldmod_msg::proto::{FilterSet, FilterSetQuery, OpsStatus, Trace, TraceSrcs};
 use coldmod_msg::web::Msg;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
@@ -60,6 +60,39 @@ impl Traces for Tracing {
             }
         }
         Ok(Response::new(()))
+    }
+
+    async fn get_filterset(
+        &self,
+        request: Request<FilterSetQuery>,
+    ) -> Result<Response<FilterSet>, Status> {
+        let query = request.into_inner();
+        match self
+            .dispatch
+            .handle(coldmod_msg::web::Msg::GetFilterSet(query))
+            .await
+        {
+            Ok(mut replies) => match replies.len() {
+                1 => {
+                    match replies.remove(0) {
+                        Msg::FilterSetAvailable(filter_set) => {
+                            return Ok(Response::new(filter_set))
+                        }
+                        _ => {
+                            tracing::error!("unexpected reply type from dispatch");
+                            return Err(Status::internal("handling failed"));
+                        }
+                    };
+                }
+                _ => {
+                    tracing::error!("unexpected reply count from dispatch");
+                    return Err(Status::internal("handling failed"));
+                }
+            },
+            Err(_e) => {
+                return Err(Status::internal("handling failed"));
+            }
+        }
     }
 }
 

@@ -12,7 +12,7 @@ pub struct HeatmapFilter {
 }
 
 impl HeatmapFilter {
-    pub fn sources(&self) -> Vec<HeatSrc> {
+    pub fn heat_srcs(&self) -> Vec<HeatSrc> {
         let mut not_cold: BTreeMap<i64, Vec<&HeatSrc>> = BTreeMap::new();
         let mut not_cold_count = 0;
 
@@ -109,7 +109,7 @@ mod tests {
 
     fn collect_trace_counts(filter: &HeatmapFilter) -> Vec<i64> {
         filter
-            .sources()
+            .heat_srcs()
             .iter()
             .map(|s| s.trace_count)
             .collect::<Vec<i64>>()
@@ -172,7 +172,7 @@ mod tests {
         filter.filter_state.toggle("COLD");
 
         let sources = filter
-            .sources()
+            .heat_srcs()
             .iter()
             .map(|s| s.trace_count)
             .collect::<Vec<i64>>();

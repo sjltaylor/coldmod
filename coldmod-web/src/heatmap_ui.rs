@@ -3,6 +3,7 @@ use crate::dispatch::Dispatch;
 use crate::events;
 use crate::filter_state::FilterState;
 use crate::heatmap_filter::HeatmapFilter;
+use crate::websocket::WS;
 use coldmod_msg::web::{self, HeatSrc};
 use leptos::*;
 
@@ -12,7 +13,23 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 
     let dispatch = use_context::<Dispatch>(cx).unwrap();
 
-    let heat_sources = move || rw_filters.get().unwrap().sources();
+    let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
+        Some(heatmap) => Some(heatmap.heat_srcs()),
+        None => None,
+    });
+
+    let ws = use_context::<WS>(cx).unwrap();
+
+    create_effect(cx, move |_| {
+        if let Some(heat_srcs) = heat_srcs_memo.get() {
+            log!("HeatMapUI/count: {}", heat_srcs.len());
+
+            let filterset = coldmod_msg::proto::FilterSet {
+                trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
+            };
+            ws.send(web::Msg::SetFilterSetInContext(filterset));
+        }
+    });
 
     dispatch.on_app_event(move |app_event| match app_event {
         events::AppEvent::ColdmodMsg(msg) => match msg {
@@ -37,7 +54,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <ControlsUI rw_filters />
                     <ul class="container heatmap data">
                         <For
-                            each=heat_sources
+                            each=move || heat_srcs_memo.get().unwrap()
                             key=|u| format!("{}-{}", u.trace_src.digest, u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_src=s /> } />
                     </ul>

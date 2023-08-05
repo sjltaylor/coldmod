@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use coldmod_msg::{
-    proto::{Trace, TraceSrc, TraceSrcs},
+    proto::{FilterSet, Trace, TraceSrc, TraceSrcs},
     web::{HeatMap, HeatMapDelta, HeatSrc},
 };
 use prost::Message;
@@ -214,5 +214,29 @@ impl RedisStore {
     pub async fn trace_count(&mut self) -> Result<i64, RedisError> {
         let count: i64 = self.trace_connection.xlen("trace_stream").await?;
         Ok(count)
+    }
+
+    pub async fn set_filterset(
+        &mut self,
+        key: &str,
+        filterset: Option<FilterSet>,
+    ) -> Result<(), anyhow::Error> {
+        if let Some(filterset) = filterset {
+            let raw = flexbuffers::to_vec(filterset)?;
+            self.connection.hset("filtersets", key, raw).await?;
+        } else {
+            self.connection.hdel("filtersets", key).await?;
+        }
+        Ok(())
+    }
+
+    pub async fn get_filterset(&mut self, key: &str) -> Result<FilterSet, anyhow::Error> {
+        let raw: Option<Vec<u8>> = self.connection.hget("filtersets", key).await?;
+        return if let Some(raw) = raw {
+            let filterset = flexbuffers::from_slice(&raw)?;
+            Ok(filterset)
+        } else {
+            Ok(FilterSet::default())
+        };
     }
 }

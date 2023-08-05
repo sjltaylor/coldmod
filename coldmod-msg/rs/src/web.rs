@@ -1,4 +1,4 @@
-use crate::proto::{Trace, TraceSrc, TraceSrcs};
+use crate::proto::{FilterSet, FilterSetQuery, Trace, TraceSrc, TraceSrcs};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -11,6 +11,10 @@ pub enum Msg {
     HeatMapAvailable(HeatMap),
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
+    SetFilterSet((FilterSet, String)),
+    SetFilterSetInContext(FilterSet),
+    GetFilterSet(FilterSetQuery),
+    FilterSetAvailable(FilterSet),
 }
 
 impl Display for Msg {
@@ -22,6 +26,10 @@ impl Display for Msg {
             Msg::TracingStatsAvailable(_) => write!(f, "TracingStatsAvailable"),
             Msg::HeatMapChanged(_) => write!(f, "HeatMapChanged"),
             Msg::Reset => write!(f, "Reset"),
+            Msg::SetFilterSet(_) => write!(f, "SetFilterSet"),
+            Msg::GetFilterSet(_) => write!(f, "GetFilterSet"),
+            Msg::FilterSetAvailable(_) => write!(f, "FilterSetAvailable"),
+            Msg::SetFilterSetInContext(_) => write!(f, "SetFilterSetInContext"),
         }
     }
 }
@@ -37,12 +45,12 @@ pub struct HeatMap {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HeatMapDelta {
-    pub deltas: HashMap<String, i64>,
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatSrc {
     pub trace_src: TraceSrc,
     pub trace_count: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HeatMapDelta {
+    pub deltas: HashMap<String, i64>,
 }

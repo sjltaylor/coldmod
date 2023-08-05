@@ -30,6 +30,7 @@ pub fn ControlsUI(cx: Scope, rw_filters: RwSignal<Option<HeatmapFilter>>) -> imp
                                 },
                                 move |heatmap_filter, _: ()| {
                                     heatmap_filter.as_mut().unwrap().filter_state.toggle(key);
+
                                 })
                             ;
 

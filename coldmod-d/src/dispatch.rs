@@ -38,6 +38,13 @@ impl Dispatch {
                 let heat_map = store.get_heat_map().await?.unwrap();
                 self._broadcast(Msg::HeatMapAvailable(heat_map));
             }
+            Msg::SetFilterSet((filterset, key)) => {
+                store.set_filterset(&key, Some(filterset)).await?;
+            }
+            Msg::GetFilterSet(query) => {
+                let filter_set = store.get_filterset(&query.key).await?;
+                return Ok(vec![Msg::FilterSetAvailable(filter_set)]);
+            }
             _ => {}
         };
 

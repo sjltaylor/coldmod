@@ -39,3 +39,15 @@ class TraceSrcs(_message.Message):
     root_path: str
     trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
     def __init__(self, root_path: _Optional[str] = ..., trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...
+
+class FilterSetQuery(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class FilterSet(_message.Message):
+    __slots__ = ["trace_srcs"]
+    TRACE_SRCS_FIELD_NUMBER: _ClassVar[int]
+    trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
+    def __init__(self, trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...

@@ -1,11 +1,27 @@
 use crate::events::{AppEvent, WebSocketEventType};
 use crate::Dispatch;
+use coldmod_msg::web::Msg;
 use leptos::*;
 use wasm_bindgen::prelude::*;
 
 use web_sys::*;
 
-pub fn start(dispatch: Dispatch) {
+#[derive(Clone)]
+pub struct WS {
+    ws: WebSocket,
+}
+
+impl WS {
+    pub fn new(ws: WebSocket) -> Self {
+        Self { ws }
+    }
+    pub fn send(&self, msg: Msg) {
+        let buffer = flexbuffers::to_vec(&msg).unwrap();
+        self.ws.send_with_u8_array(&buffer).unwrap();
+    }
+}
+
+pub fn start(dispatch: Dispatch) -> WS {
     let ws = WebSocket::new("ws://localhost:3333/ws").expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
@@ -50,14 +66,20 @@ pub fn start(dispatch: Dispatch) {
         ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
         onerror_callback.forget();
     }
+
+    WS::new(ws)
 }
 
 fn relay_upstream(dispatch: Dispatch, ws: &WebSocket) {
-    // TODO: remove this fn if the app never emits events
     let _ws = ws.clone();
 
     dispatch.on_app_event(move |app_event| match app_event {
         AppEvent::ColdmodMsg(msg_event) => match msg_event {
+            coldmod_msg::web::Msg::SetFilterSetInContext(filterset) => {
+                log!("set filterset in context: {:?}", filterset);
+                // let buffer = flexbuffers::to_vec(&filterset).unwrap();
+                // _ws.send_with_u8_array(&buffer).unwrap();
+            }
             _ => {}
         },
         _ => {}

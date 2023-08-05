@@ -48,18 +48,22 @@ pub async fn server(dispatch: Dispatch) {
 /// as well as things from HTTP headers such as user-agent of the browser etc.
 async fn ws_handler(
     ws: WebSocketUpgrade,
-    _: Option<TypedHeader<headers::UserAgent>>,
+    TypedHeader(ws_key): TypedHeader<headers::UserAgent>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(dispatch): State<Dispatch>,
 ) -> impl IntoResponse {
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
     tracing::info!("websocket upgrade request from {}", addr);
-    ws.on_upgrade(move |socket| serve_socket(socket, dispatch))
+
+    let key = format!("{:?}", ws_key);
+
+    ws.on_upgrade(move |socket| serve_socket(socket, dispatch, key))
 }
 
 struct WebSocketAdapter {
     socket: WebSocket,
+    key: String,
 }
 
 #[async_trait]
@@ -77,7 +81,12 @@ impl dispatch::WebSocket for WebSocketAdapter {
                 return None;
             }
             Some(Ok(Message::Binary(payload))) => match flexbuffers::from_slice(&payload) {
-                Ok(msg) => Some(Ok(msg)),
+                Ok(msg) => match msg {
+                    Msg::SetFilterSetInContext(filterset) => {
+                        Some(Ok(Msg::SetFilterSet((filterset, self.key.clone()))))
+                    }
+                    _ => Some(Ok(msg)),
+                },
                 Err(e) => Some(Err(e.into())),
             },
             Some(Ok(_)) => Some(Err(anyhow!("unexpected message type"))),
@@ -86,7 +95,7 @@ impl dispatch::WebSocket for WebSocketAdapter {
     }
 }
 
-async fn serve_socket(socket: WebSocket, dispatch: Dispatch) {
-    let ws = WebSocketAdapter { socket };
+async fn serve_socket(socket: WebSocket, dispatch: Dispatch, key: String) {
+    let ws = WebSocketAdapter { socket, key };
     dispatch.serve_socket(ws).await;
 }

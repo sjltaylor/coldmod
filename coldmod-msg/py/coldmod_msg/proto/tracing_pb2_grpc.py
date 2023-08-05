@@ -25,6 +25,11 @@ class TracesStub(object):
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.get_filterset = channel.unary_unary(
+                '/coldmod_msg.proto.tracing.Traces/get_filterset',
+                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.SerializeToString,
+                response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.FromString,
+                )
 
 
 class TracesServicer(object):
@@ -42,6 +47,12 @@ class TracesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def get_filterset(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_TracesServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -54,6 +65,11 @@ def add_TracesServicer_to_server(servicer, server):
                     servicer.set,
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'get_filterset': grpc.unary_unary_rpc_method_handler(
+                    servicer.get_filterset,
+                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.FromString,
+                    response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -96,5 +112,22 @@ class Traces(object):
         return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/set',
             coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def get_filterset(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/get_filterset',
+            coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.SerializeToString,
+            coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
