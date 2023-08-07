@@ -39,14 +39,6 @@ impl HeatmapFilter {
 
         let mut buckets: Vec<&Vec<&HeatSrc>> = Vec::new();
 
-        let _all = not_cold
-            .clone()
-            .values()
-            .into_iter()
-            .flatten()
-            .map(|s| s.trace_count)
-            .collect::<Vec<_>>();
-
         let mut i = 0;
 
         for bucket in not_cold.values() {
@@ -290,16 +282,51 @@ mod tests {
         assert_eq!(trace_counts, vec![5, 5, 5, 5, 5, 5, 5, 5, 5, 5]);
     }
 
-    /*
-        all elements with the same trace_count should be in the same PXX block (greedy, lowest first)
-        cold elements are excluded from the binning distribution
+    #[test]
+    fn test_cold_hot() {
+        let mut sources = Vec::<HeatSrc>::new();
 
-        test trace counts changing value accross bucket boundaries
-            * e.g something that was in P10 changes to become in P20
-            * something moves from cold to P10
-            * something moves from P90 to HOT
-            * something moves from P40 to P90 when the filter state is hot
+        for i in 0..21 {
+            sources.push(HeatSrc {
+                trace_src: trace_src_stub(),
+                trace_count: i,
+            });
+        }
 
+        let heatmap = HeatMap { srcs: sources };
 
-    */
+        let mut filter = HeatmapFilter {
+            heatmap,
+            filter_state: FilterState::default(),
+        };
+
+        filter.filter_state.toggle("COLD");
+        filter.filter_state.toggle("HOT");
+
+        assert_eq!(21, filter.heat_srcs().len());
+    }
+
+    #[test]
+    fn test_p10_p40() {
+        let mut sources = Vec::<HeatSrc>::new();
+
+        for i in 0..21 {
+            sources.push(HeatSrc {
+                trace_src: trace_src_stub(),
+                trace_count: i,
+            });
+        }
+
+        let heatmap = HeatMap { srcs: sources };
+
+        let mut filter = HeatmapFilter {
+            heatmap,
+            filter_state: FilterState::default(),
+        };
+
+        filter.filter_state.toggle("P40");
+        filter.filter_state.toggle("COLD");
+
+        assert_eq!(8, filter.heat_srcs().len());
+    }
 }

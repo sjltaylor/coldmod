@@ -49,12 +49,13 @@ impl FilterState {
             return (true, 0.0, 1.0);
         }
 
-        let p_values_f = [0.0, 0.1, 0.2, 0.4, 0.9, 0.95];
+        let a_p_values_f = [0.0, 0.1, 0.2, 0.4, 0.9, 0.95];
+        let b_p_values_f = [0.0, 0.1, 0.2, 0.4, 0.9, 1.0];
 
         if self.ascending {
-            (a == 0, 0.0, p_values_f[(b - 1) as usize])
+            (a == 0, 0.0, b_p_values_f[(b - 1) as usize])
         } else {
-            (a == 0, p_values_f[a as usize], 1.0)
+            (a == 0, a_p_values_f[a as usize], 1.0)
         }
     }
     pub fn toggle(&mut self, key: &'static str) {
@@ -448,5 +449,25 @@ mod tests {
 
         s.toggle("P40");
         assert_eq!(s.selection(), (false, 0.4, 1.0));
+    }
+
+    #[test]
+    fn test_percentile_range_full() {
+        let mut s = FilterState::default();
+        assert_eq!(s.selection(), (true, 0.0, 1.0));
+
+        s.toggle("COLD");
+        s.toggle("HOT");
+        assert_eq!(s.selection(), (true, 0.0, 1.0));
+    }
+
+    #[test]
+    fn test_percentile_range_cold_p90() {
+        let mut s = FilterState::default();
+        assert_eq!(s.selection(), (true, 0.0, 1.0));
+
+        s.toggle("COLD");
+        s.toggle("P90");
+        assert_eq!(s.selection(), (true, 0.0, 0.90));
     }
 }
