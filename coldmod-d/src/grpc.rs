@@ -1,11 +1,12 @@
+use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
 use coldmod_msg::proto::{FilterSet, FilterSetQuery, OpsStatus, Trace, TraceSrcs};
 use coldmod_msg::web::Msg;
+use tokio::sync::mpsc;
+use tokio_stream::wrappers::ReceiverStream;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
-
-use crate::dispatch::Dispatch;
 
 #[derive(Clone)]
 pub struct Tracing {
@@ -62,37 +63,48 @@ impl Traces for Tracing {
         Ok(Response::new(()))
     }
 
-    async fn get_filterset(
+    type stream_filtersetsStream = ReceiverStream<Result<FilterSet, Status>>;
+
+    async fn stream_filtersets(
         &self,
         request: Request<FilterSetQuery>,
-    ) -> Result<Response<FilterSet>, Status> {
-        let query = request.into_inner();
-        match self
-            .dispatch
-            .handle(coldmod_msg::web::Msg::GetFilterSet(query))
-            .await
-        {
-            Ok(mut replies) => match replies.len() {
-                1 => {
-                    match replies.remove(0) {
-                        Msg::FilterSetAvailable(filter_set) => {
-                            return Ok(Response::new(filter_set))
+    ) -> Result<Response<Self::stream_filtersetsStream>, Status> {
+        let q = request.into_inner();
+
+        // TODO: this could probably use tokio::sync::watch
+        // the CLI only needs the latest filterset
+        let (tonic_tx, tonic_rx) = mpsc::channel(16);
+        let (dispatch_tx, mut dispatch_rx) = mpsc::channel(16);
+
+        let dispatch_clone = self.dispatch.clone();
+
+        tokio::spawn(async move {
+            dispatch_clone
+                .send_filtersets_until_closed(q, dispatch_tx)
+                .await;
+        });
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    filterset = dispatch_rx.recv() => {
+                        match filterset {
+                            Some(filterset) => {
+                                tonic_tx.send(Ok(filterset)).await.unwrap();
+                            }
+                            None => break,
                         }
-                        _ => {
-                            tracing::error!("unexpected reply type from dispatch");
-                            return Err(Status::internal("handling failed"));
-                        }
-                    };
+                    }
+                    _ = tonic_tx.closed() => {
+                        dispatch_rx.close();
+                        tracing::info!("stream_filtersets: stream closed");
+                        break;
+                    }
                 }
-                _ => {
-                    tracing::error!("unexpected reply count from dispatch");
-                    return Err(Status::internal("handling failed"));
-                }
-            },
-            Err(_e) => {
-                return Err(Status::internal("handling failed"));
             }
-        }
+        });
+
+        Ok(Response::new(ReceiverStream::new(tonic_rx)))
     }
 }
 

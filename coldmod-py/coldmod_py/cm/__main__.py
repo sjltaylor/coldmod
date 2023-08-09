@@ -6,6 +6,7 @@ import coldmod_py.code as code
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
 import sys
+import webbrowser
 from typing import List
 
 class CLI:
@@ -42,6 +43,17 @@ class CLI:
             for trace_src in duplicate_trace_srcs:
                 print(f"{trace_src.name} -> {trace_src.path}:{trace_src.lineno}\n")
                 print(f"{trace_src.src}\n")
+
+    def connect(self, web_app_url=None):
+        if web_app_url is None:
+            (web_app_url, key) = coldmod_py.web.generate_app_url()
+            print(f"connect to: {web_app_url}")
+            webbrowser.open(web_app_url)
+        else:
+            key = coldmod_py.web.extract_key(web_app_url)
+
+        coldmod_py.web.stream_filterset(key);
+
 
 if __name__ == "__main__":
     fire.Fire(CLI)

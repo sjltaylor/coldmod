@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        State, TypedHeader,
+        Path, State,
     },
     response::IntoResponse,
     routing::get,
@@ -23,7 +23,7 @@ use crate::dispatch::{self, Dispatch};
 pub async fn server(dispatch: Dispatch) {
     // build our application with some routes
     let app = Router::new()
-        .route("/ws", get(ws_handler).with_state(dispatch))
+        .route("/ws/connect/:key", get(ws_handler).with_state(dispatch))
         .route("/", get(|| async { "Hello, World!" }))
         // logging so we can see whats going on
         .layer(
@@ -48,15 +48,16 @@ pub async fn server(dispatch: Dispatch) {
 /// as well as things from HTTP headers such as user-agent of the browser etc.
 async fn ws_handler(
     ws: WebSocketUpgrade,
-    TypedHeader(ws_key): TypedHeader<headers::UserAgent>,
+    Path(key): Path<String>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(dispatch): State<Dispatch>,
 ) -> impl IntoResponse {
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    tracing::info!("websocket upgrade request from {}", addr);
+    tracing::trace!("websocket upgrade request from {}", addr);
 
-    let key = format!("{:?}", ws_key);
+    // let key = format!("{:?}", ws_key);
+    println!("{:?}", key);
 
     ws.on_upgrade(move |socket| serve_socket(socket, dispatch, key))
 }

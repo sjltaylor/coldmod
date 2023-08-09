@@ -1,4 +1,4 @@
-use crate::proto::{FilterSet, FilterSetQuery, Trace, TraceSrc, TraceSrcs};
+use crate::proto::{FilterSet, Trace, TraceSrc, TraceSrcs};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,6 @@ pub enum Msg {
     TracingStatsAvailable(TracingStats),
     SetFilterSet((FilterSet, String)),
     SetFilterSetInContext(FilterSet),
-    GetFilterSet(FilterSetQuery),
     FilterSetAvailable(FilterSet),
 }
 
@@ -27,7 +26,6 @@ impl Display for Msg {
             Msg::HeatMapChanged(_) => write!(f, "HeatMapChanged"),
             Msg::Reset => write!(f, "Reset"),
             Msg::SetFilterSet(_) => write!(f, "SetFilterSet"),
-            Msg::GetFilterSet(_) => write!(f, "GetFilterSet"),
             Msg::FilterSetAvailable(_) => write!(f, "FilterSetAvailable"),
             Msg::SetFilterSetInContext(_) => write!(f, "SetFilterSetInContext"),
         }

@@ -4,6 +4,7 @@ use leptos::*;
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
     let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context(cx).unwrap();
+
     let keys = rw_heatmap_filter
         .get_untracked()
         .unwrap()

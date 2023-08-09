@@ -1,14 +1,19 @@
 use crate::store;
 use async_trait::async_trait;
+use coldmod_msg::proto::{FilterSet, FilterSetQuery};
 use coldmod_msg::web::{self, Msg};
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
+use tokio::sync::RwLock;
 
 #[derive(Clone)]
 pub struct Dispatch {
     pub(crate) store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
+    tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<FilterSet>>>>,
 }
 
 impl Dispatch {
@@ -19,6 +24,7 @@ impl Dispatch {
             store: store::RedisStore::new().await,
             internal,
             rate_limiter,
+            tracesrcs_listeners: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -39,11 +45,8 @@ impl Dispatch {
                 self._broadcast(Msg::HeatMapAvailable(heat_map));
             }
             Msg::SetFilterSet((filterset, key)) => {
-                store.set_filterset(&key, Some(filterset)).await?;
-            }
-            Msg::GetFilterSet(query) => {
-                let filter_set = store.get_filterset(&query.key).await?;
-                return Ok(vec![Msg::FilterSetAvailable(filter_set)]);
+                tracing::info!("set filterset:{:?}", key);
+                self._send_filterset_to_listener(&key, filterset).await;
             }
             _ => {}
         };
@@ -190,6 +193,34 @@ impl Dispatch {
                     return;
                 }
             }
+        }
+    }
+
+    pub async fn send_filtersets_until_closed(
+        &self,
+        q: FilterSetQuery,
+        tx: tokio::sync::mpsc::Sender<FilterSet>,
+    ) {
+        self.tracesrcs_listeners
+            .write()
+            .await
+            .insert(q.key.clone(), tx.clone());
+
+        tx.closed().await;
+        tracing::info!("tx closed - removing listener");
+        self.tracesrcs_listeners.write().await.remove(&q.key);
+    }
+
+    async fn _send_filterset_to_listener(&self, key: &String, filterset: FilterSet) {
+        tracing::info!("listeners: {:?}", self.tracesrcs_listeners.read().await);
+
+        match self.tracesrcs_listeners.read().await.get(key) {
+            Some(tx) => {
+                if let Err(e) = tx.send(filterset).await {
+                    tracing::error!("failed to send filterset to listener: {:?}", e);
+                }
+            }
+            None => {}
         }
     }
 }

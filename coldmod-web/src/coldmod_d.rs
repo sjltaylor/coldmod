@@ -19,8 +19,9 @@ impl Sender {
     }
 }
 
-pub fn connect<F: Fn(Msg) + 'static>(route: F) -> Sender {
-    let ws = WebSocket::new("ws://localhost:3333/ws").expect("to create websocket");
+pub fn connect<F: Fn(Msg) + 'static>(path: String, route: F) -> Sender {
+    let ws =
+        WebSocket::new(&format!("ws://localhost:3333/ws{}", path)).expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
 

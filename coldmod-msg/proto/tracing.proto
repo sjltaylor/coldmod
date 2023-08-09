@@ -35,5 +35,5 @@ message FilterSet {
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
   rpc set(TraceSrcs) returns (google.protobuf.Empty);
-  rpc get_filterset(FilterSetQuery) returns (FilterSet);
+  rpc stream_filtersets(FilterSetQuery) returns (stream FilterSet);
 }

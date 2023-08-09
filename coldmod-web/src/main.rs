@@ -1,6 +1,8 @@
 use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::web::Msg;
 use heatmap_ui::HeatMapUI;
+
+use base64::{engine::general_purpose, Engine as _};
 use leptos::*;
 
 mod coldmod_d;
@@ -10,10 +12,10 @@ mod heatmap_filter;
 mod heatmap_ui;
 
 #[component]
-fn App(cx: Scope) -> impl IntoView {
+fn App(cx: Scope, path: String) -> impl IntoView {
     let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
 
-    let sender = coldmod_d::connect(move |msg| match msg {
+    let sender = coldmod_d::connect(path, move |msg| match msg {
         Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
             filter_state: FilterState::default(),
             heatmap: heat_map,
@@ -53,5 +55,28 @@ fn App(cx: Scope) -> impl IntoView {
 
 fn main() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    mount_to_body(|cx| view! { cx,  <App></App> });
+    let location = document().location().unwrap();
+    let mut path = location.pathname().unwrap();
+
+    if !path.starts_with("/connect/") {
+        // generate 32 random b ytes and base64 encode them
+        let mut buf = [0u8; 32];
+        let crypto = window().crypto().unwrap();
+        crypto
+            .get_random_values_with_u8_array(&mut buf[..])
+            .expect("cryto not to fail");
+
+        path = format!(
+            "/connect/web-{}",
+            general_purpose::URL_SAFE_NO_PAD.encode(buf)
+        );
+
+        window()
+            .history()
+            .unwrap()
+            .push_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&path))
+            .unwrap();
+    };
+
+    mount_to_body(|cx| view! { cx,  <App path></App> });
 }
