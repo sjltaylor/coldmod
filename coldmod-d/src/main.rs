@@ -1,4 +1,4 @@
-use coldmod_msg::web::Msg;
+
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 fn configure_tracing() {
@@ -22,7 +22,7 @@ async fn main() {
     let dispatch = coldmod_d::dispatch::Dispatch::new(rate_limiter).await;
 
     if cmd_reset {
-        dispatch.handle(Msg::Reset).await.unwrap();
+        dispatch.reset_state().await.unwrap();
     }
 
     if !cmd_start {

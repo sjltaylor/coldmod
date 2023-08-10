@@ -2,7 +2,7 @@ use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
 use coldmod_msg::proto::{FilterSet, FilterSetQuery, OpsStatus, Trace, TraceSrcs};
-use coldmod_msg::web::Msg;
+
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{transport::Server, Request, Response, Status, Streaming};
@@ -28,11 +28,7 @@ impl Traces for Tracing {
             let stream_result = stream.message().await;
             match stream_result {
                 Ok(Some(trace)) => {
-                    let result = self
-                        .dispatch
-                        .handle(coldmod_msg::web::Msg::TraceReceived(trace))
-                        .await;
-                    if let Err(e) = result {
+                    if let Err(e) = self.dispatch.trace_received(trace).await {
                         tracing::error!("failed to handle trace: {:?}", e);
                     }
                 }
@@ -49,12 +45,8 @@ impl Traces for Tracing {
     }
 
     async fn set(&self, request: Request<TraceSrcs>) -> Result<Response<()>, Status> {
-        let scan = request.into_inner();
-        match self
-            .dispatch
-            .handle(coldmod_msg::web::Msg::SetTraceSrcs(scan))
-            .await
-        {
+        let trace_srcs = request.into_inner();
+        match self.dispatch.set_trace_srcs(trace_srcs).await {
             Ok(_) => {}
             Err(_e) => {
                 return Err(Status::internal("handling failed"));
@@ -116,7 +108,7 @@ impl Ops for ColdmodOps {
 
     async fn reset_state(&self, _: Request<()>) -> Result<Response<()>, Status> {
         self.dispatch
-            .handle(Msg::Reset)
+            .reset_state()
             .await
             .expect("store to be reset");
         Ok(Response::new(()))

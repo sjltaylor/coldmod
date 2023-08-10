@@ -1,6 +1,6 @@
 use crate::store;
 use async_trait::async_trait;
-use coldmod_msg::proto::{FilterSet, FilterSetQuery};
+use coldmod_msg::proto::{FilterSet, FilterSetQuery, Trace, TraceSrcs};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -30,30 +30,50 @@ impl Dispatch {
         }
     }
 
-    pub async fn handle(&self, msg: Msg) -> Result<Vec<Msg>, anyhow::Error> {
-        let mut store = self.store.clone();
-
+    async fn _handle_websocket_msg(&self, msg: Msg) -> Result<Vec<Msg>, anyhow::Error> {
         match msg {
-            Msg::Reset => {
-                store.reset().await?;
-            }
-            Msg::TraceReceived(trace) => {
-                store.store_trace(trace).await?;
-                self._pulse_rate_limiter();
-            }
-            Msg::SetTraceSrcs(scan) => {
-                store.set_trace_srcs(&scan).await?;
-                let heat_map = store.get_heat_map().await?.unwrap();
-                self._broadcast(Msg::HeatMapAvailable(heat_map));
-            }
             Msg::SetFilterSet((filterset, key)) => {
-                tracing::info!("set filterset:{:?}", key);
-                self._send_filterset_to_listener(&key, filterset).await;
+                self.route_filterset(filterset, key).await?;
             }
-            _ => {}
+            _ => {
+                tracing::warn!("unexpected websocket message: {}", msg);
+            }
         };
 
         Ok(vec![])
+    }
+
+    pub async fn route_filterset(
+        &self,
+        filterset: FilterSet,
+        key: String,
+    ) -> Result<(), anyhow::Error> {
+        tracing::info!("set filterset:{:?}", key);
+        self._send_filterset_to_listener(&key, filterset).await;
+        Ok(())
+    }
+
+    pub async fn reset_state(&self) -> Result<(), anyhow::Error> {
+        let mut store = self.store.clone();
+        store.reset().await?;
+        Ok(())
+    }
+
+    pub async fn set_trace_srcs(&self, trace_srcs: TraceSrcs) -> Result<(), anyhow::Error> {
+        let mut store = self.store.clone();
+
+        store.set_trace_srcs(&trace_srcs).await?;
+        let heat_map = store.get_heat_map().await?.unwrap();
+        self._broadcast(Msg::HeatMapAvailable(heat_map));
+
+        Ok(())
+    }
+
+    pub async fn trace_received(&self, trace: Trace) -> Result<(), anyhow::Error> {
+        let mut store = self.store.clone();
+        store.store_trace(trace).await?;
+        self._pulse_rate_limiter();
+        Ok(())
     }
 
     pub fn receiver(&self) -> broadcast::Receiver<Msg> {
@@ -163,7 +183,7 @@ impl Dispatch {
                 ws_msg = ws.receive() => {
                     match ws_msg {
                         Some(Ok(msg)) => {
-                            match self.handle(msg).await {
+                            match self._handle_websocket_msg(msg).await {
                                 Ok(replies) => replies,
                                 Err(e) => {
                                     tracing::error!("error handling message: {}", e);
