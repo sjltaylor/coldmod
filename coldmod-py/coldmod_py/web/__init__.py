@@ -21,9 +21,9 @@ def extract_key(web_app_url: str) -> str:
 
     raise Exception(f"invalid web_app_url: {web_app_url}")
 
-def stream_filterset(web_app_url: str):
+def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.FilterSet]:
     q = tracing_pb2.FilterSetQuery(key=web_app_url)
     with grpc.insecure_channel("127.0.0.1:7777") as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
         for filterset in stub.stream_filtersets(q):
-            print(filterset)
+            yield filterset

@@ -8,6 +8,8 @@ import logging
 import sys
 import webbrowser
 from typing import List
+from google.protobuf.json_format import MessageToDict
+import json
 
 class CLI:
     def __init__(self, path=None, verbose=False):
@@ -52,8 +54,20 @@ class CLI:
         else:
             key = coldmod_py.web.extract_key(web_app_url)
 
-        coldmod_py.web.stream_filterset(key);
+        path_prefix = self.config.srcs_root_dir
+
+        for filterset in coldmod_py.web.stream_filterset(key):
+            with open('./coldmod.filterset.json', 'w') as json_file:
+                raw = json.dumps(MessageToDict(filterset), indent=4)
+                json_file.write(raw)
+            with open('./coldmod.filterset.locs.txt', 'w') as locs_file:
+                for trace_src in filterset.trace_srcs:
+                    locs_file.write(f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n")
+            print(f"{len(filterset.trace_srcs)} srcs saved")
 
 
 if __name__ == "__main__":
-    fire.Fire(CLI)
+    try:
+        fire.Fire(CLI)
+    except KeyboardInterrupt:
+        pass
