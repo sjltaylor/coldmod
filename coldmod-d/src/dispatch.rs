@@ -14,6 +14,7 @@ pub struct Dispatch {
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
     tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<FilterSet>>>>,
+    websocket_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<Msg>>>>,
 }
 
 impl Dispatch {
@@ -25,6 +26,7 @@ impl Dispatch {
             internal,
             rate_limiter,
             tracesrcs_listeners: Arc::new(RwLock::new(HashMap::new())),
+            websocket_listeners: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -116,8 +118,14 @@ impl Dispatch {
         }
     }
 
-    pub async fn serve_socket<WS: WebSocket>(&self, mut ws: WS) {
+    pub async fn serve_socket<WS: WebSocket + Clone + 'static>(&self, mut ws: WS) {
         let mut store = self.store.clone();
+
+        let (send_to_key, mut receive_for_key) = mpsc::channel::<Msg>(65536);
+        self.websocket_listeners
+            .write()
+            .await
+            .insert(ws.key(), send_to_key);
 
         // before any awaiting to make sure internal messages are buffered
         let mut broadcast = self.internal.subscribe();
@@ -169,7 +177,16 @@ impl Dispatch {
                         }
                         None => {
                             tracing::info!("socket closed");
-                            return;
+                            break;
+                        }
+                    }
+                },
+                key_msg = receive_for_key.recv() => {
+                    match key_msg {
+                        Some(msg) => vec!(msg),
+                        None => {
+                            tracing::info!("key channel closed");
+                            break;
                         }
                     }
                 },
@@ -181,7 +198,7 @@ impl Dispatch {
                         }
                         Err(e) => {
                             tracing::error!("error receiving broadcast: {}", e);
-                            continue;
+                            break;
                         }
                     }
                 }
@@ -194,6 +211,9 @@ impl Dispatch {
                 }
             }
         }
+
+        // TODO: implement Drop to handle this cleanup
+        self.websocket_listeners.write().await.remove(&ws.key());
     }
 
     pub async fn send_filtersets_until_closed(
@@ -205,6 +225,14 @@ impl Dispatch {
             .write()
             .await
             .insert(q.key.clone(), tx.clone());
+
+        // if there is already a client as it to send it's current filterset
+        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
+            let msg = Msg::SendYourFilterSet;
+            if let Err(e) = ws.send(msg).await {
+                tracing::error!("failed to ask socket client for filterset: {:?}", e);
+            }
+        }
 
         tx.closed().await;
         tracing::info!("tx closed - removing listener");
@@ -226,7 +254,8 @@ impl Dispatch {
 }
 
 #[async_trait]
-pub trait WebSocket {
+pub trait WebSocket: Send + Sync {
     async fn send(&mut self, msg: &Msg) -> Result<(), anyhow::Error>;
     async fn receive(&mut self) -> Option<Result<Msg, anyhow::Error>>;
+    fn key(&self) -> String;
 }

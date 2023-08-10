@@ -11,7 +11,8 @@ use axum::{
 };
 use coldmod_msg::web::Msg;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
+use tokio::sync::Mutex;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
 //allows to extract the IP of connecting user
@@ -62,8 +63,9 @@ async fn ws_handler(
     ws.on_upgrade(move |socket| serve_socket(socket, dispatch, key))
 }
 
+#[derive(Clone)]
 struct WebSocketAdapter {
-    socket: WebSocket,
+    socket: Arc<Mutex<WebSocket>>,
     key: String,
 }
 
@@ -71,12 +73,14 @@ struct WebSocketAdapter {
 impl dispatch::WebSocket for WebSocketAdapter {
     async fn send(&mut self, msg: &Msg) -> Result<(), anyhow::Error> {
         let payload = flexbuffers::to_vec(msg)?;
-        self.socket.send(Message::Binary(payload)).await?;
+        let mut lock = self.socket.as_ref().lock().await;
+        lock.send(Message::Binary(payload)).await?;
         Ok(())
     }
 
     async fn receive(&mut self) -> Option<Result<Msg, anyhow::Error>> {
-        match self.socket.recv().await {
+        let mut lock = self.socket.as_ref().lock().await;
+        match lock.recv().await {
             None | Some(Ok(Message::Close(_))) => {
                 tracing::info!("socket closed");
                 return None;
@@ -94,9 +98,16 @@ impl dispatch::WebSocket for WebSocketAdapter {
             Some(Err(e)) => Some(Err(e.into())),
         }
     }
+
+    fn key(&self) -> String {
+        self.key.clone()
+    }
 }
 
 async fn serve_socket(socket: WebSocket, dispatch: Dispatch, key: String) {
-    let ws = WebSocketAdapter { socket, key };
+    let ws = WebSocketAdapter {
+        socket: Arc::new(Mutex::new(socket)),
+        key,
+    };
     dispatch.serve_socket(ws).await;
 }

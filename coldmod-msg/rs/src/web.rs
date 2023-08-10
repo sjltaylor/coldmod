@@ -14,6 +14,7 @@ pub enum Msg {
     SetFilterSet((FilterSet, String)),
     SetFilterSetInContext(FilterSet),
     FilterSetAvailable(FilterSet),
+    SendYourFilterSet,
 }
 
 impl Display for Msg {
@@ -28,6 +29,7 @@ impl Display for Msg {
             Msg::SetFilterSet(_) => write!(f, "SetFilterSet"),
             Msg::FilterSetAvailable(_) => write!(f, "FilterSetAvailable"),
             Msg::SetFilterSetInContext(_) => write!(f, "SetFilterSetInContext"),
+            Msg::SendYourFilterSet => write!(f, "SendYourFilterSet"),
         }
     }
 }

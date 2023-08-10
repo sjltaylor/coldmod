@@ -19,12 +19,12 @@ impl Sender {
     }
 }
 
-pub fn connect<F: Fn(Msg) + 'static>(path: String, route: F) -> Sender {
+pub fn connect<F: Fn(Msg, Sender) + 'static>(path: String, route: F) -> Sender {
     let ws =
         WebSocket::new(&format!("ws://localhost:3333/ws{}", path)).expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
-
+    let sender = Sender::new(ws.clone());
     {
         // onopen
         let onopen_callback = Closure::<dyn FnMut(_)>::new(move |_: Event| {
@@ -46,7 +46,7 @@ pub fn connect<F: Fn(Msg) + 'static>(path: String, route: F) -> Sender {
         // onmessage
         let onmessage_callback =
             Closure::<dyn FnMut(_)>::new(move |e: MessageEvent| match coldmod_msg(&e) {
-                Ok(msg) => route(msg),
+                Ok(msg) => route(msg, sender.clone()),
                 Err(err) => error!("websocket message error: {:?}", err),
             });
         ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));

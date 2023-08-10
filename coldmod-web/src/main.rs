@@ -1,4 +1,4 @@
-use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
+use crate::{coldmod_d::Sender, filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::web::Msg;
 use heatmap_ui::HeatMapUI;
 
@@ -15,23 +15,12 @@ mod heatmap_ui;
 fn App(cx: Scope, path: String) -> impl IntoView {
     let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
 
-    let sender = coldmod_d::connect(path, move |msg| match msg {
-        Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
-            filter_state: FilterState::default(),
-            heatmap: heat_map,
-        })),
-        Msg::HeatMapChanged(ref heatmap_delta) => {
-            rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
-        }
-        _ => {}
-    });
-
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
         None => None,
     });
 
-    create_effect(cx, move |_| {
+    let emit_filterset = move |sender: Sender| {
         if let Some(heat_srcs) = heat_srcs_memo.get() {
             log!("HeatMapUI/count: {}", heat_srcs.len());
 
@@ -40,6 +29,24 @@ fn App(cx: Scope, path: String) -> impl IntoView {
             };
             sender.send(Msg::SetFilterSetInContext(filterset));
         }
+    };
+
+    let sender = coldmod_d::connect(path, move |msg, sender| match msg {
+        Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
+            filter_state: FilterState::default(),
+            heatmap: heat_map,
+        })),
+        Msg::HeatMapChanged(ref heatmap_delta) => {
+            rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
+        }
+        Msg::SendYourFilterSet => emit_filterset(sender),
+        _ => {}
+    });
+
+    let sender = sender.clone();
+    create_effect(cx, move |_| {
+        let sender = sender.clone();
+        emit_filterset(sender);
     });
 
     provide_context(cx, rw_filters);
