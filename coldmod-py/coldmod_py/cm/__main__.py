@@ -3,12 +3,14 @@ import coldmod_py
 import coldmod_py.files as files
 import coldmod_py.config
 import coldmod_py.code as code
+import coldmod_py.mod as mod
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
 import sys
 import webbrowser
 from typing import List
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict, ParseDict
+import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 import json
 
 class CLI:
@@ -64,6 +66,20 @@ class CLI:
                 for trace_src in filterset.trace_srcs:
                     locs_file.write(f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n")
             print(f"{len(filterset.trace_srcs)} srcs saved")
+
+    def mod_remove(self, force=False):
+        if not force:
+            print("Are you sure (y/N)? (you didn't use --force)")
+            yN = input()
+            if yN != "y":
+                print("aborting")
+                sys.exit(1)
+
+        with open('./coldmod.filterset.json', 'r') as json_file:
+            raw = json_file.read()
+            filterset = ParseDict(json.loads(raw), tracing_pb2.FilterSet())
+            mod.remove(filterset)
+
 
 
 if __name__ == "__main__":
