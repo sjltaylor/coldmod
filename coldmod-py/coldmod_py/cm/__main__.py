@@ -58,14 +58,32 @@ class CLI:
 
         path_prefix = self.config.srcs_root_dir
 
+        previous_lines = []
+
         for filterset in coldmod_py.web.stream_filterset(key):
             with open('./coldmod.filterset.json', 'w') as json_file:
                 raw = json.dumps(MessageToDict(filterset), indent=4)
                 json_file.write(raw)
             with open('./coldmod.filterset.locs.txt', 'w') as locs_file:
+                for line in previous_lines:
+                    sys.stdout.write("\033[F")
+                    sys.stdout.write("\r")
+                    sys.stdout.write(" " * len(line))
+                    sys.stdout.write("\r")
+                    sys.stdout.flush()
+
+                previous_lines = []
+
                 for trace_src in filterset.trace_srcs:
-                    locs_file.write(f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n")
-            print(f"{len(filterset.trace_srcs)} srcs saved")
+                    loc = f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n"
+                    locs_file.write(loc)
+                    sys.stdout.write(loc)
+                    sys.stdout.flush()
+                    previous_lines.append(loc)
+
+                previous_lines.reverse()
+
+
 
     def mod_remove(self, force=False):
         if not force:
