@@ -2,6 +2,7 @@ import os
 from typing import Dict, Iterable, List, Tuple, Any, Optional
 from coldmod_msg.proto.tracing_pb2 import TraceSrc
 from hashlib import blake2b
+from .parsed_trace_src import ParsedTraceSrc
 import ast
 import libcst
 import libcst.metadata
@@ -14,7 +15,7 @@ class FunctionFinder(libcst.CSTVisitor):
         self.path = path
         # stack for storing the canonical name of the current function
         self.class_name_stack: List[str] = []
-        self.trace_srcs: List[TraceSrc] = []
+        self.parsed_trace_srcs: List[ParsedTraceSrc] = []
 
     def visit_ClassDef(self, node: libcst.ClassDef) -> Optional[bool]:
         self.class_name_stack.append(node.name.value)
@@ -32,20 +33,21 @@ class FunctionFinder(libcst.CSTVisitor):
         buffer.append(stripped_src)
         digest = blake2b("".join(buffer).encode('utf-8')).hexdigest()
 
-        self.trace_srcs.append(TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=stripped_src))
+        trace_src = TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=stripped_src)
+        self.parsed_trace_srcs.append(ParsedTraceSrc(trace_src=trace_src, function_def=node))
 
         return False # don't visit nested functions
 
 
-def _visit_module(path: str, module: libcst.Module) -> Iterable[TraceSrc]:
+def _visit_module(path: str, module: libcst.Module) -> Iterable[ParsedTraceSrc]:
     wrapper = libcst.metadata.MetadataWrapper(module)
 
     visitor = FunctionFinder(module=module, path=path)
     wrapper.visit(visitor)
 
-    return visitor.trace_srcs
+    return visitor.parsed_trace_srcs
 
-def _visit_all(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> Iterable[TraceSrc]:
+def _visit_all(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> Iterable[ParsedTraceSrc]:
     for abs_path, module in modules.items():
         path = os.path.relpath(abs_path, srcs_root_dir)
         for source in _visit_module(path, module):

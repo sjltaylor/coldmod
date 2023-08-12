@@ -19,34 +19,34 @@ class CLI:
             logging.basicConfig(level=logging.DEBUG)
         self.config = coldmod_py.config.load(path)
 
-    def list_srcs(self):
+    def src_files(self):
         """
         print the files which are included in coldmod tracing
         """
         for path in files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns):
             print(path)
 
-    def heat_srcs(self):
+    def trace_srcs(self):
         """
         print the src scan used to generate the coldmod tracing
         """
         paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        trace_srcs = code.find_trace_srcs_in(self.config.srcs_root_dir, paths)
-        for trace_src in trace_srcs:
-            print(f"{trace_src.name}:{trace_src.digest}\n{trace_src.path}:{trace_src.lineno}\n")
+        srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, paths)
+        for s in srcs:
+            print(f"{s.trace_src.name}:{s.trace_src.digest}\n{s.trace_src.path}:{s.trace_src.lineno}\n")
 
     def duplicates(self):
         """
         print any srcs that have the same digest
         """
         paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        trace_srcs = code.find_trace_srcs_in(self.config.srcs_root_dir, paths)
-        duplicates = code.duplicates(trace_srcs)
-        for digest, duplicate_trace_srcs in duplicates.items():
-            print(f"{len(list(duplicate_trace_srcs))} => {digest}\n")
-            for trace_src in duplicate_trace_srcs:
-                print(f"{trace_src.name} -> {trace_src.path}:{trace_src.lineno}\n")
-                print(f"{trace_src.src}\n")
+        trace_srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, paths)
+        duplicates_by_digest = code.duplicates(trace_srcs)
+        for digest, duplicate_srcs in duplicates_by_digest.items():
+            print(f"{len(list(duplicate_srcs))} => {digest}\n")
+            for e in duplicate_srcs:
+                print(f"{e.trace_src.name} -> {e.trace_src.path}:{e.trace_src.lineno}\n")
+                print(f"{e.trace_src.src}\n")
 
     def connect(self, web_app_url=None):
         if web_app_url is None:
@@ -84,7 +84,6 @@ class CLI:
                 previous_lines.reverse()
 
 
-
     def mod_remove(self, force=False):
         if not force:
             print("Are you sure (y/N)? (you didn't use --force)")
@@ -96,9 +95,9 @@ class CLI:
         with open('./coldmod.filterset.json', 'r') as json_file:
             raw = json_file.read()
             filterset = ParseDict(json.loads(raw), tracing_pb2.FilterSet())
-            mod.remove(filterset)
-
-
+            srcs = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
+            parsed_trace_srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, srcs)
+            mod.remove(parsed_trace_srcs, filterset)
 
 if __name__ == "__main__":
     try:

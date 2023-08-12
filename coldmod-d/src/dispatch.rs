@@ -260,8 +260,6 @@ impl Dispatch {
     }
 
     async fn _send_filterset_to_listener(&self, key: &String, filterset: FilterSet) {
-        tracing::info!("listeners: {:?}", self.tracesrcs_listeners.read().await);
-
         match self.tracesrcs_listeners.read().await.get(key) {
             Some(tx) => {
                 if let Err(e) = tx.send(filterset).await {

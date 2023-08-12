@@ -3,8 +3,8 @@ from .visitor import _visit_module
 
 def test_visit_no_functions():
     module = cst.parse_module('')
-    trace_srcs = _visit_module("path", module)
-    assert len(list(trace_srcs)) == 0
+    parsed_trace_srcs = _visit_module("path", module)
+    assert len(list(parsed_trace_srcs)) == 0
 
 _src = """
 
@@ -28,13 +28,16 @@ class Class1():
 def test_visit_many_functions():
     # a file with multiple functions incl one in a class and one with a duplicate body
     module = cst.parse_module(_src)
-    trac_srcs = list(_visit_module("the/path", module))
-    assert len(trac_srcs) == 4
+    parsed_trace_srcs = list(_visit_module("the/path", module))
+    assert len(parsed_trace_srcs) == 4
 
-    uniq_digests = set([s.digest for s in trac_srcs])
+    uniq_digests = set([s.trace_src.digest for s in parsed_trace_srcs])
     assert len(uniq_digests) == 4
 
-    trace_src = trac_srcs[3]
+    # assert node[3] is a cst.FunctionDef
+    assert isinstance(parsed_trace_srcs[3].function_def, cst.FunctionDef)
+
+    trace_src = parsed_trace_srcs[3].trace_src
     assert trace_src.name == "__init__"
     assert trace_src.path == "the/path"
     assert trace_src.lineno == 15
