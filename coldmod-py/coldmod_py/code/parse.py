@@ -15,6 +15,6 @@ def _parse_source(source: Tuple[str, str]) -> Tuple[str, cst.Module] | SyntaxErr
         return e
     return path, parsed
 
-def _parse_all(sources: Dict[str,str]) -> Dict[str, cst.Module]:
+def parse_modules(sources: Dict[str,str]) -> Dict[str, cst.Module]:
     valid_sources = [t for t in map(_parse_source, sources.items()) if not isinstance(t, SyntaxError)]
     return dict(valid_sources)

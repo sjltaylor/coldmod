@@ -6,6 +6,7 @@ from .parsed_trace_src import ParsedTraceSrc
 import ast
 import libcst
 import libcst.metadata
+from .digest import function_def_digest
 
 class FunctionFinder(libcst.CSTVisitor):
     METADATA_DEPENDENCIES = (libcst.metadata.PositionProvider,)
@@ -27,13 +28,10 @@ class FunctionFinder(libcst.CSTVisitor):
         name = node.name.value
         class_name_path = '.'.join(self.class_name_stack) if self.class_name_stack else None
         lineno = self.get_metadata(libcst.metadata.PositionProvider, node).start.line
-        stripped_src = ast.unparse(ast.parse(self.module.code_for_node(node)))
-        buffer = [self.path]
-        buffer.append(f"[{class_name_path or ''}]")
-        buffer.append(stripped_src)
-        digest = blake2b("".join(buffer).encode('utf-8')).hexdigest()
+        src = self.module.code_for_node(node)
+        digest = function_def_digest(src, rel_module_path=self.path, class_name_path=class_name_path)
 
-        trace_src = TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=stripped_src)
+        trace_src = TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=src)
         self.parsed_trace_srcs.append(ParsedTraceSrc(trace_src=trace_src, function_def=node))
 
         return False # don't visit nested functions
@@ -49,6 +47,6 @@ def _visit_module(path: str, module: libcst.Module) -> Iterable[ParsedTraceSrc]:
 
 def _visit_all(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> Iterable[ParsedTraceSrc]:
     for abs_path, module in modules.items():
-        path = os.path.relpath(abs_path, srcs_root_dir)
-        for source in _visit_module(path, module):
+        rel_path = os.path.relpath(abs_path, srcs_root_dir)
+        for source in _visit_module(rel_path, module):
             yield source

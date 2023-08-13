@@ -96,8 +96,8 @@ class CLI:
             raw = json_file.read()
             filterset = ParseDict(json.loads(raw), tracing_pb2.FilterSet())
             srcs = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-            parsed_trace_srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, srcs)
-            mod.remove(parsed_trace_srcs, filterset)
+            mod.remove(self.config.srcs_root_dir, filterset, list(srcs))
+
 
 if __name__ == "__main__":
     try:
