@@ -33,8 +33,7 @@ impl Traces for Tracing {
                     }
                 }
                 Ok(None) => {
-                    tracing::warn!("the trace was None");
-                    continue;
+                    return Ok(Response::new(()));
                 }
                 Err(e) => {
                     tracing::warn!("failed to receive trace: {:?}", e);

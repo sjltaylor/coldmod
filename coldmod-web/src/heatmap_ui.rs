@@ -40,12 +40,9 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
 
     return view! {cx,
         <li class="container heat-src">
-            <div class="heat-src-count">
-                <div class="heat-src-count-label">Traces</div>
-                <div class="heat-src-count-value">{heat_src.trace_count}</div>
-            </div>
-            <div class="heat-src-name">{buffer}</div>
-            <div class="heat-src-loc">{loc}</div>
+            <div><div class="heat-src-path">{loc}</div><div class="heat-src-name">{buffer}</div></div>
+            <div class="heat-src-trace-count">TRACE COUNT:{heat_src.trace_count}</div>
+            <div class="heat-src-digest">{trace_src.digest}</div>
         </li>
     };
 }
