@@ -32,7 +32,8 @@ class FunctionFinder(libcst.CSTVisitor):
         digest = function_def_digest(src, rel_module_path=self.path, class_name_path=class_name_path)
 
         trace_src = TraceSrc(path=self.path, name=name, lineno=lineno, digest=digest, class_name_path=class_name_path, src=src)
-        self.parsed_trace_srcs.append(ParsedTraceSrc(trace_src=trace_src, function_def=node))
+        name_position = self.get_metadata(libcst.metadata.PositionProvider, node.name).start
+        self.parsed_trace_srcs.append(ParsedTraceSrc(trace_src=trace_src, name_position=name_position))
 
         return False # don't visit nested functions
 

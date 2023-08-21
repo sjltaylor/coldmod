@@ -2,12 +2,16 @@ from typing import Iterable, Dict, List
 from coldmod_py.files import read_all
 from .parse import parse_modules
 from .visitor import _visit_all
+import libcst
 import coldmod_py.code.digest
 from .parsed_trace_src import ParsedTraceSrc
 import os
 
 def parse_trace_srcs_in(srcs_root_dir: str, src_paths: Iterable[str]) -> List[ParsedTraceSrc]:
-    return list(_visit_all(srcs_root_dir, parse_modules(read_all(src_paths))))
+    return find_trace_srcs_in(srcs_root_dir, parse_modules(read_all(src_paths)))
+
+def find_trace_srcs_in(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> List[ParsedTraceSrc]:
+    return list(_visit_all(srcs_root_dir, modules))
 
 def key_by_location(srcs_root_dir: str, trace_srcs: Iterable[ParsedTraceSrc]) -> Dict[str,ParsedTraceSrc]:
     return {f"{os.path.join(srcs_root_dir, ts.trace_src.path)}:{ts.trace_src.lineno}" : ts for ts in trace_srcs}

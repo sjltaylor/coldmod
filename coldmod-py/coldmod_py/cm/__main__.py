@@ -95,8 +95,9 @@ class CLI:
         with open('./coldmod.filterset.json', 'r') as json_file:
             raw = json_file.read()
             filterset = ParseDict(json.loads(raw), tracing_pb2.FilterSet())
-            srcs = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-            mod.remove(self.config.srcs_root_dir, filterset, list(srcs))
+            src_files = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
+            mod.remove(self.config.srcs_root_dir, filterset.trace_srcs, src_files)
+
 
 
 if __name__ == "__main__":
