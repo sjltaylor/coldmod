@@ -21,7 +21,7 @@ impl Sender {
 
 pub fn connect<F: Fn(Msg, Sender) + 'static>(path: String, route: F) -> Sender {
     let ws =
-        WebSocket::new(&format!("ws://localhost:3333/ws{}", path)).expect("to create websocket");
+        WebSocket::new(&format!("wss://localhost:3333/ws{}", path)).expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
     let sender = Sender::new(ws.clone());

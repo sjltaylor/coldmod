@@ -14,7 +14,10 @@ use coldmod_msg::web::Msg;
 
 use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
-use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+use tower_http::{
+    services::{ServeDir, ServeFile},
+    trace::{DefaultMakeSpan, TraceLayer},
+};
 
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
@@ -35,10 +38,13 @@ pub async fn server(dispatch: Dispatch) {
     .await
     .unwrap();
 
+    let serve_dir = ServeDir::new("static").fallback(ServeFile::new("static/index.html"));
+
     // build our application with some routes
     let app = Router::new()
+        // .route("/", get(|| async { "Hello, World!" }))
         .route("/ws/connect/:key", get(ws_handler).with_state(dispatch))
-        .route("/", get(|| async { "Hello, World!" }))
+        .nest_service("/", serve_dir)
         // logging so we can see whats going on
         .layer(
             TraceLayer::new_for_http()
