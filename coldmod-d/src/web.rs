@@ -9,9 +9,10 @@ use axum::{
     routing::get,
     Router,
 };
+use axum_server::tls_rustls::RustlsConfig;
 use coldmod_msg::web::Msg;
 
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
@@ -22,6 +23,18 @@ use flexbuffers;
 use crate::dispatch::{self, Dispatch};
 
 pub async fn server(dispatch: Dispatch) {
+    // configure certificate and private key used by https
+    let config = RustlsConfig::from_pem_file(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("self_signed_certs")
+            .join("cert.pem"),
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("self_signed_certs")
+            .join("key.pem"),
+    )
+    .await
+    .unwrap();
+
     // build our application with some routes
     let app = Router::new()
         .route("/ws/connect/:key", get(ws_handler).with_state(dispatch))
@@ -36,7 +49,7 @@ pub async fn server(dispatch: Dispatch) {
     let addr = SocketAddr::from(([127, 0, 0, 1], 3333));
     tracing::debug!("listening on {}", addr);
 
-    axum::Server::bind(&addr)
+    axum_server::bind_rustls(addr, config)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();

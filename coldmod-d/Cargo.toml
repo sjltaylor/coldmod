@@ -30,6 +30,9 @@ anyhow = "1.0.71"
 async-stream = "0.3.5"
 async-trait = "0.1.68"
 argh = "0.1.10"
+features = "0.10.0"
+json = "0.12.4"
+axum-server = { version = "0.5.1", features = ["rustls", "tls-rustls"] }
 
 [dev-dependencies]
 futures-util = "0.3.28"

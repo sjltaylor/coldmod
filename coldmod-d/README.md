@@ -4,4 +4,4 @@ TODO
 
 * document the main cli
 * document the demo cli
-*
+* document the COLDMOD_OPS environment variable
