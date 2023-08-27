@@ -19,7 +19,7 @@ coldmod-msg = { version = "0.1.0", path = "../coldmod-msg/rs", features = ["grpc
 axum = { version = "0.6.19", features = ["json", "http2", "tracing", "ws", "headers", "macros", "multipart"] }
 axum-extra = "0.7.4"
 tower = { version = "0.4.13", features = ["full"] }
-tower-http = { version = "0.4.0", features = ["full"] }
+tower-http = { version = "0.4.0", features = ["full", "auth"] }
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "time"] }
 tokio-tungstenite = "0.20.0"

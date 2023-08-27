@@ -17,6 +17,7 @@ use tokio::sync::Mutex;
 use tower_http::{
     services::{ServeDir, ServeFile},
     trace::{DefaultMakeSpan, TraceLayer},
+    validate_request::ValidateRequestHeaderLayer,
 };
 
 //allows to extract the IP of connecting user
@@ -39,6 +40,7 @@ pub async fn server(dispatch: Dispatch) {
     .unwrap();
 
     let serve_dir = ServeDir::new("static").fallback(ServeFile::new("static/index.html"));
+    let auth_service = ValidateRequestHeaderLayer::basic("coldmod", "nigel");
 
     // build our application with some routes
     let app = Router::new()
@@ -49,7 +51,8 @@ pub async fn server(dispatch: Dispatch) {
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
-        );
+        )
+        .layer(auth_service);
 
     // run it with hyper
     let addr = SocketAddr::from(([127, 0, 0, 1], 3333));
