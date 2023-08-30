@@ -1,3 +1,5 @@
+
+
 use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
@@ -5,8 +7,12 @@ use coldmod_msg::proto::{FilterSet, FilterSetQuery, OpsStatus, Trace, TraceSrcs}
 
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
+use tonic::transport::{Identity, ServerTlsConfig};
 use tonic::{transport::Server, Request, Response, Status, Streaming};
+
+use tower::ServiceBuilder;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+use tower_http::validate_request::ValidateRequestHeaderLayer;
 
 #[derive(Clone)]
 pub struct Tracing {
@@ -115,7 +121,10 @@ impl Ops for ColdmodOps {
 }
 
 pub async fn server(dispatch: &Dispatch) {
-    let addr = "127.0.0.1:7777".parse().expect("couldn't parse address");
+    let grpc_host = dispatch.grpc_host();
+    let api_key = dispatch.api_key();
+    let tls = dispatch.tls();
+
     let tracing_d = Tracing {
         dispatch: dispatch.clone(),
     };
@@ -123,18 +132,38 @@ pub async fn server(dispatch: &Dispatch) {
         dispatch: dispatch.clone(),
     };
 
-    let mut builder = Server::builder()
-        .layer(
-            TraceLayer::new_for_grpc()
-                .make_span_with(DefaultMakeSpan::default().include_headers(false)),
-        )
-        .add_service(TracesServer::new(tracing_d));
+    let trace_layer = TraceLayer::new_for_grpc()
+        .make_span_with(DefaultMakeSpan::default().include_headers(false));
 
-    if let Ok(_) = std::env::var("COLDMOD_OPS") {
-        builder = builder.add_service(OpsServer::new(ops_d));
+    let auth_layer = if let Some(api_key) = api_key {
+        Some(ValidateRequestHeaderLayer::bearer(api_key.as_str()))
+    } else {
+        None
+    };
+
+    let layer = ServiceBuilder::new()
+        .layer(trace_layer)
+        .option_layer(auth_layer);
+
+    let mut builder = Server::builder().layer(layer);
+
+    if let Some((cert, key)) = tls {
+        let cert_pem = std::fs::read_to_string(cert).unwrap();
+        let key_pem = std::fs::read_to_string(key).unwrap();
+        let config = ServerTlsConfig::new().identity(Identity::from_pem(&cert_pem, &key_pem));
+        builder = builder.tls_config(config).unwrap();
     }
 
-    match builder.serve(addr).await {
+    let ops_service = if std::env::var("COLDMOD_OPS").unwrap_or("off".to_string()) == "on" {
+        Some(OpsServer::new(ops_d))
+    } else {
+        None
+    };
+
+    let builder = builder.add_service(TracesServer::new(tracing_d));
+    let builder = builder.add_optional_service(ops_service);
+
+    match builder.serve(grpc_host).await {
         Ok(_) => println!("grpc server exited"),
         Err(e) => eprintln!("grpc server exited with an error: {:?}", e),
     };

@@ -98,8 +98,6 @@ class CLI:
             src_files = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
             mod.remove(self.config.srcs_root_dir, filterset.trace_srcs, src_files)
 
-
-
 if __name__ == "__main__":
     try:
         fire.Fire(CLI)

@@ -19,9 +19,19 @@ impl Sender {
     }
 }
 
+fn coldmod_web_host() -> String {
+    let w = leptos::window();
+    if let Some(coldmod_web_host) = w.get("COLDMOD_WEB_HOST") {
+        if let Some(host) = coldmod_web_host.as_string() {
+            return host;
+        }
+    };
+    return leptos::window().location().host().unwrap();
+}
+
 pub fn connect<F: Fn(Msg, Sender) + 'static>(path: String, route: F) -> Sender {
-    let ws =
-        WebSocket::new(&format!("wss://localhost:3333/ws{}", path)).expect("to create websocket");
+    let ws = WebSocket::new(&format!("wss://{}/ws{}", coldmod_web_host(), path))
+        .expect("to create websocket");
     // For small binary messages, like CBOR, Arraybuffer is more efficient than Blob handling
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
     let sender = Sender::new(ws.clone());

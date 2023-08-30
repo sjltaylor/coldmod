@@ -4,3 +4,6 @@ target
 STATUS
 .vscode/launch.json
 .pytest_cache
+mkcert
+.env
+.envrc

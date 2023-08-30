@@ -1,3 +1,4 @@
 samples
 self_signed_certs
-static
+mkcert
+dist

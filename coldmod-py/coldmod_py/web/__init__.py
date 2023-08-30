@@ -6,12 +6,14 @@ import grpc
 import secrets
 import base64
 from urllib.parse import urlparse
+from coldmod_py import coldmod_d
+from coldmod_py import config
 
 
 def generate_app_url() -> Tuple[str, str]:
     bytes = secrets.token_bytes(32)
     key = f"cm-{base64.urlsafe_b64encode(bytes).decode('utf-8')}"
-    return (f"http://localhost:8080/connect/{key}", key)
+    return (f"https://{config.COLDMOD_WEB_HOST}/connect/{key}", key)
 
 def extract_key(web_app_url: str) -> str:
     segments = urlparse(web_app_url).path.split('/')[1:]
@@ -23,7 +25,13 @@ def extract_key(web_app_url: str) -> str:
 
 def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.FilterSet]:
     q = tracing_pb2.FilterSetQuery(key=web_app_url)
-    with grpc.insecure_channel("127.0.0.1:7777") as channel:
+    with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
-        for filterset in stub.stream_filtersets(q):
+
+        if config.INSECURE:
+            filtersets = stub.stream_filtersets(q)
+        else:
+            filtersets = stub.stream_filtersets.with_call(q, metadata=[("authorization", f"Bearer {config.COLDMOD_API_KEY}")])
+
+        for filterset in filtersets:
             yield filterset

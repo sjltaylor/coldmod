@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use coldmod_msg::proto::{FilterSet, FilterSetQuery, Trace, TraceSrcs};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
@@ -10,6 +11,11 @@ use tokio::sync::RwLock;
 
 #[derive(Clone)]
 pub struct Dispatch {
+    grpc_host: SocketAddr,
+    web_host: SocketAddr,
+    api_key: Option<String>,
+    tls: Option<(String, String)>,
+    // TODO: why is this pub crate?
     pub(crate) store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
@@ -18,11 +24,38 @@ pub struct Dispatch {
 }
 
 impl Dispatch {
-    pub async fn new(rate_limiter: mpsc::Sender<()>) -> Self {
+    pub fn web_host(&self) -> SocketAddr {
+        self.web_host.clone()
+    }
+
+    pub fn grpc_host(&self) -> SocketAddr {
+        self.grpc_host.clone()
+    }
+
+    pub fn api_key(&self) -> Option<String> {
+        self.api_key.clone()
+    }
+
+    pub fn tls(&self) -> Option<(String, String)> {
+        self.tls.clone()
+    }
+
+    pub async fn new(
+        grpc_host: SocketAddr,
+        web_host: SocketAddr,
+        redis_host: String,
+        api_key: Option<String>,
+        tls: Option<(String, String)>,
+        rate_limiter: mpsc::Sender<()>,
+    ) -> Self {
         let internal = broadcast::channel(6553).0;
 
         Self {
-            store: store::RedisStore::new().await,
+            grpc_host,
+            web_host,
+            api_key,
+            tls,
+            store: store::RedisStore::new(redis_host).await,
             internal,
             rate_limiter,
             tracesrcs_listeners: Arc::new(RwLock::new(HashMap::new())),

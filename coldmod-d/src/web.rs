@@ -12,7 +12,7 @@ use axum::{
 use axum_server::tls_rustls::RustlsConfig;
 use coldmod_msg::web::Msg;
 
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::{
     services::{ServeDir, ServeFile},
@@ -27,41 +27,43 @@ use flexbuffers;
 use crate::dispatch::{self, Dispatch};
 
 pub async fn server(dispatch: Dispatch) {
-    // configure certificate and private key used by https
-    let config = RustlsConfig::from_pem_file(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("self_signed_certs")
-            .join("cert.pem"),
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("self_signed_certs")
-            .join("key.pem"),
-    )
-    .await
-    .unwrap();
+    let web_host = dispatch.web_host();
+    let api_key = dispatch.api_key();
+    let tls = dispatch.tls();
 
-    let serve_dir = ServeDir::new("static").fallback(ServeFile::new("static/index.html"));
-    let auth_service = ValidateRequestHeaderLayer::basic("coldmod", "nigel");
+    let serve_dir = ServeDir::new("dist").fallback(ServeFile::new("dist/index.html"));
 
     // build our application with some routes
-    let app = Router::new()
-        // .route("/", get(|| async { "Hello, World!" }))
+    let mut app = Router::new()
         .route("/ws/connect/:key", get(ws_handler).with_state(dispatch))
         .nest_service("/", serve_dir)
         // logging so we can see whats going on
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
-        )
-        .layer(auth_service);
+        );
+
+    if let Some(api_key) = api_key {
+        let auth_service = ValidateRequestHeaderLayer::basic("coldmod", api_key.as_str());
+        app = app.layer(auth_service);
+    }
 
     // run it with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3333));
-    tracing::debug!("listening on {}", addr);
+    tracing::debug!("listening on {}", web_host);
 
-    axum_server::bind_rustls(addr, config)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
+    if let Some((cert, key)) = tls {
+        // configure certificate and private key used by https
+        let config = RustlsConfig::from_pem_file(cert, key).await.unwrap();
+        axum_server::bind_rustls(web_host, config)
+            .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+            .await
+            .unwrap();
+    } else {
+        axum::Server::bind(&web_host)
+            .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+            .await
+            .unwrap();
+    }
 }
 
 /// The handler for the HTTP request (this gets called when the HTTP GET lands at the start

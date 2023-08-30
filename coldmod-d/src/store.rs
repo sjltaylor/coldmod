@@ -1,12 +1,12 @@
-use std::collections::HashSet;
+use std::{collections::HashSet};
 
 use coldmod_msg::{
     proto::{Trace, TraceSrc, TraceSrcs},
     web::{HeatMap, HeatMapDelta, HeatSrc},
 };
 use prost::Message;
-use redis::AsyncCommands;
 use redis::{streams::StreamRangeReply, RedisError};
+use redis::{AsyncCommands, IntoConnectionInfo};
 
 #[derive(Clone)]
 pub struct RedisStore {
@@ -16,9 +16,8 @@ pub struct RedisStore {
 }
 
 impl RedisStore {
-    pub async fn new() -> RedisStore {
-        let client = redis::Client::open("redis://127.0.0.1/").unwrap();
-
+    pub async fn new<T: IntoConnectionInfo>(redis_host: T) -> RedisStore {
+        let client = redis::Client::open(redis_host).unwrap();
         RedisStore {
             connection: client
                 .get_multiplexed_async_connection()

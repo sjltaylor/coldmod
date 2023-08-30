@@ -18,6 +18,16 @@ For example, we make use of assert to cause runtime exceptions.
 
 ## Development
 
+### ENV
+
+```
+COLDMOD_GRPC_HOST
+COLDMOD_WEB_HOST
+COLDMOD_CA
+COLDMOD_API_KEY
+```
+
+
 ### Editable install
 
 

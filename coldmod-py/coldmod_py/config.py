@@ -45,3 +45,28 @@ def load(path: str|None) -> Config:
     config.ignore_patterns = ignore
 
     return config
+
+
+def env():
+    host = os.getenv("COLDMOD_GRPC_HOST")
+    if not host:
+        raise Exception("COLDMOD_GRPC_HOST not set")
+
+    ca = os.getenv("COLDMOD_CA")
+    if not ca:
+        raise Exception("COLDMOD_CA not set")
+
+    web_host = os.getenv("COLDMOD_WEB_HOST")
+    if not web_host:
+        raise Exception("COLDMOD_WEB_HOST not set")
+
+    api_key = os.getenv("COLDMOD_API_KEY")
+    if not api_key:
+        raise Exception("COLDMOD_API_KEY not set")
+
+    insecure = os.getenv("COLDMOD_INSECURE") == "on"
+
+    return (host, ca, web_host, api_key, insecure)
+
+
+(COLDMOD_GRPC_HOST, COLDMOD_CA, COLDMOD_WEB_HOST, COLDMOD_API_KEY, INSECURE) = env()
