@@ -11,8 +11,8 @@ class CLI:
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
 
-    def trace(self, digest):
-        trace = tracing_pb2.Trace(digest=digest, process_id="0", thread_id="0")
+    def trace(self, key):
+        trace = tracing_pb2.Trace(key=key, process_id="0", thread_id="0")
         traces = [trace]
 
         with coldmod_d.grpc_channel() as channel:

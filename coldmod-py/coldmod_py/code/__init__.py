@@ -1,31 +1,19 @@
-from typing import Iterable, Dict, List
-from coldmod_py.files import read_all
-from .parse import parse_modules
-from .visitor import _visit_all
-import libcst
-import coldmod_py.code.digest
+from typing import Iterable, Dict, Tuple, Iterator
+
+from . import parsed_trace_src
 from .parsed_trace_src import ParsedTraceSrc
-import os
+from .function_finder import FunctionFinder
+from .parse import parse_modules
 
-def parse_trace_srcs_in(srcs_root_dir: str, src_paths: Iterable[str]) -> List[ParsedTraceSrc]:
-    return find_trace_srcs_in(srcs_root_dir, parse_modules(read_all(src_paths)))
+from libcst.metadata import FullRepoManager, FullyQualifiedNameProvider
 
-def find_trace_srcs_in(srcs_root_dir: str, modules: Dict[str, libcst.Module]) -> List[ParsedTraceSrc]:
-    return list(_visit_all(srcs_root_dir, modules))
+def find_trace_srcs(paths_relative_to_cwd: Iterable[str]) -> Dict[str, Iterable[parsed_trace_src.ParsedTraceSrc]]:
+    frm = FullRepoManager(".", {*paths_relative_to_cwd}, {FullyQualifiedNameProvider})
+    trace_srcs_by_relative_path = {}
+    for rp in paths_relative_to_cwd:
+        wrapper = frm.get_metadata_wrapper_for_path(rp)
+        function_finder = FunctionFinder()
+        wrapper.visit(function_finder)
+        trace_srcs_by_relative_path[rp] = function_finder.trace_srcs
 
-def key_by_location(srcs_root_dir: str, trace_srcs: Iterable[ParsedTraceSrc]) -> Dict[str,ParsedTraceSrc]:
-    return {f"{os.path.join(srcs_root_dir, ts.trace_src.path)}:{ts.trace_src.lineno}" : ts for ts in trace_srcs}
-
-def key_by_digest(trace_srcs: Iterable[ParsedTraceSrc]) -> Dict[str,ParsedTraceSrc]:
-    return {pts.trace_src.digest : pts for pts in trace_srcs}
-
-def duplicates(parsed_trace_srcs: Iterable[ParsedTraceSrc]) -> Dict[str,List[ParsedTraceSrc]]:
-    by_digest = {}
-
-    for parsed_trace_src in parsed_trace_srcs:
-        digest = parsed_trace_src.trace_src.digest
-        if digest not in by_digest:
-            by_digest[digest] = []
-        by_digest[digest].append(parsed_trace_src)
-
-    return {digest: by_digest[digest] for digest, ts in by_digest.items() if len(ts) > 1}
+    return trace_srcs_by_relative_path

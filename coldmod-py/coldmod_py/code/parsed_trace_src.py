@@ -1,13 +1,13 @@
-import coldmod_msg.proto.tracing_pb2 as tracing_pb2
-import ast
 import libcst
 import libcst.metadata
-from libcst.metadata.scope_provider import _ASSIGNMENT_LIKE_NODES
+import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 
-class ParsedTraceSrc():
-    trace_src: tracing_pb2.TraceSrc
+class ParsedTraceSrc:
+    position: libcst.metadata.CodePosition
     name_position: libcst.metadata.CodePosition
+    trace_src: tracing_pb2.TraceSrc
 
-    def __init__(self, trace_src: tracing_pb2.TraceSrc, name_position: libcst.metadata.CodePosition):
+    def __init__(self, *, position: libcst.metadata.CodePosition, name_position: libcst.metadata.CodePosition, trace_src: tracing_pb2.TraceSrc):
         self.trace_src = trace_src
+        self.position = position
         self.name_position = name_position

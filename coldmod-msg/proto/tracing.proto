@@ -5,22 +5,16 @@ import "google/protobuf/empty.proto";
 package coldmod_msg.proto.tracing;
 
 message Trace {
-  string digest = 1;
+  string key = 1;
   string thread_id = 2;
   string process_id = 3;
 }
 
 message TraceSrc {
-  string path = 1;
-  uint32 lineno = 2;
-  string name = 3;
-  optional string class_name_path = 4;
-  string src = 5;
-  string digest = 6;
+  string key = 1;
 }
 
 message TraceSrcs {
-  string root_path = 1;
   repeated TraceSrc trace_srcs = 2;
 }
 
@@ -28,12 +22,8 @@ message FilterSetQuery {
   string key = 1;
 }
 
-message FilterSet {
-  repeated TraceSrc trace_srcs = 1;
-}
-
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
   rpc set(TraceSrcs) returns (google.protobuf.Empty);
-  rpc stream_filtersets(FilterSetQuery) returns (stream FilterSet);
+  rpc stream_filtersets(FilterSetQuery) returns (stream TraceSrcs);
 }

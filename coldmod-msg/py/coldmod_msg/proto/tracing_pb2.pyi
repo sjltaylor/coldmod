@@ -7,47 +7,29 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Trace(_message.Message):
-    __slots__ = ["digest", "thread_id", "process_id"]
-    DIGEST_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["key", "thread_id", "process_id"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
     THREAD_ID_FIELD_NUMBER: _ClassVar[int]
     PROCESS_ID_FIELD_NUMBER: _ClassVar[int]
-    digest: str
+    key: str
     thread_id: str
     process_id: str
-    def __init__(self, digest: _Optional[str] = ..., thread_id: _Optional[str] = ..., process_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, key: _Optional[str] = ..., thread_id: _Optional[str] = ..., process_id: _Optional[str] = ...) -> None: ...
 
 class TraceSrc(_message.Message):
-    __slots__ = ["path", "lineno", "name", "class_name_path", "src", "digest"]
-    PATH_FIELD_NUMBER: _ClassVar[int]
-    LINENO_FIELD_NUMBER: _ClassVar[int]
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    CLASS_NAME_PATH_FIELD_NUMBER: _ClassVar[int]
-    SRC_FIELD_NUMBER: _ClassVar[int]
-    DIGEST_FIELD_NUMBER: _ClassVar[int]
-    path: str
-    lineno: int
-    name: str
-    class_name_path: str
-    src: str
-    digest: str
-    def __init__(self, path: _Optional[str] = ..., lineno: _Optional[int] = ..., name: _Optional[str] = ..., class_name_path: _Optional[str] = ..., src: _Optional[str] = ..., digest: _Optional[str] = ...) -> None: ...
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
 
 class TraceSrcs(_message.Message):
-    __slots__ = ["root_path", "trace_srcs"]
-    ROOT_PATH_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["trace_srcs"]
     TRACE_SRCS_FIELD_NUMBER: _ClassVar[int]
-    root_path: str
     trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
-    def __init__(self, root_path: _Optional[str] = ..., trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...
+    def __init__(self, trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...
 
 class FilterSetQuery(_message.Message):
     __slots__ = ["key"]
     KEY_FIELD_NUMBER: _ClassVar[int]
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
-
-class FilterSet(_message.Message):
-    __slots__ = ["trace_srcs"]
-    TRACE_SRCS_FIELD_NUMBER: _ClassVar[int]
-    trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
-    def __init__(self, trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...

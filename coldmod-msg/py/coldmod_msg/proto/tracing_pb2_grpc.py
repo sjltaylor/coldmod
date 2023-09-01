@@ -28,7 +28,7 @@ class TracesStub(object):
         self.stream_filtersets = channel.unary_stream(
                 '/coldmod_msg.proto.tracing.Traces/stream_filtersets',
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.SerializeToString,
-                response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.FromString,
+                response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                 )
 
 
@@ -69,7 +69,7 @@ def add_TracesServicer_to_server(servicer, server):
             'stream_filtersets': grpc.unary_stream_rpc_method_handler(
                     servicer.stream_filtersets,
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.FromString,
-                    response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.SerializeToString,
+                    response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -128,6 +128,6 @@ class Traces(object):
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/coldmod_msg.proto.tracing.Traces/stream_filtersets',
             coldmod__msg_dot_proto_dot_tracing__pb2.FilterSetQuery.SerializeToString,
-            coldmod__msg_dot_proto_dot_tracing__pb2.FilterSet.FromString,
+            coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

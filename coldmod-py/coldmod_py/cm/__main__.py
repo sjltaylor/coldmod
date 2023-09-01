@@ -3,7 +3,6 @@ import coldmod_py
 import coldmod_py.files as files
 import coldmod_py.config
 import coldmod_py.code as code
-import coldmod_py.code2 as code2
 import coldmod_py.mod as mod
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
@@ -18,17 +17,16 @@ class CLI:
     def __init__(self, path=None, verbose=False):
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
-        self.config = coldmod_py.config.load(path)
 
-    def trace_src2s(self):
+    def trace_srcs(self):
         """
         print traces
         """
-        rm = coldmod_py.config.rootmarker()
-        paths = files.find_src_files_in(os.getcwd(), rm.ignore_patterns)
+        root_marker = coldmod_py.config.root_marker()
+        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_patterns)
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-        trace_srcs_by_relative_path = code2.trace_srcs(relative_paths)
+        trace_srcs_by_relative_path = code.find_trace_srcs(relative_paths)
 
         for relative_path, trace_srcs in trace_srcs_by_relative_path.items():
             print(relative_path)
@@ -39,32 +37,13 @@ class CLI:
         """
         print the files which are included in coldmod tracing
         """
-        for path in files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns):
+        root_marker = coldmod_py.config.root_marker()
+        for path in files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns):
             print(path)
 
-    def trace_srcs(self):
-        """
-        print the src scan used to generate the coldmod tracing
-        """
-        paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, paths)
-        for s in srcs:
-            print(f"{s.trace_src.name}:{s.trace_src.digest}\n{s.trace_src.path}:{s.trace_src.lineno}\n")
-
-    def duplicates(self):
-        """
-        print any srcs that have the same digest
-        """
-        paths = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-        trace_srcs = code.parse_trace_srcs_in(self.config.srcs_root_dir, paths)
-        duplicates_by_digest = code.duplicates(trace_srcs)
-        for digest, duplicate_srcs in duplicates_by_digest.items():
-            print(f"{len(list(duplicate_srcs))} => {digest}\n")
-            for e in duplicate_srcs:
-                print(f"{e.trace_src.name} -> {e.trace_src.path}:{e.trace_src.lineno}\n")
-                print(f"{e.trace_src.src}\n")
-
     def connect(self, web_app_url=None):
+        root_marker = coldmod_py.config.root_marker()
+
         if web_app_url is None:
             (web_app_url, key) = coldmod_py.web.generate_app_url()
             print(f"connect to: {web_app_url}")
@@ -72,7 +51,7 @@ class CLI:
         else:
             key = coldmod_py.web.extract_key(web_app_url)
 
-        path_prefix = self.config.srcs_root_dir
+        path_prefix = root_marker.dir
 
         previous_lines = []
 
@@ -101,6 +80,8 @@ class CLI:
 
 
     def mod_remove(self, force=False):
+        root_marker = coldmod_py.config.root_marker()
+
         if not force:
             print("Are you sure (y/N)? (you didn't use --force)")
             yN = input()
@@ -110,9 +91,9 @@ class CLI:
 
         with open('./coldmod.filterset.json', 'r') as json_file:
             raw = json_file.read()
-            filterset = ParseDict(json.loads(raw), tracing_pb2.FilterSet())
-            src_files = files.find_src_files_in(self.config.srcs_root_dir, self.config.ignore_patterns)
-            mod.remove(self.config.srcs_root_dir, filterset.trace_srcs, src_files)
+            trace_srcs = ParseDict(json.loads(raw), tracing_pb2.TraceSrcs())
+            src_files = files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns)
+            mod.remove(root_marker.dir, trace_srcs.trace_srcs, src_files)
 
 if __name__ == "__main__":
     try:

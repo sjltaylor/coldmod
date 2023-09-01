@@ -1,8 +1,8 @@
 import libcst
 import libcst.metadata
 from typing import Dict, Iterable, List, Tuple, Any, Optional
-from .parsed_trace_src import ParsedTraceSrc, TraceSrc2
-from coldmod_py.code2 import parsed_trace_src
+from coldmod_msg.proto import tracing_pb2
+from .parsed_trace_src import ParsedTraceSrc
 
 
 class FunctionFinder(libcst.CSTVisitor):
@@ -13,8 +13,6 @@ class FunctionFinder(libcst.CSTVisitor):
         self.trace_srcs = []
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
-        name = node.name.value
-
         pos = self.get_metadata(libcst.metadata.PositionProvider, node).start
         name_pos = self.get_metadata(libcst.metadata.PositionProvider, node.name).start
         fqns = self.get_metadata(libcst.metadata.FullyQualifiedNameProvider, node)
@@ -22,10 +20,10 @@ class FunctionFinder(libcst.CSTVisitor):
         if len(fqns) != 1:
             raise Exception("Expected exactly one fully qualified name for function definition.")
 
-        t = TraceSrc2()
-        t.key = list(fqns)[0].name
+        trace_src = tracing_pb2.TraceSrc()
+        trace_src.key = list(fqns)[0].name
 
-        p = parsed_trace_src.ParsedTraceSrc(name_position=name_pos, position=pos, trace_src=t)
-        self.trace_srcs.append(p)
+        parsed_trace_src = ParsedTraceSrc(name_position=name_pos, position=pos, trace_src=trace_src)
+        self.trace_srcs.append(parsed_trace_src)
 
         return True # visit nested functions
