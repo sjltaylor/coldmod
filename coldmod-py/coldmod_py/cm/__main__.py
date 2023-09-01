@@ -3,6 +3,7 @@ import coldmod_py
 import coldmod_py.files as files
 import coldmod_py.config
 import coldmod_py.code as code
+import coldmod_py.code2 as code2
 import coldmod_py.mod as mod
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
@@ -18,6 +19,21 @@ class CLI:
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
         self.config = coldmod_py.config.load(path)
+
+    def trace_src2s(self):
+        """
+        print traces
+        """
+        rm = coldmod_py.config.rootmarker()
+        paths = files.find_src_files_in(os.getcwd(), rm.ignore_patterns)
+
+        relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
+        trace_srcs_by_relative_path = code2.trace_srcs(relative_paths)
+
+        for relative_path, trace_srcs in trace_srcs_by_relative_path.items():
+            print(relative_path)
+            for p in trace_srcs:
+                print(f"  {p.trace_src.key}")
 
     def src_files(self):
         """

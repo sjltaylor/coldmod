@@ -17,10 +17,10 @@ class CLI:
 
         with coldmod_d.grpc_channel() as channel:
             stub = tracing_pb2_grpc.TracesStub(channel)
-            if config.INSECURE:
+            if config.env.insecure():
                     stub.collect(iter(traces))
             else:
-                metadata = [("authorization", f"Bearer {config.COLDMOD_API_KEY}")]
+                metadata = [("authorization", f"Bearer {config.env.api_key()}")]
                 stub.collect.with_call(iter(traces), metadata=metadata)
 
 

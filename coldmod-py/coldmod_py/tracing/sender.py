@@ -16,10 +16,10 @@ def _stream_q() -> Iterable[tracing_pb2.Trace]:
 def sender():
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
-        if coldmod_d.config.INSECURE:
+        if coldmod_d.config.env.insecure():
             stub.collect(_stream_q())
         else:
-            metadata = [("authorization", f"Bearer {coldmod_d.config.COLDMOD_API_KEY}")]
+            metadata = [("authorization", f"Bearer {coldmod_d.config.env.api_key()}")]
             stub.collect.with_call(_stream_q(), metadata=metadata)
 
 def start():

@@ -13,7 +13,7 @@ from coldmod_py import config
 def generate_app_url() -> Tuple[str, str]:
     bytes = secrets.token_bytes(32)
     key = f"cm-{base64.urlsafe_b64encode(bytes).decode('utf-8')}"
-    return (f"https://{config.COLDMOD_WEB_HOST}/connect/{key}", key)
+    return (f"https://{config.env.web_host()}/connect/{key}", key)
 
 def extract_key(web_app_url: str) -> str:
     segments = urlparse(web_app_url).path.split('/')[1:]
@@ -28,10 +28,10 @@ def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.FilterSet]:
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
 
-        if config.INSECURE:
+        if config.env.insecure():
             filtersets = stub.stream_filtersets(q)
         else:
-            filtersets = stub.stream_filtersets.with_call(q, metadata=[("authorization", f"Bearer {config.COLDMOD_API_KEY}")])
+            filtersets = stub.stream_filtersets.with_call(q, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
 
         for filterset in filtersets:
             yield filterset
