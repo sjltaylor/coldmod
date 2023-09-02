@@ -1,6 +1,9 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 
+use argh::FromArgs;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+mod store;
 
 fn configure_tracing() {
     tracing_subscriber::registry()
@@ -51,12 +54,56 @@ fn read_env_vars() -> (
     return (web_host, grpc_host, redis_host, tls, api_key);
 }
 
+#[derive(FromArgs)]
+/// coldmod-d service
+struct Main {
+    #[argh(subcommand)]
+    cmd: Option<Cmd>,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+#[argh(subcommand)]
+enum Cmd {
+    Reset(ResetCmd),
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+/// Reset the data
+#[argh(subcommand, name = "reset")]
+struct ResetCmd {
+    #[argh(switch)]
+    /// confirmation that data should be reset
+    confirm: bool,
+}
+
 #[tokio::main]
 async fn main() {
-    let (web_host, grpc_host, redis_host, tls, api_key) = read_env_vars();
+    let m: Main = argh::from_env();
 
-    let cmd_reset = std::env::args().any(|arg| arg == "--reset");
-    let cmd_start = std::env::args().any(|arg| arg == "--start") || std::env::args().count() == 1;
+    if let Some(c) = m.cmd {
+        match c {
+            Cmd::Reset(r) => {
+                if r.confirm {
+                    reset().await;
+                } else {
+                    println!("--confirm that you want to reset the data");
+                }
+            }
+        };
+    } else {
+        start().await
+    }
+}
+
+async fn reset() {
+    let redis_host = std::env::var("COLDMOD_REDIS_HOST").expect("COLDMOD_REDIS_HOST not set");
+    let mut store = crate::store::RedisStore::new(redis_host).await;
+    store.reset().await.unwrap();
+    println!("done.");
+}
+
+async fn start() {
+    let (web_host, grpc_host, redis_host, tls, api_key) = read_env_vars();
 
     configure_tracing();
 
@@ -72,14 +119,6 @@ async fn main() {
         rate_limiter,
     )
     .await;
-
-    if cmd_reset {
-        dispatch.reset_state().await.unwrap();
-    }
-
-    if !cmd_start {
-        return;
-    }
 
     let grpc_dispatch = dispatch.clone();
     let web_dispatch = dispatch.clone();

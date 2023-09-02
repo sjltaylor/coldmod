@@ -5,7 +5,7 @@ mod trace;
 
 #[derive(FromArgs)]
 /// utilities for working with coldmod data
-struct Data {
+struct Demo {
     #[argh(subcommand)]
     subcommand: Subcommand,
 }
@@ -31,8 +31,8 @@ struct Trace {
 
 #[tokio::main]
 async fn main() {
-    let data: Data = argh::from_env();
-    match data.subcommand {
+    let demo: Demo = argh::from_env();
+    match demo.subcommand {
         Subcommand::Trace(trace) => {
             trace::trace(trace.key, trace.incr).await;
         }
