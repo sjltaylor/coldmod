@@ -5,8 +5,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 fn configure_tracing() {
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "TRACE".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "INFO".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -38,6 +37,8 @@ fn read_env_vars() -> (
     let insecure = std::env::var("COLDMOD_INSECURE").map_or_else(|_| false, |v| v == "on");
 
     let (api_key, tls) = if insecure {
+        (None, None)
+    } else {
         (
             Some(std::env::var("COLDMOD_API_KEY").expect("COLDMOD_API_KEY not set")),
             Some((
@@ -45,8 +46,6 @@ fn read_env_vars() -> (
                 std::env::var("COLDMOD_TLS_KEY").expect("COLDMOD_TLS_KEY not set"),
             )),
         )
-    } else {
-        (None, None)
     };
 
     return (web_host, grpc_host, redis_host, tls, api_key);

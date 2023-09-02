@@ -148,6 +148,7 @@ pub async fn server(dispatch: &Dispatch) {
     if let Some((cert, key)) = tls {
         let cert_pem = std::fs::read_to_string(cert).unwrap();
         let key_pem = std::fs::read_to_string(key).unwrap();
+        tracing::info!("starting grpc with TLS enabled");
         let config = ServerTlsConfig::new().identity(Identity::from_pem(&cert_pem, &key_pem));
         builder = builder.tls_config(config).unwrap();
     }
@@ -160,6 +161,8 @@ pub async fn server(dispatch: &Dispatch) {
 
     let builder = builder.add_service(TracesServer::new(tracing_d));
     let builder = builder.add_optional_service(ops_service);
+
+    tracing::info!("starting grpc server on {}", grpc_host);
 
     match builder.serve(grpc_host).await {
         Ok(_) => println!("grpc server exited"),

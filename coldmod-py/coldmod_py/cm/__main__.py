@@ -95,6 +95,7 @@ class CLI:
             src_files = files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns)
             mod.remove(root_marker.dir, trace_srcs.trace_srcs, src_files)
 
+
 if __name__ == "__main__":
     try:
         fire.Fire(CLI)

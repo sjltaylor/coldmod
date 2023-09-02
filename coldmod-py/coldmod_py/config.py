@@ -11,8 +11,7 @@ class RootMarker:
 
     def __init__(self, *, dir: str, ignore_patterns: List[str]):
         self.ignore_patterns = ignore_patterns
-
-
+        self.dir = dir
 
 def root_marker() -> RootMarker:
     dir = os.getcwd()

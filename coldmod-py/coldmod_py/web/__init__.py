@@ -23,7 +23,7 @@ def extract_key(web_app_url: str) -> str:
 
     raise Exception(f"invalid web_app_url: {web_app_url}")
 
-def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.FilterSet]:
+def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.TraceSrc]:
     q = tracing_pb2.FilterSetQuery(key=web_app_url)
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)

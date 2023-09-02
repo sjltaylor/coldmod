@@ -54,11 +54,13 @@ pub async fn server(dispatch: Dispatch) {
     if let Some((cert, key)) = tls {
         // configure certificate and private key used by https
         let config = RustlsConfig::from_pem_file(cert, key).await.unwrap();
+        tracing::info!("starting https server on {}", web_host);
         axum_server::bind_rustls(web_host, config)
             .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             .await
             .unwrap();
     } else {
+        tracing::info!("starting http server on {}", web_host);
         axum::Server::bind(&web_host)
             .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             .await
