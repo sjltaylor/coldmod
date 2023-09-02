@@ -1,1 +1,1 @@
-window.COLDMOD_WEB_HOST='coldmod:normallymoresecret@localhost:8088';
+window.COLDMOD_WS='ws://localhost:8088/ws';

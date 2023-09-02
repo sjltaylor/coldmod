@@ -5,15 +5,26 @@ use futures_util::stream;
 use futures_util::StreamExt;
 use tokio::time::{timeout, Duration};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use tonic::transport::Channel;
 
-const COLDMOD_D_URL: &str = "ws://127.0.0.1:3333/ws";
+fn coldmod_ws_url() -> String {
+    format!("ws://{}/ws", std::env::var("COLDMOD_WEB_HOST").unwrap())
+}
+
+fn coldmod_grpc_host() -> String {
+    format!("http://{}", std::env::var("COLDMOD_GRPC_HOST").unwrap())
+}
+
+async fn traces_client() -> TracesClient<Channel> {
+    return TracesClient::connect(coldmod_grpc_host()).await.unwrap();
+}
 
 #[derive(Default)]
 pub struct Clients {}
 
 impl Clients {
     pub async fn reset_state(&self) {
-        let mut client = OpsClient::connect("http://127.0.0.1:7777").await.unwrap();
+        let mut client = OpsClient::connect(coldmod_grpc_host()).await.unwrap();
 
         let response = client.reset_state(()).await;
 
@@ -21,24 +32,22 @@ impl Clients {
     }
 
     pub async fn send_some_traces(&self) {
-        let mut client = TracesClient::connect("http://127.0.0.1:7777")
-            .await
-            .unwrap();
+        let mut client = traces_client().await;
 
         let trace_1 = Trace {
-            digest: "7263".into(),
+            key: "/a/path/to/a/file:7263".into(),
             process_id: "1231231".into(),
             thread_id: "1230920".into(),
         };
 
         let trace_2 = Trace {
-            digest: "191".into(),
+            key: "/a/path/to/another/file:191".into(),
             process_id: "1231231".into(),
             thread_id: "1230920".into(),
         };
 
         let trace_3 = Trace {
-            digest: "7263".into(),
+            key: "/a/path/to/a/file:7263".into(),
             process_id: "1231231".into(),
             thread_id: "1230920".into(),
         };
@@ -50,41 +59,21 @@ impl Clients {
     }
 
     pub async fn send_tracing_srcs(&self) {
-        let mut client = TracesClient::connect("http://127.0.0.1:7777")
-            .await
-            .unwrap();
+        let mut client = traces_client().await;
 
         let es = vec![
             TraceSrc {
-                name: "fn_name".into(),
-                class_name_path: None,
-                path: "/a/path/to/a/file".into(),
-                src: "src_code".into(),
-                digest: "7263".into(),
-                lineno: 7263,
+                key: "/a/path/to/a/file:7263".into(),
             },
             TraceSrc {
-                name: "fn_name".into(),
-                class_name_path: None,
-                path: "/a/path/to/another/file".into(),
-                src: "src_code".into(),
-                digest: "191".into(),
-                lineno: 191,
+                key: "/a/path/to/another/file:191".into(),
             },
             TraceSrc {
-                name: "fn_name".into(),
-                path: "/a/path/to/a/file".into(),
-                class_name_path: None,
-                src: "src_code".into(),
-                digest: "1323".into(),
-                lineno: 1323,
+                key: "/a/path/to/a/file:1323".into(),
             },
         ];
 
-        let source = TraceSrcs {
-            root_path: "/a".into(),
-            trace_srcs: es,
-        };
+        let source = TraceSrcs { trace_srcs: es };
 
         let response = client.set(source).await;
 
@@ -92,10 +81,11 @@ impl Clients {
     }
 
     pub async fn connect_and_wait_for_initial_messages(&self) -> (TracingStats, Option<HeatMap>) {
-        let ws_stream = match connect_async(COLDMOD_D_URL).await {
+        let ws_stream = match connect_async(format!("{}/connect/test-key", coldmod_ws_url())).await
+        {
             Ok((stream, _)) => stream,
             Err(e) => {
-                panic!("WebSocket handshake for client failed with {e}!");
+                panic!("WebSocket handshake for client failed with {e}");
             }
         };
 

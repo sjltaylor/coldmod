@@ -88,12 +88,7 @@ mod tests {
 
     fn trace_src_stub() -> TraceSrc {
         TraceSrc {
-            src: "STUB".to_string(),
-            digest: "STUB".to_string(),
-            path: "STUB".to_string(),
-            lineno: 0,
-            name: "STUB".to_string(),
-            class_name_path: None,
+            key: "STUB".to_string(),
         }
     }
 

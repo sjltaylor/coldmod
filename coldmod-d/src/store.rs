@@ -51,12 +51,12 @@ impl RedisStore {
         q.atomic();
 
         for trace_src in trace_srcs.trace_srcs.iter() {
-            let key = &trace_src.key;
+            let trace_src_key = &trace_src.key;
 
-            q.hset_nx("heat_map", key, 0).ignore();
-            heatmap_keys.remove(key);
+            q.hset_nx("heat_map", trace_src_key, 0).ignore();
+            heatmap_keys.remove(trace_src_key);
 
-            let key = format!("trace_src:{key}");
+            let key = format!("trace_src:{}", trace_src_key);
             let bytes = trace_src.encode_to_vec();
             q.hset(&key, "raw", bytes).ignore();
             trace_src_keys.remove(&key);
@@ -156,16 +156,11 @@ impl RedisStore {
     }
 
     pub async fn get_heat_map(&mut self) -> Result<Option<HeatMap>, RedisError> {
-        let root_path: Option<String> = self
-            .heatmap_connection
-            .hget("trace_srcs", "root_path")
-            .await?;
+        let trace_src_keys: Vec<String> = self.heatmap_connection.keys("trace_src:*").await?;
 
-        if root_path.is_none() {
+        if trace_src_keys.is_empty() {
             return Ok(None);
         }
-
-        let trace_src_keys: Vec<String> = self.heatmap_connection.keys("trace_src:*").await?;
 
         let mut q = redis::pipe();
         for key in trace_src_keys.iter() {

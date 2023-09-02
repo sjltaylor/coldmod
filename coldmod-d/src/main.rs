@@ -3,8 +3,6 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use argh::FromArgs;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod store;
-
 fn configure_tracing() {
     tracing_subscriber::registry()
         .with(
@@ -78,12 +76,12 @@ struct ResetCmd {
 
 #[tokio::main]
 async fn main() {
-    let m: Main = argh::from_env();
+    let main: Main = argh::from_env();
 
-    if let Some(c) = m.cmd {
-        match c {
-            Cmd::Reset(r) => {
-                if r.confirm {
+    if let Some(cmd) = main.cmd {
+        match cmd {
+            Cmd::Reset(reset_cmd) => {
+                if reset_cmd.confirm {
                     reset().await;
                 } else {
                     println!("--confirm that you want to reset the data");
@@ -97,7 +95,7 @@ async fn main() {
 
 async fn reset() {
     let redis_host = std::env::var("COLDMOD_REDIS_HOST").expect("COLDMOD_REDIS_HOST not set");
-    let mut store = crate::store::RedisStore::new(redis_host).await;
+    let mut store = coldmod_d::store::RedisStore::new(redis_host).await;
     store.reset().await.unwrap();
     println!("done.");
 }

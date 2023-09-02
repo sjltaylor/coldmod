@@ -39,19 +39,19 @@ async fn test_heatmap() {
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.lineno == 7263 && *count == 0 }),
+            .any(|(count, f)| { f.key == "/a/path/to/a/file:7263" && *count == 0 }),
         "there is a function in the heatmap with two traces"
     );
     assert!(
-        functions_and_counts.iter().any(|(count, f)| {
-            f.path == "/a/path/to/another/file" && f.lineno == 191 && *count == 0
-        }),
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.key == "/a/path/to/another/file:191" && *count == 0 }),
         "there is a function in the heatmap with 1 trace"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.lineno == 1323 && *count == 0 }),
+            .any(|(count, f)| { f.key == "/a/path/to/a/file:1323" && *count == 0 }),
         "there is a cold function in the heatmap"
     );
 
@@ -69,19 +69,19 @@ async fn test_heatmap() {
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.lineno == 7263 && *count == 2 }),
+            .any(|(count, f)| { f.key == "/a/path/to/a/file:7263" && *count == 2 }),
         "there is a function in the heatmap with two traces"
     );
     assert!(
-        functions_and_counts.iter().any(|(count, f)| {
-            f.path == "/a/path/to/another/file" && f.lineno == 191 && *count == 1
-        }),
+        functions_and_counts
+            .iter()
+            .any(|(count, f)| { f.key == "/a/path/to/another/file:191" && *count == 1 }),
         "there is a function in the heatmap with 1 trace"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.path == "/a/path/to/a/file" && f.lineno == 1323 && *count == 0 }),
+            .any(|(count, f)| { f.key == "/a/path/to/a/file:1323" && *count == 0 }),
         "there is a cold function in the heatmap"
     );
 }
