@@ -21,8 +21,8 @@ enum Subcommand {
 #[argh(subcommand, name = "trace")]
 struct Trace {
     #[argh(positional)]
-    /// tracing src digest
-    digest: String,
+    /// tracing src key
+    key: Option<String>,
 
     #[argh(option, short = 'n')]
     /// how many traces to simulated
@@ -34,7 +34,7 @@ async fn main() {
     let data: Data = argh::from_env();
     match data.subcommand {
         Subcommand::Trace(trace) => {
-            trace::trace(trace.digest, trace.incr).await;
+            trace::trace(trace.key, trace.incr).await;
         }
     }
 }

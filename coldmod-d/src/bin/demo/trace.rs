@@ -1,7 +1,3 @@
-
-
-
-
 use coldmod_msg::proto::{traces_client::TracesClient, Trace};
 use futures_util::stream;
 use tonic::Request;
@@ -10,7 +6,7 @@ use tonic::{
     transport::{Certificate, Channel, ClientTlsConfig},
 };
 
-pub(crate) async fn trace(digest: String, incr: Option<usize>) {
+pub(crate) async fn trace(key: Option<String>, incr: Option<usize>) {
     let secure = !std::env::var("COLDMOD_INSECURE").map_or_else(|_| false, |v| v == "on");
     let grpc_host = std::env::var("COLDMOD_GRPC_HOST").expect("COLDMOD_GRPC_HOST not set");
     let url = format!("https://{}", grpc_host.clone());
@@ -44,9 +40,11 @@ pub(crate) async fn trace(digest: String, incr: Option<usize>) {
 
     let mut traces: Vec<Trace> = Vec::new();
 
+    let key = key.unwrap_or("a.fully_qualified_name.to.a.function".to_string());
+
     for _ in 0..c {
         traces.push(Trace {
-            digest: digest.clone(),
+            key: key.clone(),
             process_id: "0".into(),
             thread_id: "0".into(),
         });

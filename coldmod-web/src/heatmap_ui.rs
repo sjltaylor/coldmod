@@ -15,7 +15,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <ul class="container heatmap data">
                         <For
                             each=move || heat_srcs_memo.get().unwrap()
-                            key=|u| format!("{}-{}", u.trace_src.digest, u.trace_count)
+                            key=|u| format!("{}-{}", u.trace_src.key, u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_src=s /> } />
                     </ul>
             </div>
@@ -27,22 +27,12 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let trace_src = heat_src.trace_src;
 
-    let loc = format!("{}:{}", trace_src.path, trace_src.lineno);
-
-    let mut buffer = String::new();
-
-    if let Some(class_name_path) = trace_src.class_name_path {
-        buffer.push_str(&class_name_path);
-        buffer.push_str(".");
-    }
-
-    buffer.push_str(&trace_src.name);
-
     return view! {cx,
         <li class="container heat-src">
-            <div><div class="heat-src-path">{loc}</div><div class="heat-src-name">{buffer}</div></div>
-            <div class="heat-src-digest">{trace_src.digest}</div>
-            <div class="heat-src-trace-count">TRACE COUNT:{heat_src.trace_count}</div>
+            <div>
+                <div class="heat-src-name">{trace_src.key}</div>
+            </div>
+            <div class="heat-src-trace-count">{heat_src.trace_count}</div>
         </li>
     };
 }

@@ -24,7 +24,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         if let Some(heat_srcs) = heat_srcs_memo.get() {
             log!("HeatMapUI/count: {}", heat_srcs.len());
 
-            let filterset = coldmod_msg::proto::FilterSet {
+            let filterset = coldmod_msg::proto::TraceSrcs {
                 trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
             };
             sender.send(Msg::SetFilterSetInContext(filterset));

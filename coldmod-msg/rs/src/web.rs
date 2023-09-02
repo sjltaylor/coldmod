@@ -1,4 +1,4 @@
-use crate::proto::{FilterSet, TraceSrc};
+use crate::proto::{TraceSrc, TraceSrcs};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -8,8 +8,8 @@ pub enum Msg {
     HeatMapAvailable(HeatMap),
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
-    SetFilterSet((FilterSet, String)),
-    SetFilterSetInContext(FilterSet),
+    SetFilterSet((TraceSrcs, String)),
+    SetFilterSetInContext(TraceSrcs),
     SendYourFilterSet,
 }
 

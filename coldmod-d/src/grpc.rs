@@ -1,9 +1,7 @@
-
-
 use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
-use coldmod_msg::proto::{FilterSet, FilterSetQuery, OpsStatus, Trace, TraceSrcs};
+use coldmod_msg::proto::{FilterSetQuery, OpsStatus, Trace, TraceSrcs};
 
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -60,7 +58,7 @@ impl Traces for Tracing {
         Ok(Response::new(()))
     }
 
-    type stream_filtersetsStream = ReceiverStream<Result<FilterSet, Status>>;
+    type stream_filtersetsStream = ReceiverStream<Result<TraceSrcs, Status>>;
 
     async fn stream_filtersets(
         &self,

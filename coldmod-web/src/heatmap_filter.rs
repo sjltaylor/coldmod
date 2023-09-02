@@ -72,7 +72,7 @@ impl HeatmapFilter {
         // this doesn't need to be a loop, but we haven't created the data structure to look up the heat source
         // so for now there's a simple optimization - loop from hottest first because that's most likely
         for source in self.heatmap.srcs.iter_mut().rev() {
-            let k = source.trace_src.digest.clone();
+            let k = source.trace_src.key.clone();
 
             if let Some(delta) = heatmap_delta.deltas.get(&k) {
                 source.trace_count += *delta;

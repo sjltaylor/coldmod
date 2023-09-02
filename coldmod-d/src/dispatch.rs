@@ -1,6 +1,6 @@
 use crate::store;
 use async_trait::async_trait;
-use coldmod_msg::proto::{FilterSet, FilterSetQuery, Trace, TraceSrcs};
+use coldmod_msg::proto::{FilterSetQuery, Trace, TraceSrcs};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -19,7 +19,7 @@ pub struct Dispatch {
     pub(crate) store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
-    tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<FilterSet>>>>,
+    tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<TraceSrcs>>>>,
     websocket_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<Msg>>>>,
 }
 
@@ -78,7 +78,7 @@ impl Dispatch {
 
     pub async fn route_filterset(
         &self,
-        filterset: FilterSet,
+        filterset: TraceSrcs,
         key: String,
     ) -> Result<(), anyhow::Error> {
         tracing::info!("set filterset:{:?}", key);
@@ -272,7 +272,7 @@ impl Dispatch {
     pub async fn send_filtersets_until_closed(
         &self,
         q: FilterSetQuery,
-        tx: tokio::sync::mpsc::Sender<FilterSet>,
+        tx: tokio::sync::mpsc::Sender<TraceSrcs>,
     ) {
         self.tracesrcs_listeners
             .write()
@@ -292,7 +292,7 @@ impl Dispatch {
         self.tracesrcs_listeners.write().await.remove(&q.key);
     }
 
-    async fn _send_filterset_to_listener(&self, key: &String, filterset: FilterSet) {
+    async fn _send_filterset_to_listener(&self, key: &String, filterset: TraceSrcs) {
         match self.tracesrcs_listeners.read().await.get(key) {
             Some(tx) => {
                 if let Err(e) = tx.send(filterset).await {

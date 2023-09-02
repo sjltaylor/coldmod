@@ -1,4 +1,4 @@
-use std::{collections::HashSet};
+use std::collections::HashSet;
 
 use coldmod_msg::{
     proto::{Trace, TraceSrc, TraceSrcs},
@@ -50,16 +50,13 @@ impl RedisStore {
 
         q.atomic();
 
-        q.hset("trace_srcs", "root_path", &trace_srcs.root_path)
-            .ignore();
-
         for trace_src in trace_srcs.trace_srcs.iter() {
-            let digest = &trace_src.digest;
+            let key = &trace_src.key;
 
-            q.hset_nx("heat_map", digest, 0).ignore();
-            heatmap_keys.remove(digest);
+            q.hset_nx("heat_map", key, 0).ignore();
+            heatmap_keys.remove(key);
 
-            let key = format!("trace_src:{digest}");
+            let key = format!("trace_src:{key}");
             let bytes = trace_src.encode_to_vec();
             q.hset(&key, "raw", bytes).ignore();
             trace_src_keys.remove(&key);
@@ -131,18 +128,18 @@ impl RedisStore {
             for id in traces.ids.iter() {
                 trace_stream_last_id = Some(id.id.clone());
 
-                let digest: String = id.get("digest").unwrap();
+                let key: String = id.get("key").unwrap();
 
-                match heat_map_deltas.deltas.get_mut(&digest) {
+                match heat_map_deltas.deltas.get_mut(&key) {
                     Some(count) => {
                         *count += 1;
                     }
                     None => {
-                        heat_map_deltas.deltas.insert(digest.clone(), 1);
+                        heat_map_deltas.deltas.insert(key.clone(), 1);
                     }
                 }
 
-                q.hincr("heat_map", &digest, 1).ignore();
+                q.hincr("heat_map", &key, 1).ignore();
             }
 
             q.hset(
@@ -183,7 +180,7 @@ impl RedisStore {
 
         q = redis::pipe();
         for trace_src in trace_srcs.iter() {
-            q.hget("heat_map", &trace_src.digest);
+            q.hget("heat_map", &trace_src.key);
         }
         let counts: Vec<i64> = q.query_async(&mut self.heatmap_connection).await?;
 
@@ -202,7 +199,7 @@ impl RedisStore {
     pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {
         let bytes = trace.encode_to_vec();
         redis::cmd("XADD")
-            .arg(&["trace_stream", "*", "digest", &trace.digest])
+            .arg(&["trace_stream", "*", "key", &trace.key])
             .arg("raw")
             .arg(bytes)
             .query_async(&mut self.trace_connection)
