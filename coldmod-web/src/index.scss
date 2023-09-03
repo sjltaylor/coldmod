@@ -161,30 +161,25 @@ ul {
 }
 
 .container.heat-src {
-    margin: 1em;
-    max-width: 650px;
-    padding: 0 0.5em;
+    display: inline-block;
+    margin: 0.5em 0;
 }
 
-.container.heat-src .heat-src-name {
+.container.heat-src .heat-src-fqn {
     @include code-font;
     display: inline-block;
     font-size: 1.3em;
-    margin: 0 0.5em;
 }
 
-.container.heat-src .heat-src-digest {
-    @include code-font;
-    font-size: 0.85em;
-    color: #ccc;
-}
-
-.container.heat-src .heat-src-path {
-    @include code-font;
-    display: inline-block;
-
-}
 
 .container.heat-src .heat-src-trace-count {
+    display: inline-block;
     font-size: 0.85em;
+    padding: 0 .25em;
+    background-color: black;
+    color: white;
+    margin-right: 1.25em;
+    line-height: 1.25em;
+    border: solid 2px black;
+    border-radius: 2px;
 }

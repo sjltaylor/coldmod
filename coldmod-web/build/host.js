@@ -1,1 +1,1 @@
-window.COLDMOD_WS='wss://localhost:8088/ws';
+window.COLDMOD_WS='ws://localhost:8088/ws';
