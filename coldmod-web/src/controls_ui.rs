@@ -1,9 +1,18 @@
 use crate::heatmap_filter::HeatmapFilter;
+use coldmod_msg::web::HeatSrc;
 use leptos::*;
 
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
     let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context(cx).unwrap();
+    let memo_heat_srcs: Memo<Option<Vec<HeatSrc>>> = use_context(cx).unwrap();
+
+    let heat_src_count = move || {
+        if let Some(heat_srcs) = memo_heat_srcs.get() {
+            return format!("{}", heat_srcs.len());
+        }
+        return "".to_string();
+    };
 
     let keys = rw_heatmap_filter
         .get_untracked()
@@ -47,6 +56,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                     </div>
                 }}).collect_view(cx)}
             </div>
+            <div class="container heat-src-count">{heat_src_count}</div>
         </div>
     </div> };
 }

@@ -160,6 +160,17 @@ ul {
     font-size: 0.85em;
 }
 
+.container.heat-src-count {
+    display: inline-block;
+    margin: 0.85em;
+    padding-top: 0em;
+    position: relative;
+    top: 1px;
+    transform: skew(-15deg);
+    font-weight: 100;
+    font-size: 0.85em;
+}
+
 .container.heat-src {
     display: inline-block;
     margin: 0.5em 0;
