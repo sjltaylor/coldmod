@@ -39,9 +39,9 @@ class Env:
         return host
 
     def ca(self) -> str:
-        ca = os.getenv("COLDMOD_CA")
+        ca = os.getenv("COLDMOD_TLS_CA")
         if not ca:
-            raise Exception("COLDMOD_CA not set")
+            raise Exception("COLDMOD_TLS_CA not set")
         return ca
 
     def web_host(self) -> str:
