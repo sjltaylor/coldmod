@@ -48,9 +48,6 @@ pub async fn server(dispatch: Dispatch) {
         app = app.layer(auth_service);
     }
 
-    // run it with hyper
-    tracing::debug!("listening on {}", web_host);
-
     if let Some((cert, key)) = tls {
         // configure certificate and private key used by https
         let config = RustlsConfig::from_pem_file(cert, key).await.unwrap();

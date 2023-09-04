@@ -29,7 +29,7 @@ impl Traces for Tracing {
         let mut stream = request.into_inner();
 
         loop {
-            let stream_result = stream.message().await;
+            let stream_result: Result<Option<Trace>, Status> = stream.message().await;
             match stream_result {
                 Ok(Some(trace)) => {
                     if let Err(e) = self.dispatch.trace_received(trace).await {

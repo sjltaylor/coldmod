@@ -7,6 +7,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
+
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
@@ -21,6 +22,7 @@ pub struct Dispatch {
     rate_limiter: mpsc::Sender<()>,
     tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<TraceSrcs>>>>,
     websocket_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<Msg>>>>,
+    trace_sink: mpsc::Sender<Trace>,
 }
 
 impl Dispatch {
@@ -47,6 +49,7 @@ impl Dispatch {
         api_key: Option<String>,
         tls: Option<(String, String)>,
         rate_limiter: mpsc::Sender<()>,
+        trace_sink: mpsc::Sender<Trace>,
     ) -> Self {
         let internal = broadcast::channel(6553).0;
 
@@ -60,6 +63,7 @@ impl Dispatch {
             rate_limiter,
             tracesrcs_listeners: Arc::new(RwLock::new(HashMap::new())),
             websocket_listeners: Arc::new(RwLock::new(HashMap::new())),
+            trace_sink,
         }
     }
 
@@ -103,10 +107,50 @@ impl Dispatch {
     }
 
     pub async fn trace_received(&self, trace: Trace) -> Result<(), anyhow::Error> {
+        self.trace_sink.send(trace).await?;
+        Ok(())
+    }
+
+    async fn store_traces(&self, traces: &Vec<Trace>) -> Result<(), anyhow::Error> {
         let mut store = self.store.clone();
-        store.store_trace(trace).await?;
+        store.store_traces(traces).await?;
         self._pulse_rate_limiter();
         Ok(())
+    }
+
+    pub async fn start_trace_sink(&self, mut trace_source: mpsc::Receiver<Trace>) {
+        let timer_duration = tokio::time::Duration::from_millis(10);
+        let mut interval = tokio::time::interval(timer_duration);
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        let buffer_len = 65536;
+        let mut buffer = Vec::<Trace>::with_capacity(buffer_len);
+
+        loop {
+            let mut timer_flush = false;
+
+            tokio::select! {
+                trace = trace_source.recv() => {
+                    match trace {
+                        Some(trace) => {
+                            buffer.push(trace);
+                            interval.reset();
+                        }
+                        None => {
+                            return;
+                        }
+                    }
+                }
+                _ = interval.tick() => {
+                    timer_flush = buffer.len() > 0;
+                }
+            }
+
+            if timer_flush || buffer.len() >= buffer_len {
+                self.store_traces(&buffer).await.unwrap();
+                buffer.clear();
+            }
+        }
     }
 
     pub fn receiver(&self) -> broadcast::Receiver<Msg> {
@@ -152,6 +196,7 @@ impl Dispatch {
 
             match store.update_heatmap().await {
                 Ok(Some(heatmap_delta)) => {
+                    tracing::debug!("heatmap changed");
                     self._broadcast(Msg::HeatMapChanged(heatmap_delta));
                 }
                 Ok(None) => {}

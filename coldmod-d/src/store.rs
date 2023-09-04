@@ -191,14 +191,18 @@ impl RedisStore {
         Ok(Some(HeatMap { srcs: heat_sources }))
     }
 
-    pub async fn store_trace(&mut self, trace: Trace) -> Result<(), RedisError> {
-        let bytes = trace.encode_to_vec();
-        redis::cmd("XADD")
-            .arg(&["trace_stream", "*", "key", &trace.key])
-            .arg("raw")
-            .arg(bytes)
-            .query_async(&mut self.trace_connection)
-            .await?;
+    pub async fn store_traces(&mut self, traces: &Vec<Trace>) -> Result<(), RedisError> {
+        let mut q = redis::pipe();
+
+        for trace in traces.iter() {
+            let bytes = trace.encode_to_vec();
+            q.cmd("XADD")
+                .arg(&["trace_stream", "*", "key", &trace.key])
+                .arg("raw")
+                .arg(bytes)
+                .ignore();
+        }
+        q.query_async(&mut self.trace_connection).await?;
         Ok(())
     }
 

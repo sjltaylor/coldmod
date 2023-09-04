@@ -1,6 +1,6 @@
-use std::net::{SocketAddr, ToSocketAddrs};
-
 use argh::FromArgs;
+use coldmod_msg::proto::Trace;
+use std::net::{SocketAddr, ToSocketAddrs};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 fn configure_tracing() {
@@ -106,6 +106,7 @@ async fn start() {
     configure_tracing();
 
     let (rate_limiter, rate_limited) = tokio::sync::mpsc::channel::<()>(1);
+    let (trace_sink, trace_source) = tokio::sync::mpsc::channel::<Trace>(65536);
 
     // TODO: why is the rate limiter defined in main? also, maybe move the config loading somewhere else?
     let dispatch = coldmod_d::dispatch::Dispatch::new(
@@ -115,19 +116,31 @@ async fn start() {
         api_key,
         tls,
         rate_limiter,
+        trace_sink,
     )
     .await;
 
     let grpc_dispatch = dispatch.clone();
     let web_dispatch = dispatch.clone();
+    let event_spool_dispatch = dispatch.clone();
 
     // TODO: why sometimes &dispatch and sometimes dispatch?
     let web_worker = tokio::spawn(async move { coldmod_d::web::server(web_dispatch).await });
     let grpc_worker = tokio::spawn(async move { coldmod_d::grpc::server(&grpc_dispatch).await });
-    let event_spool_worker =
-        tokio::spawn(async move { dispatch.start_rate_limited_event_spool(rate_limited).await });
+    let event_spool_worker = tokio::spawn(async move {
+        event_spool_dispatch
+            .start_rate_limited_event_spool(rate_limited)
+            .await
+    });
+    let trace_sink_worker =
+        tokio::spawn(async move { dispatch.start_trace_sink(trace_source).await });
 
-    match tokio::try_join!(web_worker, grpc_worker, event_spool_worker) {
+    match tokio::try_join!(
+        web_worker,
+        grpc_worker,
+        event_spool_worker,
+        trace_sink_worker
+    ) {
         Ok(_) => println!("all workers exited"),
         Err(e) => println!("one or more workers exited with an error: {}", e),
     };
