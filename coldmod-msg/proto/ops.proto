@@ -10,5 +10,6 @@ message OpsStatus {
 
 service Ops {
  rpc status(google.protobuf.Empty) returns (OpsStatus);
- rpc reset_state(google.protobuf.Empty) returns (google.protobuf.Empty);
+ rpc reset_all(google.protobuf.Empty) returns (google.protobuf.Empty);
+ rpc reset_heatmap(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

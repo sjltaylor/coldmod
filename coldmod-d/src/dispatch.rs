@@ -90,9 +90,15 @@ impl Dispatch {
         Ok(())
     }
 
-    pub async fn reset_state(&self) -> Result<(), anyhow::Error> {
+    pub async fn reset_all(&self) -> Result<(), anyhow::Error> {
         let mut store = self.store.clone();
-        store.reset().await?;
+        store.reset_all().await?;
+        Ok(())
+    }
+
+    pub async fn reset_heatmap(&self) -> Result<(), anyhow::Error> {
+        let mut store = self.store.clone();
+        store.reset_heatmap().await?;
         Ok(())
     }
 

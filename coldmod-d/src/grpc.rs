@@ -109,11 +109,16 @@ impl Ops for ColdmodOps {
         Ok(Response::new(OpsStatus { ok: true }))
     }
 
-    async fn reset_state(&self, _: Request<()>) -> Result<Response<()>, Status> {
+    async fn reset_heatmap(&self, _: Request<()>) -> Result<Response<()>, Status> {
+        self.dispatch.reset_all().await.expect("store to be reset");
+        Ok(Response::new(()))
+    }
+
+    async fn reset_all(&self, _: Request<()>) -> Result<Response<()>, Status> {
         self.dispatch
-            .reset_state()
+            .reset_heatmap()
             .await
-            .expect("store to be reset");
+            .expect("heatmap to be reset");
         Ok(Response::new(()))
     }
 }

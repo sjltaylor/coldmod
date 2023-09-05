@@ -66,12 +66,16 @@ enum Cmd {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// Reset the data
+/// Reset data (only heatmap by default)
 #[argh(subcommand, name = "reset")]
 struct ResetCmd {
     #[argh(switch)]
     /// confirmation that data should be reset
     confirm: bool,
+
+    #[argh(switch)]
+    /// clear all data
+    all: bool,
 }
 
 #[tokio::main]
@@ -82,7 +86,7 @@ async fn main() {
         match cmd {
             Cmd::Reset(reset_cmd) => {
                 if reset_cmd.confirm {
-                    reset().await;
+                    reset(reset_cmd.all).await;
                 } else {
                     println!("--confirm that you want to reset the data");
                 }
@@ -93,10 +97,14 @@ async fn main() {
     }
 }
 
-async fn reset() {
+async fn reset(all: bool) {
     let redis_host = std::env::var("COLDMOD_REDIS_HOST").expect("COLDMOD_REDIS_HOST not set");
     let mut store = coldmod_d::store::RedisStore::new(redis_host).await;
-    store.reset().await.unwrap();
+    if all {
+        store.reset_all().await.unwrap();
+    } else {
+        store.reset_heatmap().await.unwrap();
+    }
     println!("done.");
 }
 

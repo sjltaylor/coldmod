@@ -75,7 +75,7 @@ impl RedisStore {
         Ok(())
     }
 
-    pub async fn reset(&mut self) -> Result<(), RedisError> {
+    pub async fn reset_all(&mut self) -> Result<(), RedisError> {
         let keys: Vec<String> = self.connection.keys("*").await?;
 
         let mut q = redis::pipe();
@@ -87,6 +87,28 @@ impl RedisStore {
         q.query_async(&mut self.connection).await?;
 
         tracing::info!("state reset");
+        Ok(())
+    }
+
+    pub async fn reset_heatmap(&mut self) -> Result<(), RedisError> {
+        let mut q = redis::pipe();
+
+        let (heatmap_keys,): (Vec<String>,) = q
+            .hkeys("heat_map")
+            .query_async(&mut self.heatmap_connection)
+            .await?;
+
+        q = redis::pipe();
+
+        q.del("heatmap_status").ignore();
+        q.del("trace_stream").ignore();
+        for key in heatmap_keys {
+            q.hset("heat_map", key, 0).ignore();
+        }
+
+        q.query_async(&mut self.connection).await?;
+
+        tracing::info!("heatmap reset");
         Ok(())
     }
 
