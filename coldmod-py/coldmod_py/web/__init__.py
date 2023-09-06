@@ -9,15 +9,21 @@ from urllib.parse import urlparse
 from coldmod_py import coldmod_d
 from coldmod_py import config
 
+
+def generate_app_url() -> Tuple[str, str]:
+    bytes = secrets.token_bytes(32)
+    key = f"cm-{base64.urlsafe_b64encode(bytes).decode('utf-8')}"
+    return (f"https://{config.env.web_host()}/connect/{key}", key)
+
 def extract_key(web_app_url: str) -> str:
     segments = urlparse(web_app_url).path.split('/')[1:]
 
     if len(segments) >= 2 and segments[0] == "connect":
         return segments[1]
 
-    raise Exception(f"couldn't extract connect key from '{web_app_url}'")
+    raise Exception(f"invalid web_app_url: {web_app_url}")
 
-def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.TraceSrcs]:
+def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.TraceSrc]:
     q = tracing_pb2.FilterSetQuery(key=web_app_url)
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)

@@ -44,6 +44,12 @@ class Env:
             raise Exception("COLDMOD_TLS_CA not set")
         return ca
 
+    def web_host(self) -> str:
+        web_host = os.getenv("COLDMOD_WEB_HOST")
+        if not web_host:
+            raise Exception("COLDMOD_WEB_HOST not set")
+        return web_host
+
     def api_key(self) -> str:
         api_key = os.getenv("COLDMOD_API_KEY")
         if not api_key:

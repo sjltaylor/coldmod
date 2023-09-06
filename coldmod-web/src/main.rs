@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use crate::{coldmod_d::Sender, filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::web::Msg;
 use heatmap_ui::HeatMapUI;
@@ -24,6 +22,8 @@ fn App(cx: Scope, path: String) -> impl IntoView {
 
     let emit_filterset = move |sender: Sender| {
         if let Some(heat_srcs) = heat_srcs_memo.get() {
+            log!("HeatMapUI/count: {}", heat_srcs.len());
+
             let filterset = coldmod_msg::proto::TraceSrcs {
                 trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
             };
@@ -31,7 +31,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         }
     };
 
-    coldmod_d::connect(path, move |msg, sender| match msg {
+    let sender = coldmod_d::connect(path, move |msg, sender| match msg {
         Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
             filter_state: FilterState::default(),
             heatmap: heat_map,
@@ -41,6 +41,12 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         }
         Msg::SendYourFilterSet => emit_filterset(sender),
         _ => {}
+    });
+
+    let sender = sender.clone();
+    create_effect(cx, move |_| {
+        let sender = sender.clone();
+        emit_filterset(sender);
     });
 
     provide_context(cx, rw_filters);
