@@ -41,17 +41,9 @@ class CLI:
         for path in files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns):
             print(path)
 
-    def connect(self, web_app_url=None):
+    def connect(self, web_app_url):
         root_marker = coldmod_py.config.root_marker()
-
-        if web_app_url is None:
-            (web_app_url, key) = coldmod_py.web.generate_app_url()
-            print(f"connect to: {web_app_url}")
-            webbrowser.open(web_app_url)
-        else:
-            key = coldmod_py.web.extract_key(web_app_url)
-
-        path_prefix = root_marker.dir
+        key = coldmod_py.web.extract_key(web_app_url)
 
         previous_lines = []
 
@@ -70,7 +62,7 @@ class CLI:
                 previous_lines = []
 
                 for trace_src in filterset.trace_srcs:
-                    loc = f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n"
+                    loc = f"{trace_src.key}\n"
                     locs_file.write(loc)
                     sys.stdout.write(loc)
                     sys.stdout.flush()

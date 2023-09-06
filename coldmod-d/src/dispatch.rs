@@ -330,7 +330,7 @@ impl Dispatch {
             .await
             .insert(q.key.clone(), tx.clone());
 
-        // if there is already a client as it to send it's current filterset
+        // if there is already a client ask it to send it's current filterset
         if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
             let msg = Msg::SendYourFilterSet;
             if let Err(e) = ws.send(msg).await {
