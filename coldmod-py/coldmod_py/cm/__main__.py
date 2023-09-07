@@ -3,6 +3,7 @@ import coldmod_py
 import coldmod_py.files as files
 import coldmod_py.config
 import coldmod_py.code as code
+import coldmod_py.cache as cache
 import coldmod_py.mod as mod
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
@@ -14,9 +15,22 @@ import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 import json
 
 class CLI:
+    class Cache():
+        def clear(self):
+            """
+            clear the coldmod cache
+            """
+            cache.clear()
+
     def __init__(self, path=None, verbose=False):
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
+
+    def cache(self):
+        """
+        coldmod cache commands
+        """
+        return self.Cache()
 
     def trace_srcs(self):
         """
@@ -70,7 +84,7 @@ class CLI:
                 previous_lines = []
 
                 for trace_src in filterset.trace_srcs:
-                    loc = f"{path_prefix}/{trace_src.path}:{trace_src.lineno}\n"
+                    loc = f"{trace_src.key}\n"
                     locs_file.write(loc)
                     sys.stdout.write(loc)
                     sys.stdout.flush()

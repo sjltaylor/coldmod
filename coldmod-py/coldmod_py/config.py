@@ -44,11 +44,19 @@ class Env:
             raise Exception("COLDMOD_TLS_CA not set")
         return ca
 
-    def web_host(self) -> str:
-        web_host = os.getenv("COLDMOD_WEB_HOST")
+    def web_app_url(self) -> str:
+        key = 'COLDMOD_WEB_HOST'
+        protocol = 'https'
+
+        if self.insecure():
+            key = 'COLDMOD_APP_HOST'
+            protocol = 'http'
+
+        web_host = os.getenv(key)
         if not web_host:
-            raise Exception("COLDMOD_WEB_HOST not set")
-        return web_host
+            raise Exception(f"{key} not set")
+
+        return f"{protocol}://{web_host}"
 
     def api_key(self) -> str:
         api_key = os.getenv("COLDMOD_API_KEY")
