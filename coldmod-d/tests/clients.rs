@@ -26,7 +26,7 @@ impl Clients {
     pub async fn reset_state(&self) {
         let mut client = OpsClient::connect(coldmod_grpc_host()).await.unwrap();
 
-        let response = client.reset_state(()).await;
+        let response = client.reset_all(()).await;
 
         assert!(response.is_ok(), "{:?}", response);
     }

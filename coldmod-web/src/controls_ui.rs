@@ -31,7 +31,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
         cx.join(" ")
     };
 
-    let cli_connection = move || return "CLI CONNECTED";
+    let _cli_connection = move || return "CLI CONNECTED";
 
     return view! {cx,
     <div class="area controls">

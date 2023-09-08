@@ -1,5 +1,5 @@
-use crate::{coldmod_d::Sender, filter_state::FilterState, heatmap_filter::HeatmapFilter};
-use coldmod_msg::{proto::ModCommand, web::Msg};
+use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
+use coldmod_msg::{web::Msg};
 use heatmap_ui::HeatMapUI;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -21,7 +21,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         None => None,
     });
 
-    let sender = coldmod_d::connect(path, move |msg, sender| match msg {
+    let sender = coldmod_d::connect(path, move |msg, _sender| match msg {
         Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
             filter_state: FilterState::default(),
             heatmap: heat_map,
