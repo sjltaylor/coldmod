@@ -2,7 +2,8 @@ from typing import Dict, Any, List, Self
 import os
 import sys
 import logging
-import toml
+import tomli
+import tomli_w
 from pathlib import Path
 
 class RootMarker:
@@ -37,8 +38,8 @@ class RootMarker:
         return self
 
     def dump(self):
-        with self._path.open('w') as file:
-            toml.dump(self._config, file)
+        with self._path.open('wb') as file:
+            tomli_w.dump(self._config, file)
 
 
 
@@ -52,7 +53,7 @@ def load() -> RootMarker:
         sys.stderr.write(f"{path} is not a file\n")
         sys.exit(-1)
 
-    with path.open('r') as file:
-        config = toml.load(file)
+    with path.open('rb') as file:
+        config = tomli.load(file)
 
     return RootMarker(path=path, config=config)
