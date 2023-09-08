@@ -7,7 +7,12 @@ This is a quick and diiirrrty CLI built using google Fire.
 Minimimal input validation is done.
 For example, we make use of assert to cause runtime exceptions.
 
+## Cacheing
 
+* parsing is expensive so trace srcs are cached per file, keyd by a digest of the relative path+contents
+* if the file changes you get a cache miss
+* the cache can be clearedwith the cli
+*
 
 
 * Get into the poetry env: `poetry shell`
