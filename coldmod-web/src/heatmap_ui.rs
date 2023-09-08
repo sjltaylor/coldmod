@@ -1,5 +1,8 @@
-use crate::controls_ui::ControlsUI;
-use coldmod_msg::web::HeatSrc;
+use crate::{coldmod_d::Sender, controls_ui::ControlsUI};
+use coldmod_msg::{
+    proto::ModCommand,
+    web::{HeatSrc, Msg},
+};
 use leptos::*;
 
 #[component]
@@ -26,6 +29,21 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 #[component]
 pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
+    let sender = use_context::<Sender>(cx).unwrap();
+    let (ignore, w_ignore) = create_signal(cx, false);
+    let k = heat_src.trace_src.key.clone();
+
+    create_effect(cx, move |_| {
+        if !ignore.get() {
+            return;
+        }
+        let msg = Msg::RouteModCommand(ModCommand {
+            key: format!("IGNORE: {}", k),
+        });
+
+        sender.send(msg);
+    });
+
     let trace_src = heat_src.trace_src;
 
     return view! {cx,
@@ -42,7 +60,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
                     when=move || mod_client_connected.get()
                     fallback=|cx| view! { cx, <span/> }>
                         <div class="heat-src-controls button-group">
-                            <div class="toggle-button">Ignore</div>
+                            <div class="toggle-button" on:click=move |_| { w_ignore.set(true) }>Ignore</div>
                             <div class="toggle-button">Remove</div>
                         </div>
                 </Show>

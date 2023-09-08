@@ -55,14 +55,11 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     });
 
     let sender = sender.clone();
-    create_effect(cx, move |_| {
-        let sender = sender.clone();
-        emit_filterset(sender);
-    });
 
     provide_context(cx, rw_filters);
     provide_context(cx, heat_srcs_memo);
     provide_context(cx, mod_client_connected);
+    provide_context(cx, sender);
 
     return view! { cx,
         <main>
