@@ -1,6 +1,6 @@
 use crate::store;
 use async_trait::async_trait;
-use coldmod_msg::proto::{FilterSetQuery, Trace, TraceSrcs};
+use coldmod_msg::proto::{ModCommand, ModCommandsArgs, Trace, TraceSrcs};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -20,7 +20,7 @@ pub struct Dispatch {
     pub(crate) store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
-    tracesrcs_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<TraceSrcs>>>>,
+    command_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<ModCommand>>>>,
     websocket_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<Msg>>>>,
     trace_sink: mpsc::Sender<Trace>,
 }
@@ -61,7 +61,7 @@ impl Dispatch {
             store: store::RedisStore::new(redis_host).await,
             internal,
             rate_limiter,
-            tracesrcs_listeners: Arc::new(RwLock::new(HashMap::new())),
+            command_listeners: Arc::new(RwLock::new(HashMap::new())),
             websocket_listeners: Arc::new(RwLock::new(HashMap::new())),
             trace_sink,
         }
@@ -69,8 +69,8 @@ impl Dispatch {
 
     async fn _handle_websocket_msg(&self, msg: Msg) -> Result<Vec<Msg>, anyhow::Error> {
         match msg {
-            Msg::SetFilterSet((filterset, key)) => {
-                self.route_filterset(filterset, key).await?;
+            Msg::RouteModCommandTo((command, receiver_key)) => {
+                self.route_mod_command(command, receiver_key).await?;
             }
             _ => {
                 tracing::warn!("unexpected websocket message: {}", msg);
@@ -80,13 +80,13 @@ impl Dispatch {
         Ok(vec![])
     }
 
-    pub async fn route_filterset(
+    pub async fn route_mod_command(
         &self,
-        filterset: TraceSrcs,
+        mod_command: ModCommand,
         key: String,
     ) -> Result<(), anyhow::Error> {
-        tracing::info!("set filterset:{:?}", key);
-        self._send_filterset_to_listener(&key, filterset).await;
+        tracing::info!("route mod command: {:?}", key);
+        self._send_command_to_listener(&key, mod_command).await;
         Ok(())
     }
 
@@ -226,6 +226,18 @@ impl Dispatch {
         let mut store = self.store.clone();
 
         let (send_to_key, mut receive_for_key) = mpsc::channel::<Msg>(65536);
+
+        if self
+            .command_listeners
+            .read()
+            .await
+            .contains_key(ws.key().as_str())
+        {
+            if let Err(e) = send_to_key.send(Msg::ModCommandClientAvailable).await {
+                tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
+            }
+        }
+
         self.websocket_listeners
             .write()
             .await
@@ -320,34 +332,34 @@ impl Dispatch {
         self.websocket_listeners.write().await.remove(&ws.key());
     }
 
-    pub async fn send_filtersets_until_closed(
+    pub async fn send_commands_until_closed(
         &self,
-        q: FilterSetQuery,
-        tx: tokio::sync::mpsc::Sender<TraceSrcs>,
+        q: ModCommandsArgs,
+        tx: tokio::sync::mpsc::Sender<ModCommand>,
     ) {
-        self.tracesrcs_listeners
+        self.command_listeners
             .write()
             .await
             .insert(q.key.clone(), tx.clone());
 
-        // if there is already a client as it to send it's current filterset
+        // if there is already a client let it know a cli client is is available
         if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
-            let msg = Msg::SendYourFilterSet;
+            let msg = Msg::ModCommandClientAvailable;
             if let Err(e) = ws.send(msg).await {
-                tracing::error!("failed to ask socket client for filterset: {:?}", e);
+                tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
             }
         }
 
         tx.closed().await;
         tracing::info!("tx closed - removing listener");
-        self.tracesrcs_listeners.write().await.remove(&q.key);
+        self.command_listeners.write().await.remove(&q.key);
     }
 
-    async fn _send_filterset_to_listener(&self, key: &String, filterset: TraceSrcs) {
-        match self.tracesrcs_listeners.read().await.get(key) {
+    async fn _send_command_to_listener(&self, key: &String, cmd: ModCommand) {
+        match self.command_listeners.read().await.get(key) {
             Some(tx) => {
-                if let Err(e) = tx.send(filterset).await {
-                    tracing::error!("failed to send filterset to listener: {:?}", e);
+                if let Err(e) = tx.send(cmd).await {
+                    tracing::error!("failed to send MOdCommand to listener: {:?}", e);
                 }
             }
             None => {}

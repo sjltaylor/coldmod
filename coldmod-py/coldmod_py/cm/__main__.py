@@ -69,28 +69,8 @@ class CLI:
 
         previous_lines = []
 
-        for filterset in coldmod_py.web.stream_filterset(key):
-            with open('./coldmod.filterset.json', 'w') as json_file:
-                raw = json.dumps(MessageToDict(filterset), indent=4)
-                json_file.write(raw)
-            with open('./coldmod.filterset.locs.txt', 'w') as locs_file:
-                for line in previous_lines:
-                    sys.stdout.write("\033[F")
-                    sys.stdout.write("\r")
-                    sys.stdout.write(" " * len(line))
-                    sys.stdout.write("\r")
-                    sys.stdout.flush()
-
-                previous_lines = []
-
-                for trace_src in filterset.trace_srcs:
-                    loc = f"{trace_src.key}\n"
-                    locs_file.write(loc)
-                    sys.stdout.write(loc)
-                    sys.stdout.flush()
-                    previous_lines.append(loc)
-
-                previous_lines.reverse()
+        for cmd in coldmod_py.web.stream_commands(key):
+            print(f"received {cmd}")
 
 
     def mod_remove(self, force=False):

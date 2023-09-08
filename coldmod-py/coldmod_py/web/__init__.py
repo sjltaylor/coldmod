@@ -23,15 +23,15 @@ def extract_key(web_app_url: str) -> str:
 
     raise Exception(f"invalid web_app_url: {web_app_url}")
 
-def stream_filterset(web_app_url: str) -> Iterable[tracing_pb2.TraceSrcs]:
-    q = tracing_pb2.FilterSetQuery(key=web_app_url)
+def stream_commands(web_app_url: str) -> Iterable[tracing_pb2.ModCommand]:
+    q = tracing_pb2.ModCommandsArgs(key=web_app_url)
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
 
         if config.env.insecure():
-            filtersets = stub.stream_filtersets(q)
+            mod_commands = stub.mod_commands(q)
         else:
-            filtersets = stub.stream_filtersets.with_call(q, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
+            mod_commands = stub.mod_commands.with_call(q, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
 
-        for filterset in filtersets:
-            yield filterset
+        for mod_command in mod_commands:
+            yield mod_command

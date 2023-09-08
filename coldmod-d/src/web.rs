@@ -110,8 +110,8 @@ impl dispatch::WebSocket for WebSocketAdapter {
             }
             Some(Ok(Message::Binary(payload))) => match flexbuffers::from_slice(&payload) {
                 Ok(msg) => match msg {
-                    Msg::SetFilterSetInContext(filterset) => {
-                        Some(Ok(Msg::SetFilterSet((filterset, self.key.clone()))))
+                    Msg::RouteModCommand(c) => {
+                        Some(Ok(Msg::RouteModCommandTo((c, self.key.clone()))))
                     }
                     _ => Some(Ok(msg)),
                 },

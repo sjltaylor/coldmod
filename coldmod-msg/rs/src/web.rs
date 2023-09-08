@@ -1,4 +1,4 @@
-use crate::proto::{TraceSrc, TraceSrcs};
+use crate::proto::{ModCommand, TraceSrc};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -8,9 +8,9 @@ pub enum Msg {
     HeatMapAvailable(HeatMap),
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
-    SetFilterSet((TraceSrcs, String)),
-    SetFilterSetInContext(TraceSrcs),
-    SendYourFilterSet,
+    ModCommandClientAvailable,
+    RouteModCommand(ModCommand),
+    RouteModCommandTo((ModCommand, String)),
 }
 
 impl Display for Msg {
@@ -19,9 +19,9 @@ impl Display for Msg {
             Msg::HeatMapAvailable(_) => write!(f, "SourceDataAvailable"),
             Msg::TracingStatsAvailable(_) => write!(f, "TracingStatsAvailable"),
             Msg::HeatMapChanged(_) => write!(f, "HeatMapChanged"),
-            Msg::SetFilterSet(_) => write!(f, "SetFilterSet"),
-            Msg::SetFilterSetInContext(_) => write!(f, "SetFilterSetInContext"),
-            Msg::SendYourFilterSet => write!(f, "SendYourFilterSet"),
+            Msg::ModCommandClientAvailable => write!(f, "ModCommandClientAvailable"),
+            Msg::RouteModCommand(_) => write!(f, "RouteModCommand"),
+            Msg::RouteModCommandTo(_) => write!(f, "RouteModCommandTo"),
         }
     }
 }

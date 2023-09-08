@@ -18,12 +18,16 @@ message TraceSrcs {
   repeated TraceSrc trace_srcs = 2;
 }
 
-message FilterSetQuery {
+message ModCommandsArgs {
   string key = 1;
+}
+
+message ModCommand {
+    string key = 1;
 }
 
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
   rpc set(TraceSrcs) returns (google.protobuf.Empty);
-  rpc stream_filtersets(FilterSetQuery) returns (stream TraceSrcs);
+  rpc mod_commands(ModCommandsArgs) returns (stream ModCommand);
 }
