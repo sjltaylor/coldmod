@@ -22,8 +22,19 @@ message ModCommandsArgs {
   string key = 1;
 }
 
-message ModCommand {
+message RemoveCommand {
     string key = 1;
+}
+
+message IgnoreCommand {
+    string key = 1;
+}
+
+message ModCommand {
+    oneof command {
+        IgnoreCommand ignore = 1;
+        RemoveCommand remove = 2;
+    }
 }
 
 service Traces {

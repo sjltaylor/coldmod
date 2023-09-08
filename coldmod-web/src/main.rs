@@ -21,17 +21,6 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         None => None,
     });
 
-    let emit_filterset = move |sender: Sender| {
-        if let Some(heat_srcs) = heat_srcs_memo.get() {
-            log!("HeatMapUI/count: {}", heat_srcs.len());
-
-            let filterset = coldmod_msg::proto::TraceSrcs {
-                trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
-            };
-            // sender.send(Msg::SetFilterSetInContext(filterset));
-        }
-    };
-
     let sender = coldmod_d::connect(path, move |msg, sender| match msg {
         Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
             filter_state: FilterState::default(),
@@ -43,9 +32,6 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         Msg::ModCommandClientAvailable => {
             log!("ModCommandClientAvailable");
             w_mod_client_connected.set(true);
-            sender.send(Msg::RouteModCommand(ModCommand {
-                key: "HELLO".to_string(),
-            }))
         }
         Msg::ModCommandClientUnavailable => {
             log!("ModCommandClientUnavailable");

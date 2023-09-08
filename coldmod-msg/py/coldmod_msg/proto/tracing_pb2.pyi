@@ -34,8 +34,22 @@ class ModCommandsArgs(_message.Message):
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
 
-class ModCommand(_message.Message):
+class RemoveCommand(_message.Message):
     __slots__ = ["key"]
     KEY_FIELD_NUMBER: _ClassVar[int]
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class IgnoreCommand(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class ModCommand(_message.Message):
+    __slots__ = ["ignore", "remove"]
+    IGNORE_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_FIELD_NUMBER: _ClassVar[int]
+    ignore: IgnoreCommand
+    remove: RemoveCommand
+    def __init__(self, ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ...) -> None: ...

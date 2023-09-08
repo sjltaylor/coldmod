@@ -1,6 +1,6 @@
 use crate::{coldmod_d::Sender, controls_ui::ControlsUI};
 use coldmod_msg::{
-    proto::ModCommand,
+    proto::{mod_command::Command, IgnoreCommand, ModCommand},
     web::{HeatSrc, Msg},
 };
 use leptos::*;
@@ -30,40 +30,57 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
     let sender = use_context::<Sender>(cx).unwrap();
-    let (ignore, w_ignore) = create_signal(cx, false);
-    let k = heat_src.trace_src.key.clone();
+    let (command, w_command) = create_signal::<Option<Command>>(cx, None);
 
-    create_effect(cx, move |_| {
-        if !ignore.get() {
-            return;
+    let key = heat_src.trace_src.key.clone();
+
+    create_effect(cx, move |_| match command.get() {
+        Some(command) => {
+            let msg = Msg::RouteModCommand(ModCommand {
+                command: Some(command),
+            });
+            sender.send(msg);
         }
-        let msg = Msg::RouteModCommand(ModCommand {
-            key: format!("IGNORE: {}", k),
-        });
-
-        sender.send(msg);
+        _ => {}
     });
 
     let trace_src = heat_src.trace_src;
+
+    let refs_view = move || {
+        if mod_client_connected.get() {
+            Some(view! {cx,
+                <div class="heat-src-trace-count">REFS:123</div>
+            })
+        } else {
+            None
+        }
+    };
+
+    let controls_view = move || {
+        if mod_client_connected.get() {
+            let key = key.clone();
+            let on_click = move |_| {
+                w_command.set(Some(Command::Ignore(IgnoreCommand { key: key.clone() })));
+            };
+
+            Some(view! {cx,
+                <div class="heat-src-controls button-group">
+                    <div class="toggle-button" on:click=on_click>Ignore</div>
+                    <div class="toggle-button">Remove</div>
+                </div>
+            })
+        } else {
+            None
+        }
+    };
 
     return view! {cx,
         <li class="heat-src-row">
             <div class="container heat-src">
                 <div class="heat-src-trace-count">TRACES:{heat_src.trace_count}</div>
-                <Show
-                    when=move || mod_client_connected.get()
-                    fallback=|cx| view! { cx, <span/> }>
-                        <div class="heat-src-trace-count">REFS:123</div>
-                </Show>
+                { refs_view }
                 <div class="heat-src-fqn">{trace_src.key}</div>
-                <Show
-                    when=move || mod_client_connected.get()
-                    fallback=|cx| view! { cx, <span/> }>
-                        <div class="heat-src-controls button-group">
-                            <div class="toggle-button" on:click=move |_| { w_ignore.set(true) }>Ignore</div>
-                            <div class="toggle-button">Remove</div>
-                        </div>
-                </Show>
+                { controls_view }
             </div>
         </li>
     };
