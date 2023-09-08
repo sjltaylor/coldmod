@@ -191,7 +191,28 @@ ul {
     padding: 0 .25em;
     margin-right: 1.25em;
     line-height: 1.25em;
-    border: solid 1px black;
-    border-radius: 2px;
     padding-top: 2px;
+}
+
+.container.cli-connection-state {
+    @include code-font;
+    display: inline-block;
+    margin: 0.85em;
+    padding-top: 0em;
+    position: relative;
+    top: 1px;
+    transform: skew(-15deg);
+    font-weight: 100;
+    font-size: 0.85em;
+    font-weight: bold;
+}
+
+.heat-src-controls {
+    margin-left: 1.85em;
+}
+
+.heat-src-button {
+    display: inline-block;
+    margin: 0 .5em;
+    text-decoration: underline;
 }

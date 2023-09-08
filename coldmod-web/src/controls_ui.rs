@@ -31,6 +31,8 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
         cx.join(" ")
     };
 
+    let cli_connection = move || return "CLI CONNECTED";
+
     return view! {cx,
     <div class="area controls">
         <div class="container controls">
@@ -56,7 +58,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                     </div>
                 }}).collect_view(cx)}
             </div>
-            <div class="container heat-src-count">{heat_src_count}</div>
+            <div class="container heat-src-count">"SRCS:"{heat_src_count}</div>
         </div>
     </div> };
 }

@@ -1,5 +1,5 @@
 use crate::{coldmod_d::Sender, filter_state::FilterState, heatmap_filter::HeatmapFilter};
-use coldmod_msg::web::Msg;
+use coldmod_msg::{proto::ModCommand, web::Msg};
 use heatmap_ui::HeatMapUI;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -14,6 +14,7 @@ mod heatmap_ui;
 #[component]
 fn App(cx: Scope, path: String) -> impl IntoView {
     let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
+    let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
 
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
@@ -27,7 +28,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
             let filterset = coldmod_msg::proto::TraceSrcs {
                 trace_srcs: heat_srcs.into_iter().map(|hs| hs.trace_src).collect(),
             };
-            sender.send(Msg::SetFilterSetInContext(filterset));
+            // sender.send(Msg::SetFilterSetInContext(filterset));
         }
     };
 
@@ -39,7 +40,17 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         Msg::HeatMapChanged(ref heatmap_delta) => {
             rw_filters.update(|f| f.as_mut().unwrap().update(heatmap_delta));
         }
-        Msg::SendYourFilterSet => emit_filterset(sender),
+        Msg::ModCommandClientAvailable => {
+            log!("ModCommandClientAvailable");
+            w_mod_client_connected.set(true);
+            sender.send(Msg::RouteModCommand(ModCommand {
+                key: "HELLO".to_string(),
+            }))
+        }
+        Msg::ModCommandClientUnavailable => {
+            log!("ModCommandClientUnavailable");
+            w_mod_client_connected.set(false);
+        }
         _ => {}
     });
 
@@ -51,6 +62,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
 
     provide_context(cx, rw_filters);
     provide_context(cx, heat_srcs_memo);
+    provide_context(cx, mod_client_connected);
 
     return view! { cx,
         <main>

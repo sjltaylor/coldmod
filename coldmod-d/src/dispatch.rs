@@ -335,14 +335,14 @@ impl Dispatch {
     pub async fn send_commands_until_closed(
         &self,
         q: ModCommandsArgs,
-        tx: tokio::sync::mpsc::Sender<ModCommand>,
+        tx_to_client: tokio::sync::mpsc::Sender<ModCommand>,
     ) {
         self.command_listeners
             .write()
             .await
-            .insert(q.key.clone(), tx.clone());
+            .insert(q.key.clone(), tx_to_client.clone());
 
-        // if there is already a client let it know a cli client is is available
+        // if there is a app already, let it know a cli is available
         if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
             let msg = Msg::ModCommandClientAvailable;
             if let Err(e) = ws.send(msg).await {
@@ -350,9 +350,17 @@ impl Dispatch {
             }
         }
 
-        tx.closed().await;
+        tx_to_client.closed().await;
         tracing::info!("tx closed - removing listener");
         self.command_listeners.write().await.remove(&q.key);
+
+        // if there is an app, let it know a cli is unavailable
+        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
+            let msg = Msg::ModCommandClientUnavailable;
+            if let Err(e) = ws.send(msg).await {
+                tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);
+            }
+        }
     }
 
     async fn _send_command_to_listener(&self, key: &String, cmd: ModCommand) {

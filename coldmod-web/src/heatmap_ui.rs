@@ -25,13 +25,27 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
+    let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
     let trace_src = heat_src.trace_src;
 
     return view! {cx,
         <li class="heat-src-row">
             <div class="container heat-src">
-                <div class="heat-src-trace-count">{heat_src.trace_count}</div>
+                <div class="heat-src-trace-count">TRACES:{heat_src.trace_count}</div>
+                <Show
+                    when=move || mod_client_connected.get()
+                    fallback=|cx| view! { cx, <span/> }>
+                        <div class="heat-src-trace-count">REFS:123</div>
+                </Show>
                 <div class="heat-src-fqn">{trace_src.key}</div>
+                <Show
+                    when=move || mod_client_connected.get()
+                    fallback=|cx| view! { cx, <span/> }>
+                        <div class="heat-src-controls button-group">
+                            <div class="toggle-button">Ignore</div>
+                            <div class="toggle-button">Remove</div>
+                        </div>
+                </Show>
             </div>
         </li>
     };

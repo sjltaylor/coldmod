@@ -9,6 +9,7 @@ pub enum Msg {
     HeatMapChanged(HeatMapDelta),
     TracingStatsAvailable(TracingStats),
     ModCommandClientAvailable,
+    ModCommandClientUnavailable,
     RouteModCommand(ModCommand),
     RouteModCommandTo((ModCommand, String)),
 }
@@ -20,6 +21,7 @@ impl Display for Msg {
             Msg::TracingStatsAvailable(_) => write!(f, "TracingStatsAvailable"),
             Msg::HeatMapChanged(_) => write!(f, "HeatMapChanged"),
             Msg::ModCommandClientAvailable => write!(f, "ModCommandClientAvailable"),
+            Msg::ModCommandClientUnavailable => write!(f, "ModCommandClientUnavailable"),
             Msg::RouteModCommand(_) => write!(f, "RouteModCommand"),
             Msg::RouteModCommandTo(_) => write!(f, "RouteModCommandTo"),
         }
