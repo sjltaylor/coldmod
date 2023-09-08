@@ -1,6 +1,6 @@
 use crate::{coldmod_d::Sender, controls_ui::ControlsUI};
 use coldmod_msg::{
-    proto::{mod_command::Command, IgnoreCommand, ModCommand},
+    proto::{mod_command::Command, IgnoreCommand, ModCommand, RemoveCommand},
     web::{HeatSrc, Msg},
 };
 use leptos::*;
@@ -58,15 +58,24 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
 
     let controls_view = move || {
         if mod_client_connected.get() {
-            let key = key.clone();
-            let on_click = move |_| {
-                w_command.set(Some(Command::Ignore(IgnoreCommand { key: key.clone() })));
+            let key_clone_1 = key.clone();
+            let key_clone_2 = key.clone();
+
+            let on_ignore = move |_| {
+                w_command.set(Some(Command::Ignore(IgnoreCommand {
+                    key: key_clone_1.clone(),
+                })));
+            };
+            let on_remove = move |_| {
+                w_command.set(Some(Command::Remove(RemoveCommand {
+                    key: key_clone_2.clone(),
+                })));
             };
 
             Some(view! {cx,
                 <div class="heat-src-controls button-group">
-                    <div class="toggle-button" on:click=on_click>Ignore</div>
-                    <div class="toggle-button">Remove</div>
+                    <div class="toggle-button" on:click=on_ignore>Ignore</div>
+                    <div class="toggle-button" on:click=on_remove>Remove</div>
                 </div>
             })
         } else {

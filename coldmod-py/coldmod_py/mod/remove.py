@@ -37,6 +37,7 @@ class _RemoveAndCommentRefs(libcst.codemod.ContextAwareTransformer):
             return FlattenSentinel([comment_node, original_node])
         return original_node
 
+
 def remove(root_dir: str, remote_trace_srcs: Iterable[tracing_pb2.TraceSrc], local_src_files: Iterable[str]) -> Set[str]:
     local_src_files_by_path = files.read_all(local_src_files)
     modules = code.parse_modules(local_src_files_by_path)

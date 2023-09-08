@@ -36,8 +36,8 @@ class CLI:
         """
         print traces
         """
-        root_marker = coldmod_py.config.root_marker()
-        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_patterns)
+        root_marker = coldmod_py.root_marker.load()
+        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
         trace_srcs_by_relative_path = code.find_trace_srcs(relative_paths)
@@ -51,12 +51,12 @@ class CLI:
         """
         print the files which are included in coldmod tracing
         """
-        root_marker = coldmod_py.config.root_marker()
-        for path in files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns):
+        root_marker = coldmod_py.root_marker.load()
+        for path in files.find_src_files_in(root_marker.dir(), root_marker.ignore_files()):
             print(path)
 
     def connect(self, web_app_url=None):
-        root_marker = coldmod_py.config.root_marker()
+        root_marker = coldmod_py.root_marker.load()
 
         if web_app_url is None:
             (web_app_url, key) = coldmod_py.web.generate_app_url()
@@ -65,16 +65,17 @@ class CLI:
         else:
             key = coldmod_py.web.extract_key(web_app_url)
 
-        path_prefix = root_marker.dir
-
-        previous_lines = []
-
         for cmd in coldmod_py.web.stream_commands(key):
-            print(f"received {cmd}")
+            match cmd.WhichOneof("command"):
+                case "ignore":
+                    print("ignoring:", cmd.ignore.key)
+                    root_marker.add_ignore_key(cmd.ignore.key).dump()
+                case _:
+                    print(f"command not supported: {cmd}")
 
 
     def mod_remove(self, force=False):
-        root_marker = coldmod_py.config.root_marker()
+        root_marker = coldmod_py.root_marker.load()
 
         if not force:
             print("Are you sure (y/N)? (you didn't use --force)")
@@ -86,8 +87,8 @@ class CLI:
         with open('./coldmod.filterset.json', 'r') as json_file:
             raw = json_file.read()
             trace_srcs = ParseDict(json.loads(raw), tracing_pb2.TraceSrcs())
-            src_files = files.find_src_files_in(root_marker.dir, root_marker.ignore_patterns)
-            mod.remove(root_marker.dir, trace_srcs.trace_srcs, src_files)
+            src_files = files.find_src_files_in(root_marker.dir(), root_marker.ignore_files())
+            mod.remove(root_marker.dir(), trace_srcs.trace_srcs, src_files)
 
 
 if __name__ == "__main__":

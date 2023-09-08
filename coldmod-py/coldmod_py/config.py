@@ -1,35 +1,4 @@
-from typing import List, Dict, Tuple, Any
 import os
-import sys
-import logging
-import tomllib
-import pathlib
-
-class RootMarker:
-    ignore_patterns: List[str]
-    dir: str
-
-    def __init__(self, *, dir: str, ignore_patterns: List[str]):
-        self.ignore_patterns = ignore_patterns
-        self.dir = dir
-
-def root_marker() -> RootMarker:
-    dir = os.getcwd()
-    path = pathlib.Path(dir).joinpath("coldmod.rootmarker")
-
-    if not path.exists():
-        sys.stderr.write("coldmod.rootmarker not found in working directory\n")
-        sys.exit(-1)
-
-    if not path.is_file():
-        sys.stderr.write(f"{path} is not a file\n")
-        sys.exit(-1)
-
-    with path.open('rb') as file:
-        config = tomllib.load(file)
-
-    return RootMarker(dir=dir, ignore_patterns=config["ignore"] or [])
-
 
 class Env:
     def grpc_host(self) -> str:
