@@ -80,9 +80,6 @@ async fn ws_handler(
     // we can customize the callback by sending additional info such as address.
     tracing::trace!("websocket upgrade request from {}", addr);
 
-    // let key = format!("{:?}", ws_key);
-    println!("{:?}", key);
-
     ws.on_upgrade(move |socket| serve_socket(socket, dispatch, key))
 }
 

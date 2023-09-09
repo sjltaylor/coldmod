@@ -28,12 +28,6 @@ class TraceSrcs(_message.Message):
     trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
     def __init__(self, trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...
 
-class ModCommandsArgs(_message.Message):
-    __slots__ = ["key"]
-    KEY_FIELD_NUMBER: _ClassVar[int]
-    key: str
-    def __init__(self, key: _Optional[str] = ...) -> None: ...
-
 class RemoveCommand(_message.Message):
     __slots__ = ["key"]
     KEY_FIELD_NUMBER: _ClassVar[int]
@@ -53,3 +47,23 @@ class ModCommand(_message.Message):
     ignore: IgnoreCommand
     remove: RemoveCommand
     def __init__(self, ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ...) -> None: ...
+
+class ConnectKey(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class SrcIgnoreKey(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class SrcMessage(_message.Message):
+    __slots__ = ["connect_key", "src_ignore_key"]
+    CONNECT_KEY_FIELD_NUMBER: _ClassVar[int]
+    SRC_IGNORE_KEY_FIELD_NUMBER: _ClassVar[int]
+    connect_key: ConnectKey
+    src_ignore_key: SrcIgnoreKey
+    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore_key: _Optional[_Union[SrcIgnoreKey, _Mapping]] = ...) -> None: ...

@@ -18,10 +18,6 @@ message TraceSrcs {
   repeated TraceSrc trace_srcs = 2;
 }
 
-message ModCommandsArgs {
-  string key = 1;
-}
-
 message RemoveCommand {
     string key = 1;
 }
@@ -37,8 +33,23 @@ message ModCommand {
     }
 }
 
+message ConnectKey {
+  string key = 1;
+}
+
+message SrcIgnoreKey {
+  string key = 1;
+}
+
+message SrcMessage {
+    oneof message {
+        ConnectKey connect_key = 1;
+        SrcIgnoreKey src_ignore_key = 2;
+    }
+}
+
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
   rpc set(TraceSrcs) returns (google.protobuf.Empty);
-  rpc mod_commands(ModCommandsArgs) returns (stream ModCommand);
+  rpc mod_commands(stream SrcMessage) returns (stream ModCommand);
 }

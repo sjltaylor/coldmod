@@ -1,6 +1,6 @@
 use crate::store;
 use async_trait::async_trait;
-use coldmod_msg::proto::{ModCommand, ModCommandsArgs, Trace, TraceSrcs};
+use coldmod_msg::proto::{ConnectKey, ModCommand, Trace, TraceSrcs};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -334,28 +334,28 @@ impl Dispatch {
 
     pub async fn send_commands_until_closed(
         &self,
-        q: ModCommandsArgs,
-        tx_to_client: tokio::sync::mpsc::Sender<ModCommand>,
+        key: String,
+        mod_command_tx: tokio::sync::mpsc::Sender<ModCommand>,
     ) {
         self.command_listeners
             .write()
             .await
-            .insert(q.key.clone(), tx_to_client.clone());
+            .insert(key.clone(), mod_command_tx.clone());
 
         // if there is a app already, let it know a cli is available
-        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
+        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
             let msg = Msg::ModCommandClientAvailable;
             if let Err(e) = ws.send(msg).await {
                 tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
             }
         }
 
-        tx_to_client.closed().await;
+        mod_command_tx.closed().await;
         tracing::info!("tx closed - removing listener");
-        self.command_listeners.write().await.remove(&q.key);
+        self.command_listeners.write().await.remove(&key);
 
         // if there is an app, let it know a cli is unavailable
-        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&q.key) {
+        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
             let msg = Msg::ModCommandClientUnavailable;
             if let Err(e) = ws.send(msg).await {
                 tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);

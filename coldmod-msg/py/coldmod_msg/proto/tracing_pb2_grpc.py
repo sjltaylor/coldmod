@@ -25,9 +25,9 @@ class TracesStub(object):
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
-        self.mod_commands = channel.unary_stream(
+        self.mod_commands = channel.stream_stream(
                 '/coldmod_msg.proto.tracing.Traces/mod_commands',
-                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommandsArgs.SerializeToString,
+                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.SerializeToString,
                 response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.FromString,
                 )
 
@@ -47,7 +47,7 @@ class TracesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def mod_commands(self, request, context):
+    def mod_commands(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -66,9 +66,9 @@ def add_TracesServicer_to_server(servicer, server):
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
-            'mod_commands': grpc.unary_stream_rpc_method_handler(
+            'mod_commands': grpc.stream_stream_rpc_method_handler(
                     servicer.mod_commands,
-                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommandsArgs.FromString,
+                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.FromString,
                     response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.SerializeToString,
             ),
     }
@@ -116,7 +116,7 @@ class Traces(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def mod_commands(request,
+    def mod_commands(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -126,8 +126,8 @@ class Traces(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/coldmod_msg.proto.tracing.Traces/mod_commands',
-            coldmod__msg_dot_proto_dot_tracing__pb2.ModCommandsArgs.SerializeToString,
+        return grpc.experimental.stream_stream(request_iterator, target, '/coldmod_msg.proto.tracing.Traces/mod_commands',
+            coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.SerializeToString,
             coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

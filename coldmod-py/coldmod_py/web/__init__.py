@@ -24,12 +24,15 @@ def extract_key(web_app_url: str) -> str:
     raise Exception(f"invalid web_app_url: {web_app_url}")
 
 def stream_commands(web_app_url: str) -> Iterable[tracing_pb2.ModCommand]:
-    q = tracing_pb2.ModCommandsArgs(key=web_app_url)
+    q = tracing_pb2.ConnectKey(key=web_app_url)
+    connect = tracing_pb2.SrcMessage(connect_key=q)
+    i = tracing_pb2.SrcIgnoreKey(key="ARSE")
+    ignore = tracing_pb2.SrcMessage(src_ignore_key=i)
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
 
         if config.env.insecure():
-            mod_commands = stub.mod_commands(q)
+            mod_commands = stub.mod_commands(iter([connect, ignore]))
         else:
             mod_commands = stub.mod_commands.with_call(q, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
 

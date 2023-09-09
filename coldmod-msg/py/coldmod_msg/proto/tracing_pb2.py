@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1f\x63oldmod-msg/proto/tracing.proto\x12\x19\x63oldmod_msg.proto.tracing\x1a\x1bgoogle/protobuf/empty.proto\";\n\x05Trace\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x11\n\tthread_id\x18\x02 \x01(\t\x12\x12\n\nprocess_id\x18\x03 \x01(\t\"\x17\n\x08TraceSrc\x12\x0b\n\x03key\x18\x01 \x01(\t\"D\n\tTraceSrcs\x12\x37\n\ntrace_srcs\x18\x02 \x03(\x0b\x32#.coldmod_msg.proto.tracing.TraceSrc\"\x1e\n\x0fModCommandsArgs\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1c\n\rRemoveCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1c\n\rIgnoreCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x8f\x01\n\nModCommand\x12:\n\x06ignore\x18\x01 \x01(\x0b\x32(.coldmod_msg.proto.tracing.IgnoreCommandH\x00\x12:\n\x06remove\x18\x02 \x01(\x0b\x32(.coldmod_msg.proto.tracing.RemoveCommandH\x00\x42\t\n\x07\x63ommand2\xf9\x01\n\x06Traces\x12\x45\n\x07\x63ollect\x12 .coldmod_msg.proto.tracing.Trace\x1a\x16.google.protobuf.Empty(\x01\x12\x43\n\x03set\x12$.coldmod_msg.proto.tracing.TraceSrcs\x1a\x16.google.protobuf.Empty\x12\x63\n\x0cmod_commands\x12*.coldmod_msg.proto.tracing.ModCommandsArgs\x1a%.coldmod_msg.proto.tracing.ModCommand0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1f\x63oldmod-msg/proto/tracing.proto\x12\x19\x63oldmod_msg.proto.tracing\x1a\x1bgoogle/protobuf/empty.proto\";\n\x05Trace\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x11\n\tthread_id\x18\x02 \x01(\t\x12\x12\n\nprocess_id\x18\x03 \x01(\t\"\x17\n\x08TraceSrc\x12\x0b\n\x03key\x18\x01 \x01(\t\"D\n\tTraceSrcs\x12\x37\n\ntrace_srcs\x18\x02 \x03(\x0b\x32#.coldmod_msg.proto.tracing.TraceSrc\"\x1c\n\rRemoveCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1c\n\rIgnoreCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x8f\x01\n\nModCommand\x12:\n\x06ignore\x18\x01 \x01(\x0b\x32(.coldmod_msg.proto.tracing.IgnoreCommandH\x00\x12:\n\x06remove\x18\x02 \x01(\x0b\x32(.coldmod_msg.proto.tracing.RemoveCommandH\x00\x42\t\n\x07\x63ommand\"\x19\n\nConnectKey\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1b\n\x0cSrcIgnoreKey\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x98\x01\n\nSrcMessage\x12<\n\x0b\x63onnect_key\x18\x01 \x01(\x0b\x32%.coldmod_msg.proto.tracing.ConnectKeyH\x00\x12\x41\n\x0esrc_ignore_key\x18\x02 \x01(\x0b\x32\'.coldmod_msg.proto.tracing.SrcIgnoreKeyH\x00\x42\t\n\x07message2\xf6\x01\n\x06Traces\x12\x45\n\x07\x63ollect\x12 .coldmod_msg.proto.tracing.Trace\x1a\x16.google.protobuf.Empty(\x01\x12\x43\n\x03set\x12$.coldmod_msg.proto.tracing.TraceSrcs\x1a\x16.google.protobuf.Empty\x12`\n\x0cmod_commands\x12%.coldmod_msg.proto.tracing.SrcMessage\x1a%.coldmod_msg.proto.tracing.ModCommand(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,14 +28,18 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_TRACESRC']._serialized_end=175
   _globals['_TRACESRCS']._serialized_start=177
   _globals['_TRACESRCS']._serialized_end=245
-  _globals['_MODCOMMANDSARGS']._serialized_start=247
-  _globals['_MODCOMMANDSARGS']._serialized_end=277
-  _globals['_REMOVECOMMAND']._serialized_start=279
-  _globals['_REMOVECOMMAND']._serialized_end=307
-  _globals['_IGNORECOMMAND']._serialized_start=309
-  _globals['_IGNORECOMMAND']._serialized_end=337
-  _globals['_MODCOMMAND']._serialized_start=340
-  _globals['_MODCOMMAND']._serialized_end=483
-  _globals['_TRACES']._serialized_start=486
-  _globals['_TRACES']._serialized_end=735
+  _globals['_REMOVECOMMAND']._serialized_start=247
+  _globals['_REMOVECOMMAND']._serialized_end=275
+  _globals['_IGNORECOMMAND']._serialized_start=277
+  _globals['_IGNORECOMMAND']._serialized_end=305
+  _globals['_MODCOMMAND']._serialized_start=308
+  _globals['_MODCOMMAND']._serialized_end=451
+  _globals['_CONNECTKEY']._serialized_start=453
+  _globals['_CONNECTKEY']._serialized_end=478
+  _globals['_SRCIGNOREKEY']._serialized_start=480
+  _globals['_SRCIGNOREKEY']._serialized_end=507
+  _globals['_SRCMESSAGE']._serialized_start=510
+  _globals['_SRCMESSAGE']._serialized_end=662
+  _globals['_TRACES']._serialized_start=665
+  _globals['_TRACES']._serialized_end=911
 # @@protoc_insertion_point(module_scope)
