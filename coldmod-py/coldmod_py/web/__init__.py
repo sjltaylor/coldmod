@@ -8,7 +8,7 @@ import base64
 from urllib.parse import urlparse
 from coldmod_py import coldmod_d
 from coldmod_py import config
-
+import queue
 
 def generate_app_url() -> Tuple[str, str]:
     bytes = secrets.token_bytes(32)
@@ -23,18 +23,20 @@ def extract_key(web_app_url: str) -> str:
 
     raise Exception(f"invalid web_app_url: {web_app_url}")
 
-def stream_commands(web_app_url: str) -> Iterable[tracing_pb2.ModCommand]:
-    q = tracing_pb2.ConnectKey(key=web_app_url)
-    connect = tracing_pb2.SrcMessage(connect_key=q)
-    i = tracing_pb2.SrcIgnoreKey(key="ARSE")
-    ignore = tracing_pb2.SrcMessage(src_ignore_key=i)
+def _stream_src_message_queue(q) -> Iterable[tracing_pb2.SrcMessage]:
+    while True:
+        yield q.get()
+
+def stream_commands(src_message_queue: queue.Queue[tracing_pb2.SrcMessage]) -> Iterable[tracing_pb2.ModCommand]:
+
+    src_message_stream = _stream_src_message_queue(src_message_queue)
+
     with coldmod_d.grpc_channel() as channel:
         stub = tracing_pb2_grpc.TracesStub(channel)
 
         if config.env.insecure():
-            mod_commands = stub.mod_commands(iter([connect, ignore]))
+            mod_commands = stub.mod_commands(src_message_stream)
         else:
-            mod_commands = stub.mod_commands.with_call(q, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
-
+            mod_commands = stub.mod_commands.with_call(src_message_stream, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
         for mod_command in mod_commands:
             yield mod_command

@@ -1,9 +1,9 @@
 use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
-use coldmod_msg::proto::src_message;
+
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
 use coldmod_msg::proto::{
-    src_message::Message, ConnectKey, ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs,
+    ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs,
 };
 
 use tokio::sync::mpsc;
@@ -71,21 +71,15 @@ impl Traces for Tracing {
 
         let (tonic_tx, tonic_rx) = mpsc::channel(16);
         let (mod_command_tx, mut mod_command_rx) = mpsc::channel(16);
+        let (src_message_tx, src_message_rx) = mpsc::channel(16);
 
         let dispatch_clone = self.dispatch.clone();
 
-        // wait for the connect key
-        if let src_message::Message::ConnectKey(connect_key) =
-            stream.message().await?.unwrap().message.unwrap()
-        {
-            tokio::spawn(async move {
-                dispatch_clone
-                    .send_commands_until_closed(connect_key.key, mod_command_tx)
-                    .await
-            });
-        } else {
-            return Err(Status::internal("expected connect key"));
-        }
+        tokio::spawn(async move {
+            dispatch_clone
+                .handle_messages_until_closed(mod_command_tx, src_message_rx)
+                .await
+        });
 
         tokio::spawn(async move {
             loop {
@@ -98,11 +92,11 @@ impl Traces for Tracing {
                         tracing::info!("src message stream closed");
                         break;
                     }
-                    Ok(Some(src_message)) => match src_message.message {
-                        _ => {
-                            tracing::warn!("mod_commands: unhandled message {:?}", src_message);
+                    Ok(Some(src_message)) => {
+                        if let Err(e) = src_message_tx.send(src_message).await {
+                            tracing::error!("failed to forward src message: {:?}", e);
                         }
-                    },
+                    }
                 }
             }
         });

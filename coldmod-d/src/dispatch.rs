@@ -1,6 +1,8 @@
 use crate::store;
 use async_trait::async_trait;
-use coldmod_msg::proto::{ConnectKey, ModCommand, Trace, TraceSrcs};
+use coldmod_msg::proto::{
+    src_message::Message, ModCommand, SrcMessage, Trace, TraceSrcs,
+};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -332,33 +334,57 @@ impl Dispatch {
         self.websocket_listeners.write().await.remove(&ws.key());
     }
 
-    pub async fn send_commands_until_closed(
+    pub async fn handle_messages_until_closed(
         &self,
-        key: String,
         mod_command_tx: tokio::sync::mpsc::Sender<ModCommand>,
+        mut src_message_rx: tokio::sync::mpsc::Receiver<SrcMessage>,
     ) {
-        self.command_listeners
-            .write()
-            .await
-            .insert(key.clone(), mod_command_tx.clone());
+        let mut key = Option::<String>::None;
 
-        // if there is a app already, let it know a cli is available
-        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
-            let msg = Msg::ModCommandClientAvailable;
-            if let Err(e) = ws.send(msg).await {
-                tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
-            }
-        }
+        loop {
+            tokio::select! {
+                maybe_src_message = src_message_rx.recv() => {
+                    if maybe_src_message.is_none() {
+                        tracing::info!("src message channel closed");
+                        break;
+                    }
+                    let message = maybe_src_message.unwrap().message;
+                    match message {
+                        Some(Message::ConnectKey(connect_key)) => {
+                            key = Some(connect_key.key.clone());
 
-        mod_command_tx.closed().await;
-        tracing::info!("tx closed - removing listener");
-        self.command_listeners.write().await.remove(&key);
+                            self.command_listeners
+                                .write()
+                                .await
+                                .insert(connect_key.key.clone(), mod_command_tx.clone());
 
-        // if there is an app, let it know a cli is unavailable
-        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
-            let msg = Msg::ModCommandClientUnavailable;
-            if let Err(e) = ws.send(msg).await {
-                tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);
+                            // if there is a app already, let it know a cli is available
+                            if let Some(ws) = self.websocket_listeners.write().await.get_mut(&connect_key.key) {
+                                if let Err(e) = ws.send(Msg::ModCommandClientAvailable).await {
+                                    tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
+                                }
+                            }
+                        }
+                        _ => {
+                            tracing::warn!("unexpected src message: {:?}", message);
+                        }
+                    }
+                }
+                _ = mod_command_tx.closed() => {
+                    tracing::info!("tx closed - removing listener");
+                    if let Some(key) = key {
+                        self.command_listeners.write().await.remove(&key);
+                        // if there is an app, let it know a cli is unavailable
+                        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
+                            let msg = Msg::ModCommandClientUnavailable;
+                            if let Err(e) = ws.send(msg).await {
+                                tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);
+                            }
+                        }
+                    }
+
+                    break;
+                }
             }
         }
     }
@@ -367,7 +393,7 @@ impl Dispatch {
         match self.command_listeners.read().await.get(key) {
             Some(tx) => {
                 if let Err(e) = tx.send(cmd).await {
-                    tracing::error!("failed to send MOdCommand to listener: {:?}", e);
+                    tracing::error!("failed to send ModCommand to listener: {:?}", e);
                 }
             }
             None => {}

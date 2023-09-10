@@ -13,6 +13,7 @@ from typing import List
 from google.protobuf.json_format import MessageToDict, ParseDict
 import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 import json
+import queue
 
 class CLI:
     class Cache():
@@ -65,11 +66,18 @@ class CLI:
         else:
             key = coldmod_py.web.extract_key(web_app_url)
 
-        for cmd in coldmod_py.web.stream_commands(key):
+        src_message_queue: queue.Queue[tracing_pb2.SrcMessage] = queue.Queue(maxsize=256)
+
+        connect = tracing_pb2.SrcMessage(connect_key=tracing_pb2.ConnectKey(key=key))
+        ignore = tracing_pb2.SrcMessage(src_ignore_key=tracing_pb2.SrcIgnoreKey(key="SRC_KEY"))
+
+        src_message_queue.put(connect)
+
+        for cmd in coldmod_py.web.stream_commands(src_message_queue):
             match cmd.WhichOneof("command"):
                 case "ignore":
-                    print("ignoring:", cmd.ignore.key)
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
+                    src_message_queue.put_nowait(ignore)
                 case _:
                     print(f"command not supported: {cmd}")
 
