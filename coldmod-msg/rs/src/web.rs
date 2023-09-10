@@ -1,4 +1,4 @@
-use crate::proto::{ModCommand, TraceSrc};
+use crate::proto::{src_message::PossibleSrcMessage, ModCommand, TraceSrc};
 use std::{collections::HashMap, fmt::Display};
 
 use serde::{Deserialize, Serialize};
@@ -12,6 +12,7 @@ pub enum Msg {
     ModCommandClientUnavailable,
     RouteModCommand(ModCommand),
     RouteModCommandTo((ModCommand, String)),
+    SrcMessage(PossibleSrcMessage),
 }
 
 impl Display for Msg {
@@ -24,6 +25,7 @@ impl Display for Msg {
             Msg::ModCommandClientUnavailable => write!(f, "ModCommandClientUnavailable"),
             Msg::RouteModCommand(_) => write!(f, "RouteModCommand"),
             Msg::RouteModCommandTo(_) => write!(f, "RouteModCommandTo"),
+            Msg::SrcMessage(_) => write!(f, "SrcMessage"),
         }
     }
 }

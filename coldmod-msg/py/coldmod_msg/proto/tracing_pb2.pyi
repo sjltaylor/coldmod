@@ -40,13 +40,19 @@ class IgnoreCommand(_message.Message):
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
 
+class SendSrcInfo(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
+
 class ModCommand(_message.Message):
-    __slots__ = ["ignore", "remove"]
+    __slots__ = ["send_src_info", "ignore", "remove"]
+    SEND_SRC_INFO_FIELD_NUMBER: _ClassVar[int]
     IGNORE_FIELD_NUMBER: _ClassVar[int]
     REMOVE_FIELD_NUMBER: _ClassVar[int]
+    send_src_info: SendSrcInfo
     ignore: IgnoreCommand
     remove: RemoveCommand
-    def __init__(self, ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ...) -> None: ...
+    def __init__(self, send_src_info: _Optional[_Union[SendSrcInfo, _Mapping]] = ..., ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ...) -> None: ...
 
 class ConnectKey(_message.Message):
     __slots__ = ["key"]

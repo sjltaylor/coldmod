@@ -1,5 +1,10 @@
+use std::collections::HashSet;
+
 use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
-use coldmod_msg::{web::Msg};
+use coldmod_msg::{
+    proto::{src_message, ModCommand},
+    web::Msg,
+};
 use heatmap_ui::HeatMapUI;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -11,9 +16,12 @@ mod filter_state;
 mod heatmap_filter;
 mod heatmap_ui;
 
+type IgnoreList = HashSet<String>;
+
 #[component]
 fn App(cx: Scope, path: String) -> impl IntoView {
     let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
+    let (ignore_list, w_ignore_list) = create_signal(cx, IgnoreList::new());
     let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
 
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
@@ -37,7 +45,12 @@ fn App(cx: Scope, path: String) -> impl IntoView {
             log!("ModCommandClientUnavailable");
             w_mod_client_connected.set(false);
         }
-        _ => {}
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcIgnoreKey(ignore_key)) => {
+            w_ignore_list.update(|set| {
+                set.insert(ignore_key.key);
+            });
+        }
+        _ => log!("unhandled msg: {:?}", msg),
     });
 
     let sender = sender.clone();
@@ -46,6 +59,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     provide_context(cx, heat_srcs_memo);
     provide_context(cx, mod_client_connected);
     provide_context(cx, sender);
+    provide_context(cx, ignore_list);
 
     return view! { cx,
         <main>

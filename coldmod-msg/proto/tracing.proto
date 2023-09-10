@@ -26,10 +26,13 @@ message IgnoreCommand {
     string key = 1;
 }
 
+message SendSrcInfo {}
+
 message ModCommand {
     oneof command {
-        IgnoreCommand ignore = 1;
-        RemoveCommand remove = 2;
+        SendSrcInfo send_src_info = 1;
+        IgnoreCommand ignore = 2;
+        RemoveCommand remove = 3;
     }
 }
 
@@ -42,7 +45,7 @@ message SrcIgnoreKey {
 }
 
 message SrcMessage {
-    oneof message {
+    oneof possible_src_message {
         ConnectKey connect_key = 1;
         SrcIgnoreKey src_ignore_key = 2;
     }

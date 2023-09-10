@@ -2,9 +2,7 @@ use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
-use coldmod_msg::proto::{
-    ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs,
-};
+use coldmod_msg::proto::{ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs};
 
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;

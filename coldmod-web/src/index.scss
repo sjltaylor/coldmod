@@ -178,6 +178,11 @@ ul {
     white-spaceL: nowrap;
 }
 
+.container.heat-src.ignore {
+    filter: opacity(0.35);
+}
+
+
 .container.heat-src .heat-src-fqn {
     @include code-font;
     display: inline-block;

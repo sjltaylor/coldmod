@@ -1,7 +1,7 @@
 use crate::store;
 use async_trait::async_trait;
 use coldmod_msg::proto::{
-    src_message::Message, ModCommand, SrcMessage, Trace, TraceSrcs,
+    src_message::PossibleSrcMessage, ModCommand, SrcMessage, Trace, TraceSrcs,
 };
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
@@ -239,6 +239,15 @@ impl Dispatch {
                 tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
             }
         }
+        self._send_command_to_listener(
+            &ws.key(),
+            ModCommand {
+                command: Some(coldmod_msg::proto::mod_command::Command::SendSrcInfo(
+                    coldmod_msg::proto::SendSrcInfo {},
+                )),
+            },
+        )
+        .await;
 
         self.websocket_listeners
             .write()
@@ -348,9 +357,9 @@ impl Dispatch {
                         tracing::info!("src message channel closed");
                         break;
                     }
-                    let message = maybe_src_message.unwrap().message;
-                    match message {
-                        Some(Message::ConnectKey(connect_key)) => {
+                    let possible_src_message = maybe_src_message.unwrap().possible_src_message;
+                    let msg = match possible_src_message {
+                        Some(PossibleSrcMessage::ConnectKey(connect_key)) => {
                             key = Some(connect_key.key.clone());
 
                             self.command_listeners
@@ -358,15 +367,20 @@ impl Dispatch {
                                 .await
                                 .insert(connect_key.key.clone(), mod_command_tx.clone());
 
-                            // if there is a app already, let it know a cli is available
-                            if let Some(ws) = self.websocket_listeners.write().await.get_mut(&connect_key.key) {
-                                if let Err(e) = ws.send(Msg::ModCommandClientAvailable).await {
-                                    tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
-                                }
-                            }
+                            Msg::ModCommandClientAvailable
                         }
-                        _ => {
-                            tracing::warn!("unexpected src message: {:?}", message);
+                        Some(message) => Msg::SrcMessage(message),
+                        None => {
+                            tracing::error!("expected a message, but got None");
+                            continue;
+                        }
+                    };
+                    if let Some(key) = key.clone() {
+                        // if there is an app forward the message
+                        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
+                            if let Err(e) = ws.send(msg).await {
+                                tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
+                            }
                         }
                     }
                 }
