@@ -34,6 +34,7 @@ class RootMarker:
             self._config["ignore"]["keys"] = []
 
         self._config["ignore"]["keys"].append(key)
+        self._config["ignore"]["keys"] = list(set(self._config["ignore"]["keys"]))
 
         return self
 
