@@ -45,7 +45,7 @@ message SrcIgnore {
 }
 
 message SrcAvailable {
-  string key = 1;
+  repeated string keys = 1;
 }
 
 message SrcMessage {

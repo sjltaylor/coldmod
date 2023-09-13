@@ -67,10 +67,10 @@ class SrcIgnore(_message.Message):
     def __init__(self, key: _Optional[str] = ...) -> None: ...
 
 class SrcAvailable(_message.Message):
-    __slots__ = ["key"]
-    KEY_FIELD_NUMBER: _ClassVar[int]
-    key: str
-    def __init__(self, key: _Optional[str] = ...) -> None: ...
+    __slots__ = ["keys"]
+    KEYS_FIELD_NUMBER: _ClassVar[int]
+    keys: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, keys: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class SrcMessage(_message.Message):
     __slots__ = ["connect_key", "src_ignore", "src_available"]

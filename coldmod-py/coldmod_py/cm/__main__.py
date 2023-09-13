@@ -74,7 +74,7 @@ class CLI:
         trace_srcs_by_key = { p.trace_src.key:p for (_,srcs) in trace_srcs_by_relative_path.items() for p in srcs}
 
         create_src_ignore_key_message = lambda key: tracing_pb2.SrcMessage(src_ignore=tracing_pb2.SrcIgnore(key=key))
-        create_src_available_message = lambda key: tracing_pb2.SrcMessage(src_available=tracing_pb2.SrcAvailable(key=key))
+        create_src_available_message = lambda keys: tracing_pb2.SrcMessage(src_available=tracing_pb2.SrcAvailable(keys=keys))
 
         src_message_queue: queue.Queue[tracing_pb2.SrcMessage] = queue.Queue(maxsize=256)
 
@@ -87,8 +87,7 @@ class CLI:
                 case "send_src_info":
                     for key in root_marker.ignore_keys():
                         src_message_queue.put(create_src_ignore_key_message(key))
-                    for key in trace_srcs_by_key.keys():
-                        src_message_queue.put(create_src_available_message(key))
+                    src_message_queue.put(create_src_available_message(list(trace_srcs_by_key.keys())))
                 case "ignore":
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
                     ignore = create_src_ignore_key_message(cmd.ignore.key)
