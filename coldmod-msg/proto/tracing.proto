@@ -40,14 +40,19 @@ message ConnectKey {
   string key = 1;
 }
 
-message SrcIgnoreKey {
+message SrcIgnore {
+  string key = 1;
+}
+
+message SrcAvailable {
   string key = 1;
 }
 
 message SrcMessage {
     oneof possible_src_message {
-        ConnectKey connect_key = 1;
-        SrcIgnoreKey src_ignore_key = 2;
+        ConnectKey   connect_key = 1;
+        SrcIgnore    src_ignore = 2;
+        SrcAvailable src_available = 3;
     }
 }
 

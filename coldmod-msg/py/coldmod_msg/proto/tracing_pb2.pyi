@@ -60,16 +60,24 @@ class ConnectKey(_message.Message):
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
 
-class SrcIgnoreKey(_message.Message):
+class SrcIgnore(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
+class SrcAvailable(_message.Message):
     __slots__ = ["key"]
     KEY_FIELD_NUMBER: _ClassVar[int]
     key: str
     def __init__(self, key: _Optional[str] = ...) -> None: ...
 
 class SrcMessage(_message.Message):
-    __slots__ = ["connect_key", "src_ignore_key"]
+    __slots__ = ["connect_key", "src_ignore", "src_available"]
     CONNECT_KEY_FIELD_NUMBER: _ClassVar[int]
-    SRC_IGNORE_KEY_FIELD_NUMBER: _ClassVar[int]
+    SRC_IGNORE_FIELD_NUMBER: _ClassVar[int]
+    SRC_AVAILABLE_FIELD_NUMBER: _ClassVar[int]
     connect_key: ConnectKey
-    src_ignore_key: SrcIgnoreKey
-    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore_key: _Optional[_Union[SrcIgnoreKey, _Mapping]] = ...) -> None: ...
+    src_ignore: SrcIgnore
+    src_available: SrcAvailable
+    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ...) -> None: ...

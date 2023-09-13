@@ -239,15 +239,6 @@ impl Dispatch {
                 tracing::error!("failed to send ModCommandClientAvailable: {:?}", e);
             }
         }
-        self._send_command_to_listener(
-            &ws.key(),
-            ModCommand {
-                command: Some(coldmod_msg::proto::mod_command::Command::SendSrcInfo(
-                    coldmod_msg::proto::SendSrcInfo {},
-                )),
-            },
-        )
-        .await;
 
         self.websocket_listeners
             .write()

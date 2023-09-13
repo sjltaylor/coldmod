@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::{
-    proto::{src_message, ModCommand},
+    proto::{mod_command::Command, src_message, ModCommand, SendSrcInfo},
     web::Msg,
 };
 use heatmap_ui::HeatMapUI;
@@ -29,7 +29,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         None => None,
     });
 
-    let sender = coldmod_d::connect(path, move |msg, _sender| match msg {
+    let sender = coldmod_d::connect(path, move |msg, sender| match msg {
         Msg::HeatMapAvailable(heat_map) => rw_filters.set(Some(HeatmapFilter {
             filter_state: FilterState::default(),
             heatmap: heat_map,
@@ -40,12 +40,15 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         Msg::ModCommandClientAvailable => {
             log!("ModCommandClientAvailable");
             w_mod_client_connected.set(true);
+            let command = Some(Command::SendSrcInfo(SendSrcInfo {}));
+            let msg = Msg::RouteModCommand(ModCommand { command });
+            sender.send(msg)
         }
         Msg::ModCommandClientUnavailable => {
             log!("ModCommandClientUnavailable");
             w_mod_client_connected.set(false);
         }
-        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcIgnoreKey(ignore_key)) => {
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcIgnore(ignore_key)) => {
             w_ignore_list.update(|set| {
                 set.insert(ignore_key.key);
             });

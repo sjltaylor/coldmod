@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1f\x63oldmod-msg/proto/tracing.proto\x12\x19\x63oldmod_msg.proto.tracing\x1a\x1bgoogle/protobuf/empty.proto\";\n\x05Trace\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x11\n\tthread_id\x18\x02 \x01(\t\x12\x12\n\nprocess_id\x18\x03 \x01(\t\"\x17\n\x08TraceSrc\x12\x0b\n\x03key\x18\x01 \x01(\t\"D\n\tTraceSrcs\x12\x37\n\ntrace_srcs\x18\x02 \x03(\x0b\x32#.coldmod_msg.proto.tracing.TraceSrc\"\x1c\n\rRemoveCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1c\n\rIgnoreCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\r\n\x0bSendSrcInfo\"\xd0\x01\n\nModCommand\x12?\n\rsend_src_info\x18\x01 \x01(\x0b\x32&.coldmod_msg.proto.tracing.SendSrcInfoH\x00\x12:\n\x06ignore\x18\x02 \x01(\x0b\x32(.coldmod_msg.proto.tracing.IgnoreCommandH\x00\x12:\n\x06remove\x18\x03 \x01(\x0b\x32(.coldmod_msg.proto.tracing.RemoveCommandH\x00\x42\t\n\x07\x63ommand\"\x19\n\nConnectKey\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1b\n\x0cSrcIgnoreKey\x12\x0b\n\x03key\x18\x01 \x01(\t\"\xa5\x01\n\nSrcMessage\x12<\n\x0b\x63onnect_key\x18\x01 \x01(\x0b\x32%.coldmod_msg.proto.tracing.ConnectKeyH\x00\x12\x41\n\x0esrc_ignore_key\x18\x02 \x01(\x0b\x32\'.coldmod_msg.proto.tracing.SrcIgnoreKeyH\x00\x42\x16\n\x14possible_src_message2\xf6\x01\n\x06Traces\x12\x45\n\x07\x63ollect\x12 .coldmod_msg.proto.tracing.Trace\x1a\x16.google.protobuf.Empty(\x01\x12\x43\n\x03set\x12$.coldmod_msg.proto.tracing.TraceSrcs\x1a\x16.google.protobuf.Empty\x12`\n\x0cmod_commands\x12%.coldmod_msg.proto.tracing.SrcMessage\x1a%.coldmod_msg.proto.tracing.ModCommand(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1f\x63oldmod-msg/proto/tracing.proto\x12\x19\x63oldmod_msg.proto.tracing\x1a\x1bgoogle/protobuf/empty.proto\";\n\x05Trace\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x11\n\tthread_id\x18\x02 \x01(\t\x12\x12\n\nprocess_id\x18\x03 \x01(\t\"\x17\n\x08TraceSrc\x12\x0b\n\x03key\x18\x01 \x01(\t\"D\n\tTraceSrcs\x12\x37\n\ntrace_srcs\x18\x02 \x03(\x0b\x32#.coldmod_msg.proto.tracing.TraceSrc\"\x1c\n\rRemoveCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1c\n\rIgnoreCommand\x12\x0b\n\x03key\x18\x01 \x01(\t\"\r\n\x0bSendSrcInfo\"\xd0\x01\n\nModCommand\x12?\n\rsend_src_info\x18\x01 \x01(\x0b\x32&.coldmod_msg.proto.tracing.SendSrcInfoH\x00\x12:\n\x06ignore\x18\x02 \x01(\x0b\x32(.coldmod_msg.proto.tracing.IgnoreCommandH\x00\x12:\n\x06remove\x18\x03 \x01(\x0b\x32(.coldmod_msg.proto.tracing.RemoveCommandH\x00\x42\t\n\x07\x63ommand\"\x19\n\nConnectKey\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x18\n\tSrcIgnore\x12\x0b\n\x03key\x18\x01 \x01(\t\"\x1b\n\x0cSrcAvailable\x12\x0b\n\x03key\x18\x01 \x01(\t\"\xe0\x01\n\nSrcMessage\x12<\n\x0b\x63onnect_key\x18\x01 \x01(\x0b\x32%.coldmod_msg.proto.tracing.ConnectKeyH\x00\x12:\n\nsrc_ignore\x18\x02 \x01(\x0b\x32$.coldmod_msg.proto.tracing.SrcIgnoreH\x00\x12@\n\rsrc_available\x18\x03 \x01(\x0b\x32\'.coldmod_msg.proto.tracing.SrcAvailableH\x00\x42\x16\n\x14possible_src_message2\xf6\x01\n\x06Traces\x12\x45\n\x07\x63ollect\x12 .coldmod_msg.proto.tracing.Trace\x1a\x16.google.protobuf.Empty(\x01\x12\x43\n\x03set\x12$.coldmod_msg.proto.tracing.TraceSrcs\x1a\x16.google.protobuf.Empty\x12`\n\x0cmod_commands\x12%.coldmod_msg.proto.tracing.SrcMessage\x1a%.coldmod_msg.proto.tracing.ModCommand(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,10 +38,12 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_MODCOMMAND']._serialized_end=531
   _globals['_CONNECTKEY']._serialized_start=533
   _globals['_CONNECTKEY']._serialized_end=558
-  _globals['_SRCIGNOREKEY']._serialized_start=560
-  _globals['_SRCIGNOREKEY']._serialized_end=587
-  _globals['_SRCMESSAGE']._serialized_start=590
-  _globals['_SRCMESSAGE']._serialized_end=755
-  _globals['_TRACES']._serialized_start=758
-  _globals['_TRACES']._serialized_end=1004
+  _globals['_SRCIGNORE']._serialized_start=560
+  _globals['_SRCIGNORE']._serialized_end=584
+  _globals['_SRCAVAILABLE']._serialized_start=586
+  _globals['_SRCAVAILABLE']._serialized_end=613
+  _globals['_SRCMESSAGE']._serialized_start=616
+  _globals['_SRCMESSAGE']._serialized_end=840
+  _globals['_TRACES']._serialized_start=843
+  _globals['_TRACES']._serialized_end=1089
 # @@protoc_insertion_point(module_scope)
