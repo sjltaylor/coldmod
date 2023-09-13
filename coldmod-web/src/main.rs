@@ -17,16 +17,45 @@ mod heatmap_filter;
 mod heatmap_ui;
 
 type IgnoreList = HashSet<String>;
+type RemoveList = Memo<HashSet<String>>;
 
 #[component]
 fn App(cx: Scope, path: String) -> impl IntoView {
     let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
     let (ignore_list, w_ignore_list) = create_signal(cx, IgnoreList::new());
+    let (src_available_list, w_src_available_list) =
+        create_signal(cx, Option::<HashSet<String>>::None);
     let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
 
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
         None => None,
+    });
+
+    let removable_memo = create_memo(cx, move |_| {
+        let srcs_available = src_available_list.get(); // map Some or None
+        let heat_srcs = heat_srcs_memo.get(); // map to Some or None
+
+        match (srcs_available, heat_srcs) {
+            (Some(srcs_available), Some(heat_srcs)) => {
+                return srcs_available
+                    .intersection(
+                        &heat_srcs
+                            .iter()
+                            .filter_map(|hs| {
+                                if hs.trace_count == 0 {
+                                    Some(hs.trace_src.key.clone())
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect(),
+                    )
+                    .cloned()
+                    .collect::<HashSet<String>>();
+            }
+            (_, _) => return HashSet::<String>::new(),
+        }
     });
 
     let sender = coldmod_d::connect(path, move |msg, sender| match msg {
@@ -48,10 +77,13 @@ fn App(cx: Scope, path: String) -> impl IntoView {
             log!("ModCommandClientUnavailable");
             w_mod_client_connected.set(false);
         }
-        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcIgnore(ignore_key)) => {
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcIgnore(src_ignore)) => {
             w_ignore_list.update(|set| {
-                set.insert(ignore_key.key);
+                set.insert(src_ignore.key);
             });
+        }
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcAvailable(src_available)) => {
+            w_src_available_list.set(Some(src_available.keys.into_iter().collect()));
         }
         _ => log!("unhandled msg: {:?}", msg),
     });
@@ -63,6 +95,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     provide_context(cx, mod_client_connected);
     provide_context(cx, sender);
     provide_context(cx, ignore_list);
+    provide_context(cx, removable_memo);
 
     return view! { cx,
         <main>

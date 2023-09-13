@@ -47,7 +47,6 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                                 },
                                 move |heatmap_filter, _: ()| {
                                     heatmap_filter.as_mut().unwrap().filter_state.toggle(key);
-
                                 })
                             ;
 
