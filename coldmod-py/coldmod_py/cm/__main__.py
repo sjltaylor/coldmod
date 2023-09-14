@@ -1,5 +1,6 @@
 import os
 import coldmod_py
+from coldmod_py.code import parsed_trace_src
 import coldmod_py.files as files
 import coldmod_py.config
 import coldmod_py.code as code
@@ -14,6 +15,7 @@ from google.protobuf.json_format import MessageToDict, ParseDict
 import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 import json
 import queue
+import threading
 
 class CLI:
     class Cache():
@@ -41,7 +43,7 @@ class CLI:
         paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-        trace_srcs_by_relative_path = code.find_trace_srcs(relative_paths)
+        trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths)
 
         for relative_path, trace_srcs in trace_srcs_by_relative_path.items():
             print(relative_path)
@@ -60,25 +62,23 @@ class CLI:
         root_marker = coldmod_py.root_marker.load()
 
         if web_app_url is None:
-            (web_app_url, key) = coldmod_py.web.generate_app_url()
+            (web_app_url, connect_key) = coldmod_py.web.generate_app_url()
             print(f"connect to: {web_app_url}")
             webbrowser.open(web_app_url)
         else:
-            key = coldmod_py.web.extract_key(web_app_url)
+            connect_key = coldmod_py.web.extract_key(web_app_url)
 
         paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-        trace_srcs_by_relative_path = code.find_trace_srcs(relative_paths)
-
-        trace_srcs_by_key = { p.trace_src.key:p for (_,srcs) in trace_srcs_by_relative_path.items() for p in srcs}
+        parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
 
         create_src_ignore_key_message = lambda key: tracing_pb2.SrcMessage(src_ignore=tracing_pb2.SrcIgnore(key=key))
         create_src_available_message = lambda keys: tracing_pb2.SrcMessage(src_available=tracing_pb2.SrcAvailable(keys=keys))
 
         src_message_queue: queue.Queue[tracing_pb2.SrcMessage] = queue.Queue(maxsize=256)
 
-        connect = tracing_pb2.SrcMessage(connect_key=tracing_pb2.ConnectKey(key=key))
+        connect = tracing_pb2.SrcMessage(connect_key=tracing_pb2.ConnectKey(key=connect_key))
 
         src_message_queue.put(connect)
 
@@ -87,7 +87,8 @@ class CLI:
                 case "send_src_info":
                     for key in root_marker.ignore_keys():
                         src_message_queue.put(create_src_ignore_key_message(key))
-                    src_message_queue.put(create_src_available_message(list(trace_srcs_by_key.keys())))
+                    src_message_queue.put(create_src_available_message(list(parsed_trace_srcs.keys())))
+                    threading.Thread(target=mod.queue_src_refs, args=[root_marker.dir(), parsed_trace_srcs.values(), src_message_queue], daemon=True).start()
                 case "ignore":
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
                     ignore = create_src_ignore_key_message(cmd.ignore.key)

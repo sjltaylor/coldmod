@@ -10,7 +10,7 @@ class FunctionFinder(libcst.CSTVisitor):
 
     def __init__(self):
         super().__init__()
-        self.trace_srcs = []
+        self.trace_srcs: List[ParsedTraceSrc] = []
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
         pos = self.get_metadata(libcst.metadata.PositionProvider, node).start

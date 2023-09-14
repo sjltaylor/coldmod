@@ -362,7 +362,8 @@ impl Dispatch {
                         }
                         Some(message) => Msg::SrcMessage(message),
                         None => {
-                            tracing::error!("expected a message, but got None");
+                            // this is the case when the protobuf oneof is a type not yet handled by this binary
+                            tracing::warn!("expected a message, but got None");
                             continue;
                         }
                     };

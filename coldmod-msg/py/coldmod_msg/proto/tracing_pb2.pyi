@@ -72,12 +72,22 @@ class SrcAvailable(_message.Message):
     keys: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, keys: _Optional[_Iterable[str]] = ...) -> None: ...
 
+class SrcRefs(_message.Message):
+    __slots__ = ["key", "count"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    count: int
+    def __init__(self, key: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
+
 class SrcMessage(_message.Message):
-    __slots__ = ["connect_key", "src_ignore", "src_available"]
+    __slots__ = ["connect_key", "src_ignore", "src_available", "src_refs"]
     CONNECT_KEY_FIELD_NUMBER: _ClassVar[int]
     SRC_IGNORE_FIELD_NUMBER: _ClassVar[int]
     SRC_AVAILABLE_FIELD_NUMBER: _ClassVar[int]
+    SRC_REFS_FIELD_NUMBER: _ClassVar[int]
     connect_key: ConnectKey
     src_ignore: SrcIgnore
     src_available: SrcAvailable
-    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ...) -> None: ...
+    src_refs: SrcRefs
+    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ..., src_refs: _Optional[_Union[SrcRefs, _Mapping]] = ...) -> None: ...

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{coldmod_d::Sender, controls_ui::ControlsUI, IgnoreList, RemoveList};
 use coldmod_msg::{
     proto::{mod_command::Command, IgnoreCommand, ModCommand, RemoveCommand},
@@ -31,12 +33,12 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
     let ignore_list = use_context::<ReadSignal<IgnoreList>>(cx).unwrap();
     let remove_list = use_context::<RemoveList>(cx).unwrap();
+    let src_refs_by_key = use_context::<ReadSignal<HashMap<String, u32>>>(cx).unwrap();
     let sender = use_context::<Sender>(cx).unwrap();
     let (command, w_command) = create_signal::<Option<Command>>(cx, None);
 
     let key = heat_src.trace_src.key.clone();
     let is_ignored = move || ignore_list.get().contains(&key);
-    let _key = heat_src.trace_src.key.clone();
 
     let ignore_classname = move || {
         let mut buffer: Vec<String> = vec!["container heat-src".to_string()];
@@ -48,8 +50,6 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         buffer.join(" ")
     };
 
-    let key = heat_src.trace_src.key.clone();
-
     create_effect(cx, move |_| match command.get() {
         Some(command) => {
             let msg = Msg::RouteModCommand(ModCommand {
@@ -60,18 +60,27 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         _ => {}
     });
 
-    let trace_src = heat_src.trace_src;
-
+    let key = heat_src.trace_src.key.clone();
     let refs_view = move || {
+        let key = key.clone();
+        let maybe_ref = src_refs_by_key.get();
+        let refs = maybe_ref.get(&key);
+
         if mod_client_connected.get() {
+            let refs = if let Some(refs) = refs {
+                format!("{}", refs)
+            } else {
+                "...".to_string()
+            };
             Some(view! {cx,
-                <div class="heat-src-trace-count">REFS:123</div>
+                <div class="heat-src-trace-count">REFS:{refs}</div>
             })
         } else {
             None
         }
     };
 
+    let key = heat_src.trace_src.key.clone();
     let controls_view = move || {
         let key = key.clone();
         if mod_client_connected.get() && !ignore_list.get().contains(&key) {
@@ -84,12 +93,14 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         }
     };
 
+    let key = heat_src.trace_src.key.clone();
+
     return view! {cx,
         <li class="heat-src-row">
             <div class={ignore_classname}>
                 <div class="heat-src-trace-count">TRACES:{heat_src.trace_count}</div>
                 { refs_view }
-                <div class="heat-src-fqn">{trace_src.key}</div>
+                <div class="heat-src-fqn">{key}</div>
                 { controls_view }
             </div>
         </li>

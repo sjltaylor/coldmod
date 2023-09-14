@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::{
@@ -26,6 +26,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     let (src_available_list, w_src_available_list) =
         create_signal(cx, Option::<HashSet<String>>::None);
     let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
+    let (src_refs_by_key, w_src_refs_by_key) = create_signal(cx, HashMap::<String, u32>::new());
 
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
@@ -85,6 +86,11 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         Msg::SrcMessage(src_message::PossibleSrcMessage::SrcAvailable(src_available)) => {
             w_src_available_list.set(Some(src_available.keys.into_iter().collect()));
         }
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcRefs(src_refs)) => {
+            w_src_refs_by_key.update(|map| {
+                map.insert(src_refs.key, src_refs.count);
+            });
+        }
         _ => log!("unhandled msg: {:?}", msg),
     });
 
@@ -96,6 +102,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     provide_context(cx, sender);
     provide_context(cx, ignore_list);
     provide_context(cx, removable_memo);
+    provide_context(cx, src_refs_by_key);
 
     return view! { cx,
         <main>

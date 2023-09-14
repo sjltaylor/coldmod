@@ -41,7 +41,7 @@ class _RemoveAndCommentRefs(libcst.codemod.ContextAwareTransformer):
 def remove(root_dir: str, remote_trace_srcs: Iterable[tracing_pb2.TraceSrc], local_src_files: Iterable[str]) -> Set[str]:
     local_src_files_by_path = files.read_all(local_src_files)
     modules = code.parse_modules(local_src_files_by_path)
-    local_trace_srcs = code.find_trace_srcs(local_src_files)
+    local_trace_srcs = code.find_trace_srcs_by_relative_paths(local_src_files)
 
     # key -> (rel_path, parsed_src)
     local_trace_srcs_by_key = {
