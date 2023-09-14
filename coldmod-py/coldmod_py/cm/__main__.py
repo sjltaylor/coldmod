@@ -82,13 +82,26 @@ class CLI:
 
         src_message_queue.put(connect)
 
+        stop_event = None
+        src_refs_thread = None
+
         for cmd in coldmod_py.web.stream_commands(src_message_queue):
             match cmd.WhichOneof("command"):
                 case "send_src_info":
                     for key in root_marker.ignore_keys():
                         src_message_queue.put(create_src_ignore_key_message(key))
                     src_message_queue.put(create_src_available_message(list(parsed_trace_srcs.keys())))
-                    threading.Thread(target=mod.queue_src_refs, args=[root_marker.dir(), parsed_trace_srcs.values(), src_message_queue], daemon=True).start()
+
+                    if stop_event is not None:
+                        stop_event.set()
+                    if src_refs_thread is not None:
+                        src_refs_thread.join()
+
+                    stop_event = threading.Event()
+
+                    src_refs_thread = threading.Thread(target=mod.queue_src_refs, args=[root_marker.dir(), parsed_trace_srcs.values(), src_message_queue, stop_event], daemon=True)
+                    src_refs_thread.start()
+
                 case "ignore":
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
                     ignore = create_src_ignore_key_message(cmd.ignore.key)

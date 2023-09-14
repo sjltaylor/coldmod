@@ -70,7 +70,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
             let refs = if let Some(refs) = refs {
                 format!("{}", refs)
             } else {
-                "...".to_string()
+                "--".to_string()
             };
             Some(view! {cx,
                 <div class="heat-src-trace-count">REFS:{refs}</div>
