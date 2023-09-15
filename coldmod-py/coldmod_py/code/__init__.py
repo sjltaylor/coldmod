@@ -3,7 +3,6 @@ from typing import Iterable, Dict, Tuple, Iterator, List
 from . import parsed_trace_src
 from .parsed_trace_src import ParsedTraceSrc
 from .function_finder import FunctionFinder
-from .parse import parse_modules
 from hashlib import blake2b
 import coldmod_py.cache as cache
 from pathlib import Path

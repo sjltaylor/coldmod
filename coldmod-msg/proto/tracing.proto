@@ -53,12 +53,18 @@ message SrcRefs {
   uint32 count = 2;
 }
 
+message SrcRemoveResult {
+  string key = 1;
+  bool success = 2;
+}
+
 message SrcMessage {
     oneof possible_src_message {
-        ConnectKey   connect_key = 1;
-        SrcIgnore    src_ignore = 2;
-        SrcAvailable src_available = 3;
-        SrcRefs      src_refs = 4;
+        ConnectKey      connect_key = 1;
+        SrcIgnore       src_ignore = 2;
+        SrcAvailable    src_available = 3;
+        SrcRefs         src_refs = 4;
+        SrcRemoveResult src_remove_result = 5;
     }
 }
 

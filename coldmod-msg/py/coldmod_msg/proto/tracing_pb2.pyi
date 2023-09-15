@@ -80,14 +80,24 @@ class SrcRefs(_message.Message):
     count: int
     def __init__(self, key: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
 
+class SrcRemoveResult(_message.Message):
+    __slots__ = ["key", "success"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    success: bool
+    def __init__(self, key: _Optional[str] = ..., success: bool = ...) -> None: ...
+
 class SrcMessage(_message.Message):
-    __slots__ = ["connect_key", "src_ignore", "src_available", "src_refs"]
+    __slots__ = ["connect_key", "src_ignore", "src_available", "src_refs", "src_remove_result"]
     CONNECT_KEY_FIELD_NUMBER: _ClassVar[int]
     SRC_IGNORE_FIELD_NUMBER: _ClassVar[int]
     SRC_AVAILABLE_FIELD_NUMBER: _ClassVar[int]
     SRC_REFS_FIELD_NUMBER: _ClassVar[int]
+    SRC_REMOVE_RESULT_FIELD_NUMBER: _ClassVar[int]
     connect_key: ConnectKey
     src_ignore: SrcIgnore
     src_available: SrcAvailable
     src_refs: SrcRefs
-    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ..., src_refs: _Optional[_Union[SrcRefs, _Mapping]] = ...) -> None: ...
+    src_remove_result: SrcRemoveResult
+    def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ..., src_refs: _Optional[_Union[SrcRefs, _Mapping]] = ..., src_remove_result: _Optional[_Union[SrcRemoveResult, _Mapping]] = ...) -> None: ...

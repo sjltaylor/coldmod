@@ -75,6 +75,7 @@ class CLI:
 
         create_src_ignore_key_message = lambda key: tracing_pb2.SrcMessage(src_ignore=tracing_pb2.SrcIgnore(key=key))
         create_src_available_message = lambda keys: tracing_pb2.SrcMessage(src_available=tracing_pb2.SrcAvailable(keys=keys))
+        create_src_remove_result_message = lambda key,success: tracing_pb2.SrcMessage(src_remove_result=tracing_pb2.SrcRemoveResult(key=key,success=success))
 
         src_message_queue: queue.Queue[tracing_pb2.SrcMessage] = queue.Queue(maxsize=256)
 
@@ -106,9 +107,30 @@ class CLI:
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
                     ignore = create_src_ignore_key_message(cmd.ignore.key)
                     src_message_queue.put_nowait(ignore)
+                case "remove":
+                    (parsed_trace_src, path) = parsed_trace_srcs[cmd.remove.key]
+                    success = True
+                    try:
+                        mod.remove(root_marker.dir(), parsed_trace_src, path)
+                    except Exception as e:
+                        success = False
+                        print(f"failed to remove {parsed_trace_src.trace_src.key}: {e}")
+                    msg = create_src_remove_result_message(parsed_trace_src.trace_src.key, success)
+                    src_message_queue.put_nowait(msg)
+
                 case _:
                     print(f"command not supported: {cmd}")
 
+    def rm(self, key: str):
+        root_marker = coldmod_py.root_marker.load()
+
+        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
+
+        relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
+        parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
+
+        (parsed_trace_src, path) = parsed_trace_srcs[key]
+        mod.remove(root_marker.dir(), parsed_trace_src, path)
 
     def mod_remove(self, force=False):
         root_marker = coldmod_py.root_marker.load()

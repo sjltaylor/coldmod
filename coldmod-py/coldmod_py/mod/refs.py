@@ -7,12 +7,12 @@ import jedi
 from pathlib import Path
 import threading
 
-def refs(root_dir: str, parsed_trace_src: ParsedTraceSrc, path: Path) -> List[str]:
+def refs(root_dir: str, parsed_trace_src: ParsedTraceSrc, path: Path) -> List[Tuple[str, int]]:
     project = jedi.Project(root_dir)
     script = jedi.Script(path.read_text(), path=path, project=project)
     refs = script.get_references(line=parsed_trace_src.name_position.line, column=parsed_trace_src.name_position.column)
 
-    return [f"{r.module_path}:{r.line}" for r in refs]
+    return [(str(r.module_path), r.line) for r in refs]
 
 
 def queue_src_refs(root_dir: str, parsed_trace_srcs: Iterable[Tuple[ParsedTraceSrc, Path]], q: Queue[tracing_pb2.SrcMessage], stop_event: threading.Event):
