@@ -25,6 +25,7 @@ def refs(root_dir: str, parsed_trace_src: ParsedTraceSrc, path: Path) -> List[Tu
 def queue_src_refs(root_dir: str, parsed_trace_srcs: Iterable[Tuple[ParsedTraceSrc, Path]], q: Queue[tracing_pb2.SrcMessage], stop_event: threading.Event):
     create_src_refs_message = lambda n,k: tracing_pb2.SrcMessage(src_refs=tracing_pb2.SrcRefs(count=n, key=k))
     for (parsed_trace_src, path) in parsed_trace_srcs:
+        break
         if stop_event.is_set():
             break
 

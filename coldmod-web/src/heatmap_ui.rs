@@ -131,7 +131,7 @@ pub fn HeatSourceControlsUI(
                 })));
             };
 
-            Some(view! {cx, <div class="toggle-button" on:click=on_remove>Remove</div>})
+            Some(view! {cx, <div class="cm-button small" on:click=on_remove>Remove</div>})
         } else {
             None
         }
@@ -139,7 +139,7 @@ pub fn HeatSourceControlsUI(
 
     return view! {cx,
         <div class="heat-src-controls button-group">
-            <div class="toggle-button" on:click=on_ignore>Ignore</div>
+            <div class="cm-button small" on:click=on_ignore>Ignore</div>
             { remove_button }
         </div>
     };

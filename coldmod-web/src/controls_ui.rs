@@ -84,14 +84,14 @@ pub fn ToggleButton(
 
     let class_name = move || {
         if is_on.get() {
-            return format!("toggle-button on {}", label_class);
+            return format!("cm-button on {}", label_class);
         }
-        return format!("toggle-button off");
+        return format!("cm-button off");
     };
 
     return view! {cx,
 
     <div class={class_name} on:click=move |_| w_is_on.set(())>
-        <div class="toggle-button-label">{label}</div>
+        {label}
     </div> };
 }
