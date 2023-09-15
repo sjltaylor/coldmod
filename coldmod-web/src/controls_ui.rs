@@ -1,15 +1,23 @@
 use crate::heatmap_filter::HeatmapFilter;
-use coldmod_msg::web::HeatSrc;
+use coldmod_msg::web::{HeatSrc, TracingStats};
 use leptos::*;
 
 #[component]
 pub fn ControlsUI(cx: Scope) -> impl IntoView {
     let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context(cx).unwrap();
     let memo_heat_srcs: Memo<Option<Vec<HeatSrc>>> = use_context(cx).unwrap();
+    let tracing_stats: ReadSignal<Option<TracingStats>> = use_context(cx).unwrap();
 
     let heat_src_count = move || {
         if let Some(heat_srcs) = memo_heat_srcs.get() {
             return format!("{}", heat_srcs.len());
+        }
+        return "".to_string();
+    };
+
+    let trace_count = move || {
+        if let Some(tracing_stats) = tracing_stats.get() {
+            return format!("{}", tracing_stats.count);
         }
         return "".to_string();
     };
@@ -57,7 +65,10 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                     </div>
                 }}).collect_view(cx)}
             </div>
-            <div class="container heat-src-count">"SRCS:"{heat_src_count}</div>
+            <div class="container stats">
+                <div class="stat trace-count">"TRACES:"{trace_count}</div>
+                <div class="stat heat-src-count">"SRCS:"{heat_src_count}</div>
+            </div>
         </div>
     </div> };
 }

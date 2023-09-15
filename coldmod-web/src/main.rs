@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{filter_state::FilterState, heatmap_filter::HeatmapFilter};
 use coldmod_msg::{
     proto::{mod_command::Command, src_message, ModCommand, SendSrcInfo},
-    web::Msg,
+    web::{Msg, TracingStats},
 };
 use heatmap_ui::HeatMapUI;
 
@@ -27,6 +27,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
         create_signal(cx, Option::<HashSet<String>>::None);
     let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
     let (src_refs_by_key, w_src_refs_by_key) = create_signal(cx, HashMap::<String, u32>::new());
+    let (tracing_stats, w_tracing_stats) = create_signal::<Option<TracingStats>>(cx, None);
 
     let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
@@ -100,6 +101,9 @@ fn App(cx: Scope, path: String) -> impl IntoView {
                 });
             }
         }
+        Msg::TracingStatsAvailable(trace_stats) => {
+            w_tracing_stats.set(Some(trace_stats));
+        }
         _ => log!("unhandled msg: {:?}", msg),
     });
 
@@ -112,6 +116,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     provide_context(cx, ignore_list);
     provide_context(cx, removable_memo);
     provide_context(cx, src_refs_by_key);
+    provide_context(cx, tracing_stats);
 
     return view! { cx,
         <main>

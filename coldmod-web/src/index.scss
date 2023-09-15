@@ -160,15 +160,20 @@ ul {
     font-size: 0.85em;
 }
 
-.container.heat-src-count {
+.container.controls .stats {
+    @include code-font;
     display: inline-block;
+    font-size: 0.65em;
     margin: 0.85em;
-    padding-top: 0em;
+    padding: 1em 0em;
     position: relative;
-    top: 1px;
-    transform: skew(-15deg);
+    top: 0.65em;
     font-weight: 100;
-    font-size: 0.85em;
+    transform: skew(-15deg);
+}
+
+.container.controls .stats .stat {
+
 }
 
 .container.heat-src {
