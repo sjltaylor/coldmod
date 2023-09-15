@@ -118,6 +118,19 @@ class CLI:
                     msg = create_src_remove_result_message(parsed_trace_src.trace_src.key, success)
                     src_message_queue.put_nowait(msg)
 
+                    parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
+
+                    # TODO: consider moving this to a function
+                    if stop_event is not None:
+                        stop_event.set()
+                    if src_refs_thread is not None:
+                        src_refs_thread.join()
+
+                    stop_event = threading.Event()
+
+                    src_refs_thread = threading.Thread(target=mod.queue_src_refs, args=[root_marker.dir(), parsed_trace_srcs.values(), src_message_queue, stop_event], daemon=True)
+                    src_refs_thread.start()
+
                 case _:
                     print(f"command not supported: {cmd}")
 
