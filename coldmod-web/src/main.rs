@@ -91,6 +91,15 @@ fn App(cx: Scope, path: String) -> impl IntoView {
                 map.insert(src_refs.key, src_refs.count);
             });
         }
+        Msg::SrcMessage(src_message::PossibleSrcMessage::SrcRemoveResult(src_remove_result)) => {
+            if src_remove_result.success {
+                w_src_available_list.update(|src_available| {
+                    if let Some(src_available) = src_available {
+                        src_available.remove(&src_remove_result.key);
+                    }
+                });
+            }
+        }
         _ => log!("unhandled msg: {:?}", msg),
     });
 
