@@ -66,8 +66,8 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                 }}).collect_view(cx)}
             </div>
             <div class="container stats">
-                <div class="stat trace-count">"TRACES:"{trace_count}</div>
-                <div class="stat heat-src-count">"SRCS:"{heat_src_count}</div>
+                <div class="trace-count">"TRACES:"{trace_count}</div>
+                <div class="heat-src-count">"SRCS:"{heat_src_count}</div>
             </div>
         </div>
     </div> };

@@ -156,7 +156,7 @@ ul {
 .button-group {
     display: inline-block;
     background-color: white;
-    border: solid 1px black;
+    outline: solid 1px black;
     margin: 5px;
     transform: skew(-15deg);
     border-radius: 3px;
@@ -178,10 +178,6 @@ ul {
     transform: skew(-15deg);
 }
 
-.container.controls .stats .stat {
-
-}
-
 .container.heat-src {
     display: inline-block;
     padding: 0.5em 0;
@@ -201,13 +197,13 @@ ul {
 }
 
 
-.container.heat-src .heat-src-trace-count {
+.container.heat-src .heat-src-stat {
     display: inline-block;
     font-size: 0.85em;
     padding: 0 .25em;
     margin-right: 1.25em;
-    line-height: 1.25em;
     padding-top: 2px;
+    height: 1.25em;
 }
 
 .container.cli-connection-state {
@@ -225,12 +221,10 @@ ul {
 
 .heat-src-controls {
     margin-left: 1.5em;
-    position: relative;
-    top: -3px;
+    float: right;
     margin-top: 0;
     margin-bottom: 0;
 }
-
 
 .heat-src-button {
     display: inline-block;

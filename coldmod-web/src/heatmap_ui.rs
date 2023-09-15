@@ -73,7 +73,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
                 "--".to_string()
             };
             Some(view! {cx,
-                <div class="heat-src-trace-count">REFS:{refs}</div>
+                <div class="heat-src-stat">REFS:{refs}</div>
             })
         } else {
             None
@@ -98,7 +98,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     return view! {cx,
         <li class="heat-src-row">
             <div class={ignore_classname}>
-                <div class="heat-src-trace-count">TRACES:{heat_src.trace_count}</div>
+                <div class="heat-src-stat">TRACES:{heat_src.trace_count}</div>
                 { refs_view }
                 <div class="heat-src-fqn">{key}</div>
                 { controls_view }
