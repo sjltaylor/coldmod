@@ -176,13 +176,40 @@ class CLI:
 
         root_marker.dump()
 
-    def fetch(self, refs = False, all = False, json = False):
+    def fetch(self, all = False, format = "text"):
         """
             fetch a snapshot of tracing data and reconcile with local source code.
             anything that can't be found locally is not included in json output.
         """
         heat_map = coldmod_py.coldmod_d.fetch(all)
-        print("srcs:", len(heat_map.srcs))
+        root_marker = coldmod_py.root_marker.load()
+        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
+        relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
+        parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
+
+        match format:
+            case "json":
+                matching_srcs = [(p[0], p[1], c) for (p, c) in [(parsed_trace_srcs.get(src.key), src.trace_count) for src in heat_map.srcs] if p is not None]
+                dicts = [{
+                    'key': src.trace_src.key,
+                    'loc': f"{path.absolute()}:{src.position.line}",
+                    'traces': count
+                } for (src, path, count) in matching_srcs]
+                print(json.dumps(dicts, indent=2))
+            case "text":
+                for src in heat_map.srcs:
+                    print(f"key:{src.key}")
+                    print(f"traces:{src.trace_count}")
+                    parsed_trace_src_and_path = parsed_trace_srcs.get(src.key)
+                    if parsed_trace_src_and_path is None:
+                        print("lod:[not found]")
+                    else:
+                        (parsed_trace_src, path) = parsed_trace_src_and_path
+                        print(f"loc:{path.absolute()}:{parsed_trace_src.position.line}")
+
+                    print("\n")
+            case _:
+                print("format not supported")
 
 if __name__ == "__main__":
     try:
