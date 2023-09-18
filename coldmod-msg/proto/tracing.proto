@@ -18,6 +18,10 @@ message TraceSrcs {
   repeated TraceSrc trace_srcs = 2;
 }
 
+message OpenCommand {
+    string key = 1;
+}
+
 message RemoveCommand {
     string key = 1;
 }
@@ -33,6 +37,7 @@ message ModCommand {
         SendSrcInfo send_src_info = 1;
         IgnoreCommand ignore = 2;
         RemoveCommand remove = 3;
+        OpenCommand   open   = 4;
     }
 }
 

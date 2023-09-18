@@ -28,6 +28,12 @@ class TraceSrcs(_message.Message):
     trace_srcs: _containers.RepeatedCompositeFieldContainer[TraceSrc]
     def __init__(self, trace_srcs: _Optional[_Iterable[_Union[TraceSrc, _Mapping]]] = ...) -> None: ...
 
+class OpenCommand(_message.Message):
+    __slots__ = ["key"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    def __init__(self, key: _Optional[str] = ...) -> None: ...
+
 class RemoveCommand(_message.Message):
     __slots__ = ["key"]
     KEY_FIELD_NUMBER: _ClassVar[int]
@@ -45,14 +51,16 @@ class SendSrcInfo(_message.Message):
     def __init__(self) -> None: ...
 
 class ModCommand(_message.Message):
-    __slots__ = ["send_src_info", "ignore", "remove"]
+    __slots__ = ["send_src_info", "ignore", "remove", "open"]
     SEND_SRC_INFO_FIELD_NUMBER: _ClassVar[int]
     IGNORE_FIELD_NUMBER: _ClassVar[int]
     REMOVE_FIELD_NUMBER: _ClassVar[int]
+    OPEN_FIELD_NUMBER: _ClassVar[int]
     send_src_info: SendSrcInfo
     ignore: IgnoreCommand
     remove: RemoveCommand
-    def __init__(self, send_src_info: _Optional[_Union[SendSrcInfo, _Mapping]] = ..., ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ...) -> None: ...
+    open: OpenCommand
+    def __init__(self, send_src_info: _Optional[_Union[SendSrcInfo, _Mapping]] = ..., ignore: _Optional[_Union[IgnoreCommand, _Mapping]] = ..., remove: _Optional[_Union[RemoveCommand, _Mapping]] = ..., open: _Optional[_Union[OpenCommand, _Mapping]] = ...) -> None: ...
 
 class ConnectKey(_message.Message):
     __slots__ = ["key"]

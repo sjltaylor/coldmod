@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{coldmod_d::Sender, controls_ui::ControlsUI, IgnoreList, RemoveList};
+use crate::{coldmod_d::Sender, controls_ui::ControlsUI, IgnoreList, SrcAvailableList};
 use coldmod_msg::{
-    proto::{mod_command::Command, HeatSrc, IgnoreCommand, ModCommand, RemoveCommand},
+    proto::{mod_command::Command, HeatSrc, IgnoreCommand, ModCommand, OpenCommand, RemoveCommand},
     web::Msg,
 };
 use leptos::*;
@@ -32,7 +32,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
     let ignore_list = use_context::<ReadSignal<IgnoreList>>(cx).unwrap();
-    let remove_list = use_context::<RemoveList>(cx).unwrap();
+    let src_available_list = use_context::<SrcAvailableList>(cx).unwrap();
     let src_refs_by_key = use_context::<ReadSignal<HashMap<String, u32>>>(cx).unwrap();
     let sender = use_context::<Sender>(cx).unwrap();
     let (command, w_command) = create_signal::<Option<Command>>(cx, None);
@@ -84,9 +84,9 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let controls_view = move || {
         let key = key.clone();
         if mod_client_connected.get() && !ignore_list.get().contains(&key) {
-            let remove = remove_list.get().contains(&key);
+            let src_available = src_available_list.get().contains(&key);
             Some(view! {cx,
-                <HeatSourceControlsUI key w_command remove />
+                <HeatSourceControlsUI key w_command src_available />
             })
         } else {
             None
@@ -112,10 +112,25 @@ pub fn HeatSourceControlsUI(
     cx: Scope,
     key: String,
     w_command: WriteSignal<Option<Command>>,
-    remove: bool,
+    src_available: bool,
 ) -> impl IntoView {
     let key_clone = key.clone();
+    let open_button = move || {
+        if src_available {
+            let key_clone = key_clone.clone();
+            let on_open = move |_| {
+                w_command.set(Some(Command::Open(OpenCommand {
+                    key: key_clone.clone(),
+                })));
+            };
 
+            Some(view! {cx, <div class="cm-button small" on:click=on_open>Open</div>})
+        } else {
+            None
+        }
+    };
+
+    let key_clone = key.clone();
     let on_ignore = move |_| {
         w_command.set(Some(Command::Ignore(IgnoreCommand {
             key: key_clone.clone(),
@@ -123,7 +138,7 @@ pub fn HeatSourceControlsUI(
     };
 
     let remove_button = move || {
-        if remove {
+        if src_available {
             let key_clone = key.clone();
             let on_remove = move |_| {
                 w_command.set(Some(Command::Remove(RemoveCommand {
@@ -139,6 +154,7 @@ pub fn HeatSourceControlsUI(
 
     return view! {cx,
         <div class="heat-src-controls button-group">
+            { open_button }
             <div class="cm-button small" on:click=on_ignore>Ignore</div>
             { remove_button }
         </div>

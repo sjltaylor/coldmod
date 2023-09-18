@@ -116,6 +116,18 @@ class CLI:
                     src_refs_thread = threading.Thread(target=mod.queue_src_refs, args=[root_marker.dir(), parsed_trace_srcs.values(), src_message_queue, stop_event], daemon=True)
                     src_refs_thread.start()
 
+                case "open":
+                    editor = os.getenv("EDITOR")
+                    if editor is None:
+                        print("EDITOR environment variable not set")
+                        continue
+                    parsed_trace_src_and_path = parsed_trace_srcs.get(cmd.open.key)
+                    if parsed_trace_src_and_path is None:
+                        print(f"not found: {cmd.open.key}")
+                        continue
+                    (parsed_trace_src, path) = parsed_trace_src_and_path
+                    os.system(f"{editor} {path}:{parsed_trace_src.position.line}")
+
                 case "ignore":
                     root_marker.add_ignore_key(cmd.ignore.key).dump()
                     ignore = create_src_ignore_key_message(cmd.ignore.key)

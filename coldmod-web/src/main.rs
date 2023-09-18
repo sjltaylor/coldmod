@@ -17,7 +17,7 @@ mod heatmap_filter;
 mod heatmap_ui;
 
 type IgnoreList = HashSet<String>;
-type RemoveList = Memo<HashSet<String>>;
+type SrcAvailableList = Memo<HashSet<String>>;
 
 #[component]
 fn App(cx: Scope, path: String) -> impl IntoView {
@@ -35,8 +35,8 @@ fn App(cx: Scope, path: String) -> impl IntoView {
     });
 
     let removable_memo = create_memo(cx, move |_| {
-        let srcs_available = src_available_list.get(); // map Some or None
-        let heat_srcs = heat_srcs_memo.get(); // map to Some or None
+        let srcs_available = src_available_list.get();
+        let heat_srcs = heat_srcs_memo.get();
 
         match (srcs_available, heat_srcs) {
             (Some(srcs_available), Some(heat_srcs)) => {
