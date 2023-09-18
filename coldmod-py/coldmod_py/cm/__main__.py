@@ -6,6 +6,7 @@ import coldmod_py.config
 import coldmod_py.code as code
 import coldmod_py.cache as cache
 import coldmod_py.mod as mod
+import coldmod_py.coldmod_d
 import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
 import sys
@@ -180,7 +181,8 @@ class CLI:
             fetch a snapshot of tracing data and reconcile with local source code.
             anything that can't be found locally is not included in json output.
         """
-        ...
+        heat_map = coldmod_py.coldmod_d.fetch(all)
+        print("srcs:", len(heat_map.srcs))
 
 if __name__ == "__main__":
     try:

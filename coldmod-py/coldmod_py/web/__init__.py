@@ -35,8 +35,8 @@ def stream_commands(src_message_queue: queue.Queue[tracing_pb2.SrcMessage]) -> I
         stub = tracing_pb2_grpc.TracesStub(channel)
 
         if config.env.insecure():
-            mod_commands = stub.mod_commands(src_message_stream)
+            mod_commands = stub.mod(src_message_stream)
         else:
-            mod_commands = stub.mod_commands.with_call(src_message_stream, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
+            mod_commands = stub.mod.with_call(src_message_stream, metadata=[("authorization", f"Bearer {config.env.api_key()}")])
         for mod_command in mod_commands:
             yield mod_command

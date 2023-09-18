@@ -128,7 +128,7 @@ impl Dispatch {
                     heatmap
                         .srcs
                         .into_iter()
-                        .filter(|src| src.trace_count > 0)
+                        .filter(|src| src.trace_count == 0)
                         .collect::<Vec<HeatSrc>>()
                 }
             }
