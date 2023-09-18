@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::filter_state::FilterState;
-use coldmod_msg::web::HeatMap;
+use coldmod_msg::proto::{HeatMap, HeatSrc};
 use coldmod_msg::web::HeatMapDelta;
-use coldmod_msg::web::HeatSrc;
 
 #[derive(Clone)]
 pub struct HeatmapFilter {
@@ -72,7 +71,7 @@ impl HeatmapFilter {
         // this doesn't need to be a loop, but we haven't created the data structure to look up the heat source
         // so for now there's a simple optimization - loop from hottest first because that's most likely
         for source in self.heatmap.srcs.iter_mut().rev() {
-            let k = source.trace_src.key.clone();
+            let k = source.key.clone();
 
             if let Some(delta) = heatmap_delta.deltas.get(&k) {
                 source.trace_count += *delta;

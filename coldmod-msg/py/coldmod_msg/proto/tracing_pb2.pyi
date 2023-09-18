@@ -101,3 +101,23 @@ class SrcMessage(_message.Message):
     src_refs: SrcRefs
     src_remove_result: SrcRemoveResult
     def __init__(self, connect_key: _Optional[_Union[ConnectKey, _Mapping]] = ..., src_ignore: _Optional[_Union[SrcIgnore, _Mapping]] = ..., src_available: _Optional[_Union[SrcAvailable, _Mapping]] = ..., src_refs: _Optional[_Union[SrcRefs, _Mapping]] = ..., src_remove_result: _Optional[_Union[SrcRemoveResult, _Mapping]] = ...) -> None: ...
+
+class FetchOptions(_message.Message):
+    __slots__ = ["all"]
+    ALL_FIELD_NUMBER: _ClassVar[int]
+    all: bool
+    def __init__(self, all: bool = ...) -> None: ...
+
+class HeatSrc(_message.Message):
+    __slots__ = ["key", "trace_count"]
+    KEY_FIELD_NUMBER: _ClassVar[int]
+    TRACE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    key: str
+    trace_count: int
+    def __init__(self, key: _Optional[str] = ..., trace_count: _Optional[int] = ...) -> None: ...
+
+class HeatMap(_message.Message):
+    __slots__ = ["srcs"]
+    SRCS_FIELD_NUMBER: _ClassVar[int]
+    srcs: _containers.RepeatedCompositeFieldContainer[HeatSrc]
+    def __init__(self, srcs: _Optional[_Iterable[_Union[HeatSrc, _Mapping]]] = ...) -> None: ...

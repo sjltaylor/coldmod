@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use coldmod_msg::proto::{
     src_message::PossibleSrcMessage, ModCommand, SrcMessage, Trace, TraceSrcs,
 };
+use coldmod_msg::proto::{FetchOptions, HeatMap, HeatSrc};
 use coldmod_msg::web::{self, Msg};
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -112,6 +113,29 @@ impl Dispatch {
         self._broadcast(Msg::HeatMapAvailable(heat_map));
 
         Ok(())
+    }
+
+    pub async fn fetch(&self, fetch_options: FetchOptions) -> Result<HeatMap, anyhow::Error> {
+        // TODO: a more efficient version of this would only query for the data needed
+        let mut store = self.store.clone();
+        let heatmap = store.get_heat_map().await?;
+
+        let srcs: Vec<HeatSrc> = match heatmap {
+            Some(heatmap) => {
+                if fetch_options.all {
+                    heatmap.srcs
+                } else {
+                    heatmap
+                        .srcs
+                        .into_iter()
+                        .filter(|src| src.trace_count > 0)
+                        .collect::<Vec<HeatSrc>>()
+                }
+            }
+            None => vec![],
+        };
+
+        Ok(HeatMap { srcs })
     }
 
     pub async fn trace_received(&self, trace: Trace) -> Result<(), anyhow::Error> {

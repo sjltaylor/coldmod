@@ -1,5 +1,6 @@
 use crate::heatmap_filter::HeatmapFilter;
-use coldmod_msg::web::{HeatSrc, TracingStats};
+use coldmod_msg::proto::HeatSrc;
+use coldmod_msg::web::TracingStats;
 use leptos::*;
 
 #[component]

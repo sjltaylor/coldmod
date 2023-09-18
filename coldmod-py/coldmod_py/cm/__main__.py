@@ -10,7 +10,7 @@ import fire # https://github.com/google/python-fire/blob/master/docs/guide.md
 import logging
 import sys
 import webbrowser
-from typing import List
+from typing import List, Tuple
 from google.protobuf.json_format import MessageToDict, ParseDict
 import coldmod_msg.proto.tracing_pb2 as tracing_pb2
 import json
@@ -25,6 +25,18 @@ class CLI:
             """
             cache.clear()
 
+        def warm(self):
+            """
+            warm the coldmod cache
+            """
+            root_marker = coldmod_py.root_marker.load()
+            paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
+
+            relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
+            trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths)
+            print("done.")
+
+
     def __init__(self, path=None, verbose=False):
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
@@ -35,9 +47,9 @@ class CLI:
         """
         return self.Cache()
 
-    def trace_srcs(self):
+    def srcs(self):
         """
-        print traces
+        print trace srcs
         """
         root_marker = coldmod_py.root_marker.load()
         paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
@@ -50,9 +62,9 @@ class CLI:
             for p in trace_srcs:
                 print(f"  {p.trace_src.key}")
 
-    def src_files(self):
+    def files(self):
         """
-        print the files which are included in coldmod tracing
+        print the files which are parsed for trace srcs
         """
         root_marker = coldmod_py.root_marker.load()
         for path in files.find_src_files_in(root_marker.dir(), root_marker.ignore_files()):
@@ -134,33 +146,41 @@ class CLI:
                 case _:
                     print(f"command not supported: {cmd}")
 
-    def rm(self, key: str):
+
+    def rm(self, *keys: str):
+        """
+        Remove functions corresponding to the given keys
+        """
         root_marker = coldmod_py.root_marker.load()
 
         paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-        parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
 
-        (parsed_trace_src, path) = parsed_trace_srcs[key]
-        mod.remove(root_marker.dir(), parsed_trace_src, path)
+        for key in keys:
+            parsed_trace_srcs = code.by_key(code.find_trace_srcs_by_relative_paths(relative_paths))
 
-    def mod_remove(self, force=False):
+            (parsed_trace_src, path) = parsed_trace_srcs[key]
+            mod.remove(root_marker.dir(), parsed_trace_src, path)
+
+    def ignore(self, *keys: str):
+        """
+        Add the given keys to the ignore list in coldmod.rootmarker
+        """
+
         root_marker = coldmod_py.root_marker.load()
 
-        if not force:
-            print("Are you sure (y/N)? (you didn't use --force)")
-            yN = input()
-            if yN != "y":
-                print("aborting")
-                sys.exit(1)
+        for key in keys:
+            root_marker.add_ignore_key(key)
 
-        with open('./coldmod.filterset.json', 'r') as json_file:
-            raw = json_file.read()
-            trace_srcs = ParseDict(json.loads(raw), tracing_pb2.TraceSrcs())
-            src_files = files.find_src_files_in(root_marker.dir(), root_marker.ignore_files())
-            mod.remove(root_marker.dir(), trace_srcs.trace_srcs, src_files)
+        root_marker.dump()
 
+    def fetch(self, refs = False, all = False, json = False):
+        """
+            fetch a snapshot of tracing data and reconcile with local source code.
+            anything that can't be found locally is not included in json output.
+        """
+        ...
 
 if __name__ == "__main__":
     try:

@@ -68,8 +68,22 @@ message SrcMessage {
     }
 }
 
+message FetchOptions {
+    bool all = 1;
+}
+
+message HeatSrc {
+    string key = 1;
+    int64 trace_count = 2;
+}
+
+message HeatMap {
+    repeated HeatSrc srcs = 1;
+}
+
 service Traces {
   rpc collect(stream Trace) returns (google.protobuf.Empty);
   rpc set(TraceSrcs) returns (google.protobuf.Empty);
-  rpc mod_commands(stream SrcMessage) returns (stream ModCommand);
+  rpc mod(stream SrcMessage) returns (stream ModCommand);
+  rpc fetch(FetchOptions) returns (HeatMap);
 }

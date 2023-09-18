@@ -2,7 +2,9 @@ use crate::dispatch::Dispatch;
 use coldmod_msg::proto::ops_server::{Ops, OpsServer};
 
 use coldmod_msg::proto::traces_server::{Traces, TracesServer};
-use coldmod_msg::proto::{ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs};
+use coldmod_msg::proto::{
+    FetchOptions, HeatMap, ModCommand, OpsStatus, SrcMessage, Trace, TraceSrcs,
+};
 
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
@@ -59,12 +61,23 @@ impl Traces for Tracing {
         Ok(Response::new(()))
     }
 
-    type mod_commandsStream = ReceiverStream<Result<ModCommand, Status>>;
+    async fn fetch(&self, request: Request<FetchOptions>) -> Result<Response<HeatMap>, Status> {
+        let fetch_options = request.into_inner();
+        let heat_map = self.dispatch.fetch(fetch_options).await;
 
-    async fn mod_commands(
+        if let Err(_) = heat_map {
+            return Err(Status::internal("handling failed"));
+        };
+
+        Ok(Response::new(heat_map.unwrap()))
+    }
+
+    type modStream = ReceiverStream<Result<ModCommand, Status>>;
+
+    async fn r#mod(
         &self,
         request: Request<Streaming<SrcMessage>>,
-    ) -> Result<Response<Self::mod_commandsStream>, Status> {
+    ) -> Result<Response<Self::modStream>, Status> {
         let mut stream = request.into_inner();
 
         let (tonic_tx, tonic_rx) = mpsc::channel(16);
@@ -121,46 +134,6 @@ impl Traces for Tracing {
 
         Ok(Response::new(ReceiverStream::new(tonic_rx)))
     }
-
-    // async fn mod_commands(
-    //     &self,
-    //     request: Request<ModCommandsArgs>,
-    // ) -> Result<Response<Self::mod_commandsStream>, Status> {
-    //     let q = request.into_inner();
-
-    //     let (tonic_tx, tonic_rx) = mpsc::channel(16);
-    //     let (dispatch_tx, mut dispatch_rx) = mpsc::channel(16);
-
-    //     let dispatch_clone = self.dispatch.clone();
-
-    //     tokio::spawn(async move {
-    //         dispatch_clone
-    //             .send_commands_until_closed(q, dispatch_tx)
-    //             .await;
-    //     });
-
-    //     tokio::spawn(async move {
-    //         loop {
-    //             tokio::select! {
-    //                 cmd = dispatch_rx.recv() => {
-    //                     match cmd {
-    //                         Some(cmd) => {
-    //                             tonic_tx.send(Ok(cmd)).await.unwrap();
-    //                         }
-    //                         None => break,
-    //                     }
-    //                 }
-    //                 _ = tonic_tx.closed() => {
-    //                     dispatch_rx.close();
-    //                     tracing::info!("connect: stream closed");
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     });
-
-    //     Ok(Response::new(ReceiverStream::new(tonic_rx)))
-    // }
 }
 
 #[tonic::async_trait]

@@ -25,10 +25,15 @@ class TracesStub(object):
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
-        self.mod_commands = channel.stream_stream(
-                '/coldmod_msg.proto.tracing.Traces/mod_commands',
+        self.mod = channel.stream_stream(
+                '/coldmod_msg.proto.tracing.Traces/mod',
                 request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.SerializeToString,
                 response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.FromString,
+                )
+        self.fetch = channel.unary_unary(
+                '/coldmod_msg.proto.tracing.Traces/fetch',
+                request_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.FetchOptions.SerializeToString,
+                response_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.HeatMap.FromString,
                 )
 
 
@@ -47,7 +52,13 @@ class TracesServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def mod_commands(self, request_iterator, context):
+    def mod(self, request_iterator, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def fetch(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -66,10 +77,15 @@ def add_TracesServicer_to_server(servicer, server):
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.TraceSrcs.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
-            'mod_commands': grpc.stream_stream_rpc_method_handler(
-                    servicer.mod_commands,
+            'mod': grpc.stream_stream_rpc_method_handler(
+                    servicer.mod,
                     request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.FromString,
                     response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.SerializeToString,
+            ),
+            'fetch': grpc.unary_unary_rpc_method_handler(
+                    servicer.fetch,
+                    request_deserializer=coldmod__msg_dot_proto_dot_tracing__pb2.FetchOptions.FromString,
+                    response_serializer=coldmod__msg_dot_proto_dot_tracing__pb2.HeatMap.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -116,7 +132,7 @@ class Traces(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def mod_commands(request_iterator,
+    def mod(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -126,8 +142,25 @@ class Traces(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_stream(request_iterator, target, '/coldmod_msg.proto.tracing.Traces/mod_commands',
+        return grpc.experimental.stream_stream(request_iterator, target, '/coldmod_msg.proto.tracing.Traces/mod',
             coldmod__msg_dot_proto_dot_tracing__pb2.SrcMessage.SerializeToString,
             coldmod__msg_dot_proto_dot_tracing__pb2.ModCommand.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def fetch(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/coldmod_msg.proto.tracing.Traces/fetch',
+            coldmod__msg_dot_proto_dot_tracing__pb2.FetchOptions.SerializeToString,
+            coldmod__msg_dot_proto_dot_tracing__pb2.HeatMap.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

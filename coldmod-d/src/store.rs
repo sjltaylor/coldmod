@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use coldmod_msg::{
-    proto::{Trace, TraceSrc, TraceSrcs},
-    web::{HeatMap, HeatMapDelta, HeatSrc},
+    proto::{HeatMap, HeatSrc, Trace, TraceSrc, TraceSrcs},
+    web::HeatMapDelta,
 };
 use prost::Message;
 use redis::{streams::StreamRangeReply, RedisError};
@@ -205,7 +205,7 @@ impl RedisStore {
             .into_iter()
             .zip(counts)
             .map(|(trace_src, trace_count)| HeatSrc {
-                trace_src,
+                key: trace_src.key,
                 trace_count,
             })
             .collect();

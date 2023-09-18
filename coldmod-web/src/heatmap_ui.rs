@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use crate::{coldmod_d::Sender, controls_ui::ControlsUI, IgnoreList, RemoveList};
 use coldmod_msg::{
-    proto::{mod_command::Command, IgnoreCommand, ModCommand, RemoveCommand},
-    web::{HeatSrc, Msg},
+    proto::{mod_command::Command, HeatSrc, IgnoreCommand, ModCommand, RemoveCommand},
+    web::Msg,
 };
 use leptos::*;
 
@@ -20,7 +20,7 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
                     <ul class="container heatmap data">
                         <For
                             each=move || heat_srcs_memo.get().unwrap()
-                            key=|u| format!("{}-{}", u.trace_src.key, u.trace_count)
+                            key=|u| format!("{}-{}", u.key, u.trace_count)
                             view=move |cx, s| view! {cx, <HeatSourceUI heat_src=s /> } />
                     </ul>
             </div>
@@ -37,7 +37,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
     let sender = use_context::<Sender>(cx).unwrap();
     let (command, w_command) = create_signal::<Option<Command>>(cx, None);
 
-    let key = heat_src.trace_src.key.clone();
+    let key = heat_src.key.clone();
     let is_ignored = move || ignore_list.get().contains(&key);
 
     let ignore_classname = move || {
@@ -60,7 +60,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         _ => {}
     });
 
-    let key = heat_src.trace_src.key.clone();
+    let key = heat_src.key.clone();
     let refs_view = move || {
         let key = key.clone();
         let maybe_ref = src_refs_by_key.get();
@@ -80,7 +80,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         }
     };
 
-    let key = heat_src.trace_src.key.clone();
+    let key = heat_src.key.clone();
     let controls_view = move || {
         let key = key.clone();
         if mod_client_connected.get() && !ignore_list.get().contains(&key) {
@@ -93,7 +93,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         }
     };
 
-    let key = heat_src.trace_src.key.clone();
+    let key = heat_src.key.clone();
 
     return view! {cx,
         <li class="heat-src-row">

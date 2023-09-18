@@ -46,7 +46,7 @@ fn App(cx: Scope, path: String) -> impl IntoView {
                             .iter()
                             .filter_map(|hs| {
                                 if hs.trace_count == 0 {
-                                    Some(hs.trace_src.key.clone())
+                                    Some(hs.key.clone())
                                 } else {
                                     None
                                 }
