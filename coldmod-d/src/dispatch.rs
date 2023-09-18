@@ -330,7 +330,7 @@ impl Dispatch {
             }
         }
 
-        // TODO: implement Drop to handle this cleanup
+        // TODO: implement Drop to handle this cleanup?
         self.websocket_listeners.write().await.remove(&ws.key());
     }
 
@@ -378,18 +378,19 @@ impl Dispatch {
                 }
                 _ = mod_command_tx.closed() => {
                     tracing::info!("tx closed - removing listener");
-                    if let Some(key) = key {
-                        self.command_listeners.write().await.remove(&key);
-                        // if there is an app, let it know a cli is unavailable
-                        if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
-                            let msg = Msg::ModCommandClientUnavailable;
-                            if let Err(e) = ws.send(msg).await {
-                                tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);
-                            }
-                        }
-                    }
-
                     break;
+                }
+            }
+        }
+
+        if let Some(key) = key {
+            tracing::debug!("removing command listener");
+            self.command_listeners.write().await.remove(&key);
+            // if there is an app, let it know a cli is unavailable
+            if let Some(ws) = self.websocket_listeners.write().await.get_mut(&key) {
+                let msg = Msg::ModCommandClientUnavailable;
+                if let Err(e) = ws.send(msg).await {
+                    tracing::error!("failed to send ModCommandClientUnavailable: {:?}", e);
                 }
             }
         }
