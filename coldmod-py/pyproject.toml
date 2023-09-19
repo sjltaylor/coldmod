@@ -16,6 +16,7 @@ fire = "^0.5.0"
 jedi = "^0.19.0"
 tomli-w = "^1.0.0"
 tomli = "^2.0.1"
+backoff = "^2.2.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"

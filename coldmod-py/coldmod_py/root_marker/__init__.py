@@ -18,13 +18,13 @@ class RootMarker:
         return str(self._path.parent)
 
     def ignore(self) -> Dict[str, List[str]]:
-        return self._config["ignore"] or {}
+        return self._config.get("ignore") or {}
 
     def ignore_files(self) -> List[str]:
-        return self.ignore()["files"] or []
+        return self.ignore().get("files") or []
 
     def ignore_keys(self) -> List[str]:
-        return self.ignore()["keys"] or []
+        return self.ignore().get("keys") or []
 
     def add_ignore_key(self, key: str) -> Self:
         if "ignore" not in self._config:
