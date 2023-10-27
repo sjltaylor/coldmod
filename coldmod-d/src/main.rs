@@ -18,6 +18,7 @@ fn read_env_vars() -> (
     String,
     Option<(String, String)>,
     Option<String>,
+    Option<String>,
 ) {
     let web_host = std::env::var("COLDMOD_WEB_HOST")
         .expect("COLDMOD_WEB_HOST not set")
@@ -37,8 +38,8 @@ fn read_env_vars() -> (
 
     let insecure = std::env::var("COLDMOD_INSECURE").map_or_else(|_| false, |v| v == "on");
 
-    let (api_key, tls) = if insecure {
-        (None, None)
+    let (api_key, tls, origin) = if insecure {
+        (None, None, None)
     } else {
         (
             Some(std::env::var("COLDMOD_API_KEY").expect("COLDMOD_API_KEY not set")),
@@ -46,10 +47,11 @@ fn read_env_vars() -> (
                 std::env::var("COLDMOD_TLS_CERT").expect("COLDMOD_TLS_CERT not set"),
                 std::env::var("COLDMOD_TLS_KEY").expect("COLDMOD_TLS_KEY not set"),
             )),
+            Some(std::env::var("COLDMOD_APP_ORIGIN").expect("COLDMOD_APP_ORIGIN not set")),
         )
     };
 
-    return (web_host, grpc_host, redis_host, tls, api_key);
+    return (web_host, grpc_host, redis_host, tls, api_key, origin);
 }
 
 #[derive(FromArgs)]
@@ -109,7 +111,7 @@ async fn reset(all: bool) {
 }
 
 async fn start() {
-    let (web_host, grpc_host, redis_host, tls, api_key) = read_env_vars();
+    let (web_host, grpc_host, redis_host, tls, api_key, origin) = read_env_vars();
 
     configure_tracing();
 
@@ -123,6 +125,7 @@ async fn start() {
         redis_host,
         api_key,
         tls,
+        origin,
         rate_limiter,
         trace_sink,
     )

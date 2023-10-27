@@ -19,6 +19,7 @@ pub struct Dispatch {
     web_host: SocketAddr,
     api_key: Option<String>,
     tls: Option<(String, String)>,
+    origin: Option<String>,
     // TODO: why is this pub crate?
     pub(crate) store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
@@ -45,12 +46,17 @@ impl Dispatch {
         self.tls.clone()
     }
 
+    pub fn origin(&self) -> Option<String> {
+        self.origin.clone()
+    }
+
     pub async fn new(
         grpc_host: SocketAddr,
         web_host: SocketAddr,
         redis_host: String,
         api_key: Option<String>,
         tls: Option<(String, String)>,
+        origin: Option<String>,
         rate_limiter: mpsc::Sender<()>,
         trace_sink: mpsc::Sender<Trace>,
     ) -> Self {
@@ -61,6 +67,7 @@ impl Dispatch {
             web_host,
             api_key,
             tls,
+            origin,
             store: store::RedisStore::new(redis_host).await,
             internal,
             rate_limiter,
@@ -151,6 +158,7 @@ impl Dispatch {
     }
 
     pub async fn start_trace_sink(&self, mut trace_source: mpsc::Receiver<Trace>) {
+        // TODO: do we need to buffer or is a buffered channel enough?
         let timer_duration = tokio::time::Duration::from_millis(10);
         let mut interval = tokio::time::interval(timer_duration);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);

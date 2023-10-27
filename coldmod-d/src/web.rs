@@ -5,6 +5,7 @@ use axum::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         Path, State,
     },
+    http::HeaderMap,
     response::IntoResponse,
     routing::get,
     Router,
@@ -57,7 +58,7 @@ pub async fn server(dispatch: Dispatch) {
             .await
             .unwrap();
     } else {
-        tracing::info!("starting http server on {}", web_host);
+        tracing::info!("starting web server on {}", web_host);
         axum::Server::bind(&web_host)
             .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             .await
@@ -74,11 +75,26 @@ async fn ws_handler(
     ws: WebSocketUpgrade,
     Path(key): Path<String>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     State(dispatch): State<Dispatch>,
 ) -> impl IntoResponse {
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    tracing::trace!("websocket upgrade request from {}", addr);
+    tracing::info!("websocket upgrade request from {}", addr);
+
+    if let Some(expected_origin) = dispatch.origin() {
+        let origin_header = headers.get("origin");
+        let origin = origin_header.map_or(None, |origin| origin.to_str().map_or(None, |s| Some(s)));
+
+        if origin.map_or(true, |o| o != expected_origin.as_str()) {
+            tracing::warn!(
+                "rejecting ws upgrade, could not verify origin ({:?}) was the expected origin ({:?})",
+                origin,
+                expected_origin
+            );
+            return (axum::http::StatusCode::FORBIDDEN, "forbidden").into_response();
+        }
+    }
 
     ws.on_upgrade(move |socket| serve_socket(socket, dispatch, key))
 }
