@@ -51,6 +51,9 @@ insert generated man page here
 
 run it with brew install, it uses node... so I don't want to make every install it as a dep
 
+* vendors coldmod-msg
+* coldmod-msg dependencies are a subset of coldmod-py dependencies
+
 
 ## setting up in an app via editable install of local checkout
 
