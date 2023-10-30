@@ -1,6 +1,6 @@
 __pycache__
 target
-/scratch.py
+scratch
 STATUS
 .vscode/launch.json
 .pytest_cache
