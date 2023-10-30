@@ -60,7 +60,7 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                             ;
 
                             view! {cx,
-                                <ToggleButton label=key.clone() is_on w_is_on />
+                                <ToggleButton label=key is_on w_is_on />
                             }
                         }).collect_view(cx)}
                     </div>
