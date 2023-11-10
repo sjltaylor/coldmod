@@ -55,7 +55,7 @@ fn read_env_vars() -> (
 }
 
 #[derive(FromArgs)]
-/// coldmod-d service
+/// This is the Coldmod server CLI
 struct Main {
     #[argh(subcommand)]
     cmd: Option<Cmd>,

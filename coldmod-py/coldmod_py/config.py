@@ -14,17 +14,18 @@ class Env:
         return ca
 
     def web_app_url(self) -> str:
+        if self.insecure():
+            key = 'COLDMOD_APP_ORIGIN'
+            app_origin = os.getenv(key)
+            if not app_origin:
+                raise Exception(f"{key} not set")
+            return app_origin
+
         key = 'COLDMOD_WEB_HOST'
         protocol = 'https'
-
-        if self.insecure():
-            key = 'COLDMOD_APP_HOST'
-            protocol = 'http'
-
         web_host = os.getenv(key)
         if not web_host:
             raise Exception(f"{key} not set")
-
         return f"{protocol}://{web_host}"
 
     def api_key(self) -> str:

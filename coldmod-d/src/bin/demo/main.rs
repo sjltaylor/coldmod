@@ -4,7 +4,7 @@ use argh::FromArgs;
 mod grpc;
 
 #[derive(FromArgs)]
-/// utilities for working with coldmod data
+/// A utlity for working with coldmod data
 struct Demo {
     #[argh(subcommand)]
     subcommand: Subcommand,
@@ -31,7 +31,7 @@ struct Trace {
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// Set trace srcs to a sample
+/// Set trace srcs to a predefined sample
 #[argh(subcommand, name = "set-trace-srcs-sample")]
 struct SetTraceSrcsSample {
     #[argh(switch)]

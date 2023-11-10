@@ -1,31 +1,30 @@
 # README
 
-TODO
+This is the Coldmod server component. It provides:
+* Storage via redis 7.2
+* A gRPC interface for
+    * runtime data collection
+    * CLI <-> Web UI interop
+* A websocket server for the web UI
 
-* document the main cli
-* document the demo cli
-* document the COLDMOD_OPS environment variable ("on" to turn on)
-* document generating tls certs (rsa 2048 because rustls)
-* document how using mkcert for local dev
+This package contains the following binary crates:
+* `coldmod-d` gRPC, websockets and static file server
+* `demo` a cli enabling simulation and diagnostics of data collection
 
-ENV VARS
+Top level instructions to get this component running at [here](../README.md).
 
+## Run
 
-COLDMOD_OPS
-COLDMOD_TLS_CA (demo client)
-COLDMOD_WEB_HOST
-COLDMOD_GRPC_HOST
-COLDMOD_REDIS_HOST
-COLDMOD_API_KEY
-COLDMOD_TLS_CERT
-COLDMOD_TLS_KEY
-COLDMOD_INSECURE (local basically turns off auth and tls, becuase trunk RS doesnt do TLS and browser don't allow you to mix )
+* `cargo run --bin coldmod-d` to run the server (from the root)
+* `cargo run --bin demo` to run the demo cli (from the root)
+
+Each binary crate is a self-documenting cli developed with [argh](https://github.com/google/argh)
 
 
-## TLS
+## Tests
 
-The `leptos` web app is run during development with `trunk.rs`, which doesn't support TLS - so configuration supports setups with and without TLS.
+Run with `cargo test`.
 
-To run the setup with TLS you will need certs. For local dev with TLS enabled, you might want to use https://github.com/FiloSottile/mkcert to create certs.
+The integration tests are destructive. To avoid data loss they are `#[ignore]`ed. To run them, uncomment the `#[ignore]` and set `COLDMOD_OPS=on`.
 
-With TLS enabled, obviously you won't be able to use `trunk.rs`. So, build the apps and host it in `coldmod-d/dist`. `trunk build` in `coldmod-web` creates a `dist` directory in `coldmod-web`. `coldmod-d` runs a static file server that looks in `dist/index.html` from wherever it is run, so you can move the `coldmod-web` `dist` to `coldmod-d` to serve the app via TLS.
+`COLDMOD_OPS` enables some gRPC operations which can be used by the test suite to manage test data.

@@ -1,16 +1,14 @@
-use coldmod_msg::web::HeatMap;
-
-use coldmod_msg::proto::TraceSrc;
+use coldmod_msg::proto::HeatMap;
 
 mod clients;
 
 use clients::Clients;
 
-fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, TraceSrc)> {
+fn heatmap_to_functions_and_counts(heatmap: HeatMap) -> Vec<(i64, String)> {
     heatmap
         .srcs
         .into_iter()
-        .map(|elem| (elem.trace_count, elem.trace_src))
+        .map(|elem| (elem.trace_count, elem.key.to_string()))
         .collect()
 }
 
@@ -32,26 +30,26 @@ async fn test_heatmap() {
     assert_eq!(trace_stats.count, 0);
     assert!(heatmap.is_some());
 
-    let functions_and_counts: Vec<(i64, TraceSrc)> =
+    let functions_and_counts: Vec<(i64, String)> =
         heatmap_to_functions_and_counts(heatmap.unwrap());
 
     assert_eq!(functions_and_counts.len(), 3);
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/a/file:7263" && *count == 0 }),
+            .any(|(count, f)| { f == "/a/path/to/a/file:7263" && *count == 0 }),
         "there is a function in the heatmap with two traces"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/another/file:191" && *count == 0 }),
+            .any(|(count, f)| { f == "/a/path/to/another/file:191" && *count == 0 }),
         "there is a function in the heatmap with 1 trace"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/a/file:1323" && *count == 0 }),
+            .any(|(count, f)| { f == "/a/path/to/a/file:1323" && *count == 0 }),
         "there is a cold function in the heatmap"
     );
 
@@ -63,25 +61,25 @@ async fn test_heatmap() {
     assert!(heatmap.is_some());
     let heatmap = heatmap.unwrap();
 
-    let functions_and_counts: Vec<(i64, TraceSrc)> = heatmap_to_functions_and_counts(heatmap);
+    let functions_and_counts: Vec<(i64, String)> = heatmap_to_functions_and_counts(heatmap);
 
     assert_eq!(functions_and_counts.len(), 3);
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/a/file:7263" && *count == 2 }),
+            .any(|(count, f)| { f == "/a/path/to/a/file:7263" && *count == 2 }),
         "there is a function in the heatmap with two traces"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/another/file:191" && *count == 1 }),
+            .any(|(count, f)| { f == "/a/path/to/another/file:191" && *count == 1 }),
         "there is a function in the heatmap with 1 trace"
     );
     assert!(
         functions_and_counts
             .iter()
-            .any(|(count, f)| { f.key == "/a/path/to/a/file:1323" && *count == 0 }),
+            .any(|(count, f)| { f == "/a/path/to/a/file:1323" && *count == 0 }),
         "there is a cold function in the heatmap"
     );
 }

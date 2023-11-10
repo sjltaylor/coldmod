@@ -8,6 +8,7 @@ use coldmod_msg::{
 use heatmap_ui::HeatMapUI;
 
 use base64::{engine::general_purpose, Engine as _};
+use leptos::logging::*;
 use leptos::*;
 
 mod coldmod_d;
@@ -20,21 +21,20 @@ type IgnoreList = HashSet<String>;
 type SrcAvailableList = Memo<HashSet<String>>;
 
 #[component]
-fn App(cx: Scope, path: String) -> impl IntoView {
-    let rw_filters = create_rw_signal(cx, Option::<HeatmapFilter>::None);
-    let (ignore_list, w_ignore_list) = create_signal(cx, IgnoreList::new());
-    let (src_available_list, w_src_available_list) =
-        create_signal(cx, Option::<HashSet<String>>::None);
-    let (mod_client_connected, w_mod_client_connected) = create_signal(cx, false);
-    let (src_refs_by_key, w_src_refs_by_key) = create_signal(cx, HashMap::<String, u32>::new());
-    let (tracing_stats, w_tracing_stats) = create_signal::<Option<TracingStats>>(cx, None);
+fn App(path: String) -> impl IntoView {
+    let rw_filters = create_rw_signal(Option::<HeatmapFilter>::None);
+    let (ignore_list, w_ignore_list) = create_signal(IgnoreList::new());
+    let (src_available_list, w_src_available_list) = create_signal(Option::<HashSet<String>>::None);
+    let (mod_client_connected, w_mod_client_connected) = create_signal(false);
+    let (src_refs_by_key, w_src_refs_by_key) = create_signal(HashMap::<String, u32>::new());
+    let (tracing_stats, w_tracing_stats) = create_signal::<Option<TracingStats>>(None);
 
-    let heat_srcs_memo = create_memo(cx, move |_| match rw_filters.get() {
+    let heat_srcs_memo = create_memo(move |_| match rw_filters.get() {
         Some(heatmap) => Some(heatmap.heat_srcs()),
         None => None,
     });
 
-    let removable_memo = create_memo(cx, move |_| {
+    let removable_memo = create_memo(move |_| {
         let srcs_available = src_available_list.get();
         let heat_srcs = heat_srcs_memo.get();
 
@@ -109,16 +109,16 @@ fn App(cx: Scope, path: String) -> impl IntoView {
 
     let sender = sender.clone();
 
-    provide_context(cx, rw_filters);
-    provide_context(cx, heat_srcs_memo);
-    provide_context(cx, mod_client_connected);
-    provide_context(cx, sender);
-    provide_context(cx, ignore_list);
-    provide_context(cx, removable_memo);
-    provide_context(cx, src_refs_by_key);
-    provide_context(cx, tracing_stats);
+    provide_context(rw_filters);
+    provide_context(heat_srcs_memo);
+    provide_context(mod_client_connected);
+    provide_context(sender);
+    provide_context(ignore_list);
+    provide_context(removable_memo);
+    provide_context(src_refs_by_key);
+    provide_context(tracing_stats);
 
-    return view! { cx,
+    return view! {
         <main>
             <HeatMapUI />
         </main>
@@ -151,5 +151,5 @@ fn main() {
             .unwrap();
     };
 
-    mount_to_body(|cx| view! { cx,  <App path></App> });
+    mount_to_body(move || view! { <App path={path.clone()}></App> });
 }

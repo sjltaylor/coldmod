@@ -82,15 +82,6 @@ impl HeatmapFilter {
 
 #[cfg(test)]
 mod tests {
-
-    use coldmod_msg::proto::TraceSrc;
-
-    fn trace_src_stub() -> TraceSrc {
-        TraceSrc {
-            key: "STUB".to_string(),
-        }
-    }
-
     use super::*;
 
     fn collect_trace_counts(filter: &HeatmapFilter) -> Vec<i64> {
@@ -107,7 +98,7 @@ mod tests {
 
         for i in vs.iter() {
             sources.push(HeatSrc {
-                trace_src: trace_src_stub(),
+                key: "STUB_KEY".to_string(),
                 trace_count: *i,
             });
         }
@@ -122,7 +113,7 @@ mod tests {
 
         for i in vs.iter() {
             sources.push(HeatSrc {
-                trace_src: trace_src_stub(),
+                key: "STUB_KEY".to_string(),
                 trace_count: *i,
             });
         }
@@ -134,7 +125,7 @@ mod tests {
         let mut sources = Vec::<HeatSrc>::new();
         for _ in 0..10 {
             sources.push(HeatSrc {
-                trace_src: trace_src_stub(),
+                key: "STUB_KEY".to_string(),
                 trace_count: 5,
             });
         }
@@ -282,7 +273,7 @@ mod tests {
 
         for i in 0..21 {
             sources.push(HeatSrc {
-                trace_src: trace_src_stub(),
+                key: "STUB_KEY".to_string(),
                 trace_count: i,
             });
         }
@@ -306,7 +297,7 @@ mod tests {
 
         for i in 0..21 {
             sources.push(HeatSrc {
-                trace_src: trace_src_stub(),
+                key: "STUB_KEY".to_string(),
                 trace_count: i,
             });
         }

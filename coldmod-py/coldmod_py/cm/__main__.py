@@ -18,26 +18,25 @@ import json
 import queue
 import threading
 
+class CacheCLI():
+    def clear(self):
+        """
+        clear the coldmod cache
+        """
+        cache.clear()
+
+    def warm(self):
+        """
+        warm the coldmod cache
+        """
+        root_marker = coldmod_py.root_marker.load()
+        paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
+
+        relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
+        trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths)
+        print("done.")
+
 class CLI:
-    class Cache():
-        def clear(self):
-            """
-            clear the coldmod cache
-            """
-            cache.clear()
-
-        def warm(self):
-            """
-            warm the coldmod cache
-            """
-            root_marker = coldmod_py.root_marker.load()
-            paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
-
-            relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-            trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths)
-            print("done.")
-
-
     def __init__(self, path=None, verbose=False):
         if verbose:
             logging.basicConfig(level=logging.DEBUG)
@@ -46,7 +45,7 @@ class CLI:
         """
         coldmod cache commands
         """
-        return self.Cache()
+        return CacheCLI()
 
     def srcs(self):
         """
@@ -72,6 +71,9 @@ class CLI:
             print(path)
 
     def connect(self, web_app_url=None):
+        """
+        Connect to the given web app, or open a new one.
+        """
         root_marker = coldmod_py.root_marker.load()
 
         if web_app_url is None:

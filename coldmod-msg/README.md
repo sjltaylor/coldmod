@@ -1,11 +1,9 @@
 # README
 
-This directory contains `flatbuffers` which define protocols between coldmod components.
+This directory contains protocol buffer and gRPC definitions in `proto`, as well as some shared client-server Rust types in `rs/src/web`.
 
-The `rs` and `py` directorys are intended to contain libraries imports for Rust and Python respectively.
-The source client implementations are generated:
+You will need to install the `protoc` compiler to generate code from the definitions.
 
-from the root:
+To generate (or update) Python code from protocol buffer definitions, run `py/gen.sh` from the `py` directory.
 
-* `flatc --rust -o coldmod-msg/rs/src coldmod-msg/trace.fbs`
-* `flatc --python -o coldmod-msg/py/src coldmod-msg/trace.fbs`
+Rust code uses `tonic_build` to generate code from protocol buffer definitions. See `rs/build.rs` for how this is configured.

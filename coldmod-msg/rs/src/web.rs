@@ -35,17 +35,6 @@ pub struct TracingStats {
     pub count: i64,
 }
 
-// #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-// pub struct HeatMap {
-//     pub srcs: Vec<HeatSrc>,
-// }
-
-// #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-// pub struct HeatSrc {
-//     pub trace_src: TraceSrc,
-//     pub trace_count: i64,
-// }
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapDelta {
     pub deltas: HashMap<String, i64>,

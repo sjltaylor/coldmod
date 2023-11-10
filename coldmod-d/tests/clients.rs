@@ -1,6 +1,6 @@
 use coldmod_msg::proto::traces_client::TracesClient;
-use coldmod_msg::proto::{ops_client::OpsClient, Trace, TraceSrc, TraceSrcs};
-use coldmod_msg::web::{HeatMap, TracingStats};
+use coldmod_msg::proto::{ops_client::OpsClient, HeatMap, Trace, TraceSrc, TraceSrcs};
+use coldmod_msg::web::TracingStats;
 use futures_util::stream;
 use futures_util::StreamExt;
 use tokio::time::{timeout, Duration};
@@ -116,7 +116,7 @@ impl Clients {
             _ => None,
         };
 
-        let heatmap: Option<coldmod_msg::web::HeatMap> =
+        let heatmap: Option<coldmod_msg::proto::HeatMap> =
             message_2.map(|message_2| match message_2 {
                 Message::Binary(payload) => {
                     let msg: coldmod_msg::web::Msg = flexbuffers::from_slice(payload.as_slice())

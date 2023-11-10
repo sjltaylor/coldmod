@@ -4,10 +4,10 @@ use coldmod_msg::web::TracingStats;
 use leptos::*;
 
 #[component]
-pub fn ControlsUI(cx: Scope) -> impl IntoView {
-    let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context(cx).unwrap();
-    let memo_heat_srcs: Memo<Option<Vec<HeatSrc>>> = use_context(cx).unwrap();
-    let tracing_stats: ReadSignal<Option<TracingStats>> = use_context(cx).unwrap();
+pub fn ControlsUI() -> impl IntoView {
+    let rw_heatmap_filter: RwSignal<Option<HeatmapFilter>> = use_context().unwrap();
+    let memo_heat_srcs: Memo<Option<Vec<HeatSrc>>> = use_context().unwrap();
+    let tracing_stats: ReadSignal<Option<TracingStats>> = use_context().unwrap();
 
     let heat_src_count = move || {
         if let Some(heat_srcs) = memo_heat_srcs.get() {
@@ -42,15 +42,15 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
 
     let _cli_connection = move || return "CLI CONNECTED";
 
-    return view! {cx,
+    return view! {
     <div class="area controls">
         <div class="container controls">
             <div class={buttons_classes}>
             {groups.map(|group| {
-                    view! {cx,
+                    view! {
                     <div class="button-group">
                         {group.into_iter().map(|key| {
-                            let (is_on,w_is_on) = create_slice(cx, rw_heatmap_filter,
+                            let (is_on,w_is_on) = create_slice(rw_heatmap_filter,
                                 |heatmap_filter| {
                                     heatmap_filter.as_ref().unwrap().filter_state.get(key)
                                 },
@@ -59,12 +59,12 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
                                 })
                             ;
 
-                            view! {cx,
+                            view! {
                                 <ToggleButton label=key is_on w_is_on />
                             }
-                        }).collect_view(cx)}
+                        }).collect_view()}
                     </div>
-                }}).collect_view(cx)}
+                }}).collect_view()}
             </div>
             <div class="container stats">
                 <div class="trace-count">"TRACES:"{trace_count}</div>
@@ -76,7 +76,6 @@ pub fn ControlsUI(cx: Scope) -> impl IntoView {
 
 #[component]
 pub fn ToggleButton(
-    cx: Scope,
     #[prop(into)] label: String,
     is_on: Signal<bool>,
     w_is_on: SignalSetter<()>,
@@ -90,8 +89,7 @@ pub fn ToggleButton(
         return format!("cm-button off");
     };
 
-    return view! {cx,
-
+    return view! {
     <div class={class_name} on:click=move |_| w_is_on.set(())>
         {label}
     </div> };

@@ -8,20 +8,20 @@ use coldmod_msg::{
 use leptos::*;
 
 #[component]
-pub fn HeatMapUI(cx: Scope) -> impl IntoView {
-    let heat_srcs_memo = use_context::<Memo<Option<Vec<HeatSrc>>>>(cx).unwrap();
+pub fn HeatMapUI() -> impl IntoView {
+    let heat_srcs_memo = use_context::<Memo<Option<Vec<HeatSrc>>>>().unwrap();
 
-    return view! {cx,
+    return view! {
         <Show
             when=move || heat_srcs_memo.get().is_some()
-                fallback=|cx| view! { cx, <NoDataUI /> }>
+                fallback=|| view! { <NoDataUI /> }>
                 <div class="container heatmap">
                     <ControlsUI />
                     <ul class="container heatmap data">
                         <For
                             each=move || heat_srcs_memo.get().unwrap()
                             key=|u| format!("{}-{}", u.key, u.trace_count)
-                            view=move |cx, s| view! {cx, <HeatSourceUI heat_src=s /> } />
+                            children=move |s| view! {<HeatSourceUI heat_src=s /> } />
                     </ul>
             </div>
         </Show>
@@ -29,13 +29,13 @@ pub fn HeatMapUI(cx: Scope) -> impl IntoView {
 }
 
 #[component]
-pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
-    let mod_client_connected = use_context::<ReadSignal<bool>>(cx).unwrap();
-    let ignore_list = use_context::<ReadSignal<IgnoreList>>(cx).unwrap();
-    let src_available_list = use_context::<SrcAvailableList>(cx).unwrap();
-    let src_refs_by_key = use_context::<ReadSignal<HashMap<String, u32>>>(cx).unwrap();
-    let sender = use_context::<Sender>(cx).unwrap();
-    let (command, w_command) = create_signal::<Option<Command>>(cx, None);
+pub fn HeatSourceUI(heat_src: HeatSrc) -> impl IntoView {
+    let mod_client_connected = use_context::<ReadSignal<bool>>().unwrap();
+    let ignore_list = use_context::<ReadSignal<IgnoreList>>().unwrap();
+    let src_available_list = use_context::<SrcAvailableList>().unwrap();
+    let src_refs_by_key = use_context::<ReadSignal<HashMap<String, u32>>>().unwrap();
+    let sender = use_context::<Sender>().unwrap();
+    let (command, w_command) = create_signal::<Option<Command>>(None);
 
     let key = heat_src.key.clone();
     let is_ignored = move || ignore_list.get().contains(&key);
@@ -50,7 +50,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         buffer.join(" ")
     };
 
-    create_effect(cx, move |_| match command.get() {
+    create_effect(move |_| match command.get() {
         Some(command) => {
             let msg = Msg::RouteModCommand(ModCommand {
                 command: Some(command),
@@ -72,7 +72,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
             } else {
                 "--".to_string()
             };
-            Some(view! {cx,
+            Some(view! {
                 <div class="heat-src-stat">REFS:{refs}</div>
             })
         } else {
@@ -85,7 +85,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
         let key = key.clone();
         if mod_client_connected.get() && !ignore_list.get().contains(&key) {
             let src_available = src_available_list.get().contains(&key);
-            Some(view! {cx,
+            Some(view! {
                 <HeatSourceControlsUI key w_command src_available />
             })
         } else {
@@ -95,7 +95,7 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
 
     let key = heat_src.key.clone();
 
-    return view! {cx,
+    return view! {
         <li class="heat-src-row">
             <div class={ignore_classname}>
                 <div class="heat-src-stat">TRACES:{heat_src.trace_count}</div>
@@ -109,7 +109,6 @@ pub fn HeatSourceUI(cx: Scope, heat_src: HeatSrc) -> impl IntoView {
 
 #[component]
 pub fn HeatSourceControlsUI(
-    cx: Scope,
     key: String,
     w_command: WriteSignal<Option<Command>>,
     src_available: bool,
@@ -124,7 +123,7 @@ pub fn HeatSourceControlsUI(
                 })));
             };
 
-            Some(view! {cx, <div class="cm-button small" on:click=on_open>Open</div>})
+            Some(view! {<div class="cm-button small" on:click=on_open>Open</div>})
         } else {
             None
         }
@@ -146,13 +145,13 @@ pub fn HeatSourceControlsUI(
                 })));
             };
 
-            Some(view! {cx, <div class="cm-button small" on:click=on_remove>Remove</div>})
+            Some(view! {<div class="cm-button small" on:click=on_remove>Remove</div>})
         } else {
             None
         }
     };
 
-    return view! {cx,
+    return view! {
         <div class="heat-src-controls button-group">
             { open_button }
             <div class="cm-button small" on:click=on_ignore>Ignore</div>
@@ -162,6 +161,6 @@ pub fn HeatSourceControlsUI(
 }
 
 #[component]
-pub fn NoDataUI(cx: Scope) -> impl IntoView {
-    return view! {cx, <div class="container heatmap nodata"></div> };
+pub fn NoDataUI() -> impl IntoView {
+    return view! {<div class="container heatmap nodata"></div> };
 }

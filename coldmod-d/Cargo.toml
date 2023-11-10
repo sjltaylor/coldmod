@@ -3,6 +3,8 @@ name = "coldmod-d"
 version = "0.1.0"
 edition = "2021"
 default-run = "coldmod-d"
+rust-version = "1.73"
+
 
 [dependencies]
 serde = { version = "1.0.178", features = ["derive"] }
