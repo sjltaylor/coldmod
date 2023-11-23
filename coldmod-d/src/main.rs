@@ -118,7 +118,6 @@ async fn start() {
     let (rate_limiter, rate_limited) = tokio::sync::mpsc::channel::<()>(1);
     let (trace_sink, trace_source) = tokio::sync::mpsc::channel::<Trace>(65536);
 
-    // TODO: why is the rate limiter defined in main? also, maybe move the config loading somewhere else?
     let dispatch = coldmod_d::dispatch::Dispatch::new(
         grpc_host,
         web_host,
