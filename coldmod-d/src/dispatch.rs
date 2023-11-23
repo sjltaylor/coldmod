@@ -20,8 +20,7 @@ pub struct Dispatch {
     api_key: Option<String>,
     tls: Option<(String, String)>,
     origin: Option<String>,
-    // TODO: why is this pub crate?
-    pub(crate) store: store::RedisStore,
+    store: store::RedisStore,
     internal: broadcast::Sender<Msg>,
     rate_limiter: mpsc::Sender<()>,
     command_listeners: Arc<RwLock<HashMap<String, mpsc::Sender<ModCommand>>>>,
@@ -158,7 +157,6 @@ impl Dispatch {
     }
 
     pub async fn start_trace_sink(&self, mut trace_source: mpsc::Receiver<Trace>) {
-        // TODO: do we need to buffer or is a buffered channel enough?
         let timer_duration = tokio::time::Duration::from_millis(10);
         let mut interval = tokio::time::interval(timer_duration);
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
@@ -362,7 +360,6 @@ impl Dispatch {
             }
         }
 
-        // TODO: implement Drop to handle this cleanup?
         self.websocket_listeners.write().await.remove(&ws.key());
     }
 

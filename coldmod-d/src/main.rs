@@ -134,7 +134,6 @@ async fn start() {
     let web_dispatch = dispatch.clone();
     let event_spool_dispatch = dispatch.clone();
 
-    // TODO: why sometimes &dispatch and sometimes dispatch?
     let web_worker = tokio::spawn(async move { coldmod_d::web::server(web_dispatch).await });
     let grpc_worker = tokio::spawn(async move { coldmod_d::grpc::server(&grpc_dispatch).await });
     let event_spool_worker = tokio::spawn(async move {
