@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "coldmod-py"
-version = "0.1.2"
+version = "0.1.3"
 description = "find cold code"
 authors = ["Sam Taylor <sjltaylor@gmail.com>"]
 readme = "README.md"

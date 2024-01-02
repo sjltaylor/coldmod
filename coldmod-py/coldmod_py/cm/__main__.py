@@ -25,16 +25,18 @@ class CacheCLI():
         """
         cache.clear()
 
-    def warm(self):
+    def warm(self, startup_cache=True):
         """
-        warm the coldmod cache
+        warm the coldmod cache.
+        --startup-cache causes traces sources computation to be cached - subsequent runs won't reflect code changes
         """
         root_marker = coldmod_py.root_marker.load()
         paths = files.find_src_files_in(os.getcwd(), root_marker.ignore_files())
 
         relative_paths = [os.path.relpath(p, os.getcwd()) for p in paths]
-        trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths)
+        trace_srcs_by_relative_path = code.find_trace_srcs_by_relative_paths(relative_paths, use_cache=True)
         print("done.")
+
 
 class CLI:
     def __init__(self, path=None, verbose=False):

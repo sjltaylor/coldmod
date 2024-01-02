@@ -1,4 +1,4 @@
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Iterable
 import coldmod_py.config
 import coldmod_py.files as files
 from coldmod_py.code import ParsedTraceSrc
@@ -43,3 +43,17 @@ def parsed_trace_srcs(relative_path, origin: Callable[[], List[ParsedTraceSrc]])
         cache.write_bytes(pickle.dumps(parsed_trace_src))
 
     return parsed_trace_src
+
+
+def find_trace_srcs_by_relative_paths(paths_relative_to_cwd: Iterable[str], origin: Callable[[Iterable[str]], Dict[str, Iterable[ParsedTraceSrc]]]) -> Dict[str, Iterable[ParsedTraceSrc]]:
+    cache = cache_dir().joinpath(".startup-cache")
+
+    if cache.exists():
+        LOG.debug(f"cache HIT for startup cache")
+        value = pickle.loads(cache.read_bytes())
+    else:
+        LOG.debug(f"cache MISS for startup cache")
+        value = origin(paths_relative_to_cwd)
+        cache.write_bytes(pickle.dumps(value))
+
+    return value

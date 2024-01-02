@@ -18,7 +18,7 @@ def start():
     root_marker = coldmod_py.root_marker.load()
     absolute_paths = find_src_files_in(root_marker.dir(), root_marker.ignore_files())
     relative_paths = [os.path.relpath(p, root_marker.dir()) for p in absolute_paths]
-    parsed_trace_srcs = coldmod_py.code.find_trace_srcs_by_relative_paths(relative_paths)
+    parsed_trace_srcs = coldmod_py.code.find_trace_srcs_by_relative_paths(relative_paths, use_cache=True)
     srcs_by_location = _trace_src_by_abs_loc(parsed_trace_srcs)
     settrace.install(srcs_by_location)
     sender.start(srcs_by_location.values())

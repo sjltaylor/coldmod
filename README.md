@@ -94,7 +94,7 @@ keys = [ ]
 
 For more about `keys` see (more on this later).
 
-Now we will begin parsing source code to look for functions to trace at runtime. Note the first time parsing happens it can take a while, but will cache some of the data it collects in `.coldmod-cache` in the same directory as `coldmod.rootmarker` to speed up subsequent runs.
+Now we will begin parsing source code to look for functions to trace at runtime. Note the first time parsing happens it can take a while, but will cache the data it collects in `.coldmod-cache` in the same directory as `coldmod.rootmarker` to speed up subsequent runs. If startup time is a concern, the cache can be warmed at build time with a CLI (see `coldmod-py` README for CLI usage).
 
 Before we run the Django application and start tracing, we can sense check the `ignore` configuration to see what files and functions will be included:
 * `python -m coldmod_py.cm files` to list the files that will be included

@@ -9,7 +9,13 @@ from pathlib import Path
 
 from libcst.metadata import FullRepoManager, FullyQualifiedNameProvider
 
-def find_trace_srcs_by_relative_paths(paths_relative_to_cwd: Iterable[str]) -> Dict[str, Iterable[parsed_trace_src.ParsedTraceSrc]]:
+def find_trace_srcs_by_relative_paths(paths_relative_to_cwd: Iterable[str], use_cache=False) -> Dict[str, Iterable[parsed_trace_src.ParsedTraceSrc]]:
+    if use_cache:
+        return cache.find_trace_srcs_by_relative_paths(paths_relative_to_cwd, _find_trace_srcs_by_relative_paths)
+
+    return _find_trace_srcs_by_relative_paths(paths_relative_to_cwd)
+
+def _find_trace_srcs_by_relative_paths(paths_relative_to_cwd: Iterable[str]) -> Dict[str, Iterable[parsed_trace_src.ParsedTraceSrc]]:
     frm = FullRepoManager(".", {*paths_relative_to_cwd}, {FullyQualifiedNameProvider})
     trace_srcs_by_relative_path = {}
     for rp in paths_relative_to_cwd:
