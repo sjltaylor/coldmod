@@ -2,7 +2,7 @@
 
 Coldmod is a set of tools for finding and removing "cold" code.
 
-N.B. Where "dead" code can be found through static analysis, "cold" code is code that is never executed at runtime even if its callpath is reachable.
+Where "dead" code can be found through static analysis, "cold" code is code that is never executed at runtime even if its callpath is reachable.
 
 ## Components
 
